@@ -4,7 +4,7 @@ services:
     container_name: mysql_db
     restart: always
     environment:
-      MYSQL_DATABASE: course
+      MYSQL_DATABASE: timerbook
       MYSQL_ROOT_PASSWORD: 123
       
     ports:
@@ -26,4 +26,4 @@ services:
       PMA_PASSWORD: 123
 
 volumes:
-  mysql_data:%                                                                                                                                                                             
+  mysql_data:
