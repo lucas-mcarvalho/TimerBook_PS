@@ -6,7 +6,6 @@ services:
     environment:
       MYSQL_DATABASE: timerbook
       MYSQL_ROOT_PASSWORD: 123
-      
     ports:
       - "3306:3306"
     volumes:
@@ -19,11 +18,34 @@ services:
     depends_on:
       - mysql
     ports:
-      - "8080:80"
+      - "9090:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: root
       PMA_PASSWORD: 123
+
+  frontend:
+    build: ./front-end
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front-end:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - mysql
+
+  backend:
+    build: ./BackEnd/TimerBook_API
+    container_name: backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Backend:/app
+      - /app/node_modules
+    depends_on:
+      - mysql
 
 volumes:
   mysql_data:
