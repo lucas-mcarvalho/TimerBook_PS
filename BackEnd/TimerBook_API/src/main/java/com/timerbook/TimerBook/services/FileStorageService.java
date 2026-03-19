@@ -1,0 +1,53 @@
+package com.timerbook.TimerBook.services;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
+@Service
+public class FileStorageService {
+
+
+    private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+
+    public FileStorageService() {
+        try {
+            // Cria a pasta "uploads" automaticamente ao iniciar o projeto, caso ela não exista
+            Files.createDirectories(this.fileStorageLocation);
+        } catch (Exception ex) {
+            throw new RuntimeException("Não foi possível criar o diretório de uploads.", ex);
+        }
+    }
+
+    public String storeFile(MultipartFile file, String subfolder) {
+        try {
+            Path targetLocation = this.fileStorageLocation.resolve(subfolder);
+            Files.createDirectories(targetLocation);
+            String originalFileName = file.getOriginalFilename();
+            String uniqueFileName = UUID.randomUUID() + "_" + originalFileName;
+            Path finalFilePath = targetLocation.resolve(uniqueFileName);
+            Files.copy(file.getInputStream(), finalFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "uploads/" + subfolder + "/" + uniqueFileName;
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Não foi possível salvar o arquivo. Tente novamente!", ex);
+        }
+    }
+    public void deleteFile(String filePath) {
+        try {
+            if (filePath != null && !filePath.trim().isEmpty()) {
+                Path fileToDeletePath = Paths.get(filePath).toAbsolutePath().normalize();
+                Files.deleteIfExists(fileToDeletePath);
+            }
+        } catch (IOException ex) {
+            System.err.println("Aviso: Não foi possível deletar o arquivo físico: " + filePath);
+        }
+    }
+}
