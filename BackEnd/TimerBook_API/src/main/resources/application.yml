@@ -1,0 +1,25 @@
+server:
+  port: 8080
+cors:
+  originPatterns: http://localhost:8080,http://localhost:3000,https://www.udemy.com
+
+spring:
+  application:
+    name: course
+  datasource:
+    url: jdbc:mysql://mysql:3306/course?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    #url: jdbc:postgresql://localhost:5432/course
+    username: root
+    password: 123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
