@@ -1,18 +1,15 @@
 server:
   port: 8080
-cors:
-  originPatterns: http://localhost:8080,http://localhost:3000,https://www.udemy.com
 
 spring:
   application:
     name: timerbook
   datasource:
-    url: jdbc:mysql://localhost:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    #url: jdbc:postgresql://localhost:5432/course
+   # url: jdbc:mysql://localhost:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://mysql:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: 123
     driver-class-name: com.mysql.cj.jdbc.Driver
-    #driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none
@@ -23,11 +20,12 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  cors:
-    originPatterns: http://localhost:3000,http://localhost:8080,http://localhost:5173
-  springdoc:
-    api-docs:
-      path: /api-docs
-    swagger-ui:
-      path: /swagger-ui.html
-      operations-sorter: method
+cors:
+  originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
