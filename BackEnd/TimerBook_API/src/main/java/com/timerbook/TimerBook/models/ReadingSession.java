@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -15,27 +16,25 @@ public class ReadingSession implements Serializable {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "book_id")
-    private Book book;
+    @JoinColumn(name = "reading_id")
+    private Reading reading;
 
-    private LocalDateTime startTime;
+    private Integer startPage;
+    private Integer endPage;
 
-    private LocalDateTime endTime;
-
-    private Long durationSeconds;
-
-    private Integer pagesRead;
-
-    public ReadingSession(Long id, Book book, LocalDateTime startTime, LocalDateTime endTime, Long durationSeconds, Integer pagesRead) {
-        this.id = id;
-        this.book = book;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.durationSeconds = durationSeconds;
-        this.pagesRead = pagesRead;
-    }
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
 
     public ReadingSession() {}
+
+    public ReadingSession(Long id, Reading reading, Integer startPage, Integer endPage, LocalDateTime startedAt, LocalDateTime endedAt) {
+        this.id = id;
+        this.reading = reading;
+        this.startPage = startPage;
+        this.endPage = endPage;
+        this.startedAt = startedAt;
+        this.endedAt = endedAt;
+    }
 
     public Long getId() {
         return id;
@@ -45,44 +44,44 @@ public class ReadingSession implements Serializable {
         this.id = id;
     }
 
-    public Book getBook() {
-        return book;
+    public Reading getReading() {
+        return reading;
     }
 
-    public void setBook(Book book) {
-        this.book = book;
+    public void setReading(Reading reading) {
+        this.reading = reading;
     }
 
-    public LocalDateTime getStartTime() {
-        return startTime;
+    public Integer getStartPage() {
+        return startPage;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
+    public void setStartPage(Integer startPage) {
+        this.startPage = startPage;
     }
 
-    public LocalDateTime getEndTime() {
-        return endTime;
+    public Integer getEndPage() {
+        return endPage;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
+    public void setEndPage(Integer endPage) {
+        this.endPage = endPage;
     }
 
-    public Long getDurationSeconds() {
-        return durationSeconds;
+    public LocalDateTime getStartedAt() {
+        return startedAt;
     }
 
-    public void setDurationSeconds(Long durationSeconds) {
-        this.durationSeconds = durationSeconds;
+    public void setStartedAt(LocalDateTime startedAt) {
+        this.startedAt = startedAt;
     }
 
-    public Integer getPagesRead() {
-        return pagesRead;
+    public LocalDateTime getEndedAt() {
+        return endedAt;
     }
 
-    public void setPagesRead(Integer pagesRead) {
-        this.pagesRead = pagesRead;
+    public void setEndedAt(LocalDateTime endedAt) {
+        this.endedAt = endedAt;
     }
 
     @Override
