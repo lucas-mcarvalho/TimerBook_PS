@@ -47,9 +47,6 @@ export default function CadastrarLivro() {
 
       const bookData = {
         name: formData.name,
-        author: formData.author,
-        isbn: formData.isbn,
-        publicationYear: formData.publicationYear,
         description: formData.description,
       };
 
@@ -63,10 +60,7 @@ export default function CadastrarLivro() {
 
       setFormData({
         name: "",
-        author: "",
-        isbn: "",
-        publicationYear: "",
-        description: "",
+        description: ""
       });
 
       setCoverFile(null);
@@ -102,38 +96,7 @@ export default function CadastrarLivro() {
             onChange={handleInputChange}
             required
           />
-        </div>
-
-        <div>
-          <label>Autor *</label>
-          <input
-            type="text"
-            name="author"
-            value={formData.author}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <label>ISBN</label>
-          <input
-            type="text"
-            name="isbn"
-            value={formData.isbn}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <div>
-          <label>Ano de Publicação</label>
-          <input
-            type="number"
-            name="publicationYear"
-            value={formData.publicationYear}
-            onChange={handleInputChange}
-          />
-        </div>
+        </div>x
 
         <div>
           <label>Descrição</label>
