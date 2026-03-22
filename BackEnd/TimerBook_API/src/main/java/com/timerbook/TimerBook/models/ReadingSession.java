@@ -15,8 +15,8 @@ public class ReadingSession implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "reading_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reading_id", nullable = false)
     private Reading reading;
 
     private Integer startPage;
