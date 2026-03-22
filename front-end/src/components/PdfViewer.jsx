@@ -5,13 +5,20 @@ import "../styles/TextLayer.css";
 import "../styles/AnnotationLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-
-function PdfViewer({ file }) {
+  
+function PdfViewer({ file, onPageChange }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
 
   function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
+  }
+
+  function handlePageChange(newPage) {
+    setPageNumber(newPage);
+    if (onPageChange) {
+      onPageChange(newPage);
+    }
   }
 
   return (
@@ -26,11 +33,11 @@ function PdfViewer({ file }) {
         Página {pageNumber} de {numPages || "?"}
       </p>
 
-      <button onClick={() => setPageNumber((p) => Math.max(1, p - 1))} disabled={pageNumber <= 1}>
+      <button onClick={() => handlePageChange(Math.max(1, pageNumber - 1))} disabled={pageNumber <= 1}>
         Anterior
       </button>
       <button
-        onClick={() => setPageNumber((p) => Math.min(numPages || p, p + 1))}
+        onClick={() => handlePageChange(Math.min(numPages || pageNumber, pageNumber + 1))}
         disabled={!numPages || pageNumber >= numPages}
       >
         Próxima
