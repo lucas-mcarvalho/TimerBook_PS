@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "tb_reading")
+@Table(name = "reading")
 public class Reading implements Serializable {
 
     @Id

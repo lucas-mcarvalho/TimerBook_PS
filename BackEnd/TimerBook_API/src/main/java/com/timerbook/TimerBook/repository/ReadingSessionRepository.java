@@ -4,12 +4,10 @@ import com.timerbook.TimerBook.models.ReadingSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReadingSessionRepository extends JpaRepository<ReadingSession, Long> {
-
     long countByReadingBookIdAndStartedAtBetween(Long bookId, LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT COALESCE(SUM(rs.endPage - rs.startPage), 0) " +
@@ -23,7 +21,7 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     );
 
     @Query(value = "SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, rs.started_at, rs.ended_at)), 0) " +
-            "FROM tb_reading_session rs " +
+            "FROM reading_session rs " +
             "WHERE rs.reading_id = :readingId " +
             "AND rs.started_at BETWEEN :start AND :end",
             nativeQuery = true)
@@ -39,7 +37,7 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
                                                   @Param("end") LocalDateTime end);
 
     @Query(value = "SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, rs.started_at, COALESCE(rs.ended_at, NOW()))), 0) " +
-            "FROM tb_reading_session rs " +
+            "FROM reading_session rs " +
             "WHERE rs.reading_id = :readingId " +
             "AND rs.started_at BETWEEN :start AND :end",
             nativeQuery = true)

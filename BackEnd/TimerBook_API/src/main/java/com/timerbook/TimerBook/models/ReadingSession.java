@@ -1,27 +1,21 @@
 package com.timerbook.TimerBook.models;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "tb_reading_session")
+@Table(name = "reading_session")
 public class ReadingSession implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reading_id", nullable = false)
     private Reading reading;
-
     private Integer startPage;
     private Integer endPage;
-
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 
