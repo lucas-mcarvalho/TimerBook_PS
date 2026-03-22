@@ -5,6 +5,7 @@ import Cadastrar_Livro from "./pages/Cadastrar_Livro";
 
 function App() {
   return (
+    //<Home /> 
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
