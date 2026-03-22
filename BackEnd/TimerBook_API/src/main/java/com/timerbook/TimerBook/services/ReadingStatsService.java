@@ -21,6 +21,64 @@ public class ReadingStatsService {
     @Autowired
     private ReadingRepository readingRepository;
 
+    public Reading create() {
+        Reading r = new Reading();
+        r.setBook(null);
+        r.setCurrentPage(0);
+        r.setStartedAt(LocalDateTime.now());
+        r.setFinishedAt(null);
+        return readingRepository.save(r);
+    }
+
+    public ReadingSession createSession() {
+        ReadingSession s = new ReadingSession();
+        s.setReading(null);
+        s.setStartPage(0);
+        s.setEndPage(0);
+        s.setStartedAt(LocalDateTime.now());
+        s.setEndedAt(null);
+        return readingSessionRepository.save(s);
+    }
+
+    public Reading update(Long readingId, Integer currentPage, LocalDateTime startedAt, LocalDateTime finishedAt) {
+        Optional<Reading> opt = readingRepository.findById(readingId);
+        if (opt.isEmpty()) {
+            throw new RuntimeException("Reading not found");
+        }
+        Reading r = opt.get();
+        if (currentPage != null) r.setCurrentPage(currentPage);
+        if (startedAt != null) r.setStartedAt(startedAt);
+        if (finishedAt != null) r.setFinishedAt(finishedAt);
+        return readingRepository.save(r);
+    }
+
+    public ReadingSession updateSession(Long sessionId, Long readingId, Integer startPage, Integer endPage) {
+        Optional<ReadingSession> opt = readingSessionRepository.findById(sessionId);
+        if (opt.isEmpty()) {
+            throw new RuntimeException("Session not found");
+        }
+        ReadingSession s = opt.get();
+        if (readingId != null) {
+            Optional<Reading> rOpt = readingRepository.findById(readingId);
+            if (rOpt.isEmpty()) {
+                throw new RuntimeException("Reading not found");
+            }
+            s.setReading(rOpt.get());
+        }
+        if (startPage != null) s.setStartPage(startPage);
+        if (endPage != null) s.setEndPage(endPage);
+        s.setEndedAt(LocalDateTime.now());
+        return readingSessionRepository.save(s);
+    }
+
+    public void delete(Long readingId) {
+        readingRepository.deleteById(readingId);
+    }
+
+    public void deleteSession(Long sessionId) {
+        readingSessionRepository.deleteById(sessionId);
+    }
+
     public ReadingStatsDTO getStatsForReading(Long readingId, LocalDateTime start, LocalDateTime end, boolean includeOnGoingSessions) {
         if (start == null) {
             start = LocalDateTime.of(2010, 1, 1, 0, 0);

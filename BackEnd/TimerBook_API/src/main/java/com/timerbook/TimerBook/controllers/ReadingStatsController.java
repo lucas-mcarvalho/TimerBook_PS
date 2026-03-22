@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/stats")
+@RequestMapping("/reading")
 public class ReadingStatsController {
 
     @Autowired
@@ -24,7 +24,7 @@ public class ReadingStatsController {
         return ResponseEntity.ok(readings);
     }
 
-    @GetMapping("/reading/{readingId}")
+    @GetMapping("/{readingId}")
     public ResponseEntity<ReadingStatsDTO> getReadingStats(
             @PathVariable Long readingId,
             @RequestParam(value = "start", required = false)
@@ -37,7 +37,7 @@ public class ReadingStatsController {
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/reading/{readingId}/streak")
+    @GetMapping("/{readingId}/streak")
     public ResponseEntity<Integer> getReadingStreak(
             @PathVariable Long readingId,
             @RequestParam(value = "start", required = false)
