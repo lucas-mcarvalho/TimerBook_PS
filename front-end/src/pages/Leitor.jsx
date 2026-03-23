@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import PdfViewer from "../components/PdfViewer";
 import { Link } from "react-router-dom";
-import { deleteBook } from "../features/books/booksApi";
+import { askAI } from "../lib/llama.js";
+import { extractPDFRange } from "../features/books/pdfExtractor.js";
+import ReactMarkdown from "react-markdown";
 
 export default function Leitor() {
   const [question, setQuestion] = useState("");
@@ -72,9 +74,42 @@ export default function Leitor() {
     <div>
       <Link to="/">Ir para Home</Link>
       <h1>Leitor</h1>
-      <PdfViewer file="/the-road-to-learn-react.pdf" />
+      <PdfViewer file="/Memorias_do_Subsolo.pdf" onPageChange={setCurrentPage} />
 
-      <button onClick={() => deleteBook("bookId")}>Deletar Livro</button>
+      <div style={{ marginTop: 20, padding: 20, border: "1px solid #ccc" }}>
+        <h2>Assistente de Leitura</h2>
+        {extracting && <p>Carregando páginas...</p>}
+        {pdfContext && <p style={{ fontSize: 12, color: "#666" }}>✓ Páginas {Math.max(1, currentPage - PAGE_RANGE)}-{currentPage + PAGE_RANGE} carregadas</p>}
+
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Faça uma pergunta sobre o PDF..."
+            style={{ width: "100%", padding: 8, marginBottom: 10 }}
+            disabled={extracting || !pdfContext}
+          />
+          <button type="submit" disabled={loading || extracting || !pdfContext}>
+            {loading ? "Respondendo..." : extracting ? "Carregando..." : "Perguntar"}
+          </button>
+        </form>
+
+        {answer && (
+          <div
+            style={{
+              marginTop: 20,
+              padding: 10,
+              backgroundColor: "#f0f0f0",
+              maxHeight: 300,
+              overflowY: "auto",
+            }}
+          >
+            <strong>Resposta:</strong>
+            <ReactMarkdown>{answer}</ReactMarkdown>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
