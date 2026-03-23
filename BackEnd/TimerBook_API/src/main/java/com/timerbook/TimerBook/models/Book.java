@@ -16,7 +16,6 @@ public class Book {
     private String coverUrl;
     private String dataPath;
 
-
     public Book(){
 
     }
