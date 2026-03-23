@@ -7,6 +7,7 @@ function Home() {
       <Link to="/leitor">Ir para o leitor de PDF</Link>
         <br />
       <Link to="/cadastrar-livro">Cadastrar Livro</Link>
+      <Link to="/meus-livros">Minha Biblioteca</Link>
       
     </div>
   );        
