@@ -26,3 +26,26 @@ export async function registerBook(book, coverFile, pdfFile) {
 
   return response.json();
 }
+
+export async function deleteBook(id) {
+  const response = await fetch(`http://localhost:8080/book/${id}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao deletar livro");
+  }
+
+  return response.json();
+}   
+
+export async function getBooks() {
+  const response = await fetch("http://localhost:8080/book");
+
+  if (!response.ok) {
+    throw new Error("Erro ao buscar livros");
+  }
+
+  return response.json();
+} 
+
