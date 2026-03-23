@@ -82,7 +82,7 @@ const Home: React.FC = () => {
           </a>
 
           {books.length === 0 ? (
-            <div className="empty-books-msg">Vc ainda não tem livros cadastrados</div>
+            <div className="empty-books-msg">Sem livros cadastrados</div>
           ) : (
             <div className="sidebar-shortcuts">
               {books.slice(0, 5).map((book) => (
