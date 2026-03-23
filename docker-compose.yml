@@ -48,13 +48,10 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./Backend:/app
-      - ./uploads:/app/uploads
-      - /app/node_modules
+      - ./uploads:/uploads  
     depends_on:
       mysql:
         condition: service_healthy
 
 volumes:
   mysql_data:
-  

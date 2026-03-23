@@ -28,7 +28,7 @@ public class ReadingSessionService {
         ReadingSession session = new ReadingSession();
         session.setReading(reading.get());
         session.setStartPage(dto.getStartPage());
-        session.setEndPage(dto.getStartPage()); // Começa igual ao startPage
+        session.setEndPage(dto.getStartPage());
         session.setStartedAt(dto.getStartedAt() != null ? dto.getStartedAt() : LocalDateTime.now());
 
         return readingSessionRepository.save(session);

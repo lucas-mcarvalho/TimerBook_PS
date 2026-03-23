@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.services;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,13 +14,16 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
+    @Value("${app.upload.dir:/uploads}")
+    private String uploadDir;
 
-    private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+    private Path fileStorageLocation;
 
     public FileStorageService() {
         try {
-            // Cria a pasta "uploads" automaticamente ao iniciar o projeto, caso ela não exista
+            this.fileStorageLocation = Paths.get("/uploads").toAbsolutePath().normalize();
             Files.createDirectories(this.fileStorageLocation);
+            System.out.println("Upload directory: " + this.fileStorageLocation);
         } catch (Exception ex) {
             throw new RuntimeException("Não foi possível criar o diretório de uploads.", ex);
         }
@@ -40,11 +44,15 @@ public class FileStorageService {
             throw new RuntimeException("Não foi possível salvar o arquivo. Tente novamente!", ex);
         }
     }
+
     public void deleteFile(String filePath) {
         try {
             if (filePath != null && !filePath.trim().isEmpty()) {
-                Path fileToDeletePath = Paths.get(filePath).toAbsolutePath().normalize();
+                Path fileToDeletePath = this.fileStorageLocation.resolve(
+                        filePath.replace("uploads/", "")
+                );
                 Files.deleteIfExists(fileToDeletePath);
+                System.out.println("Arquivo deletado: " + fileToDeletePath);
             }
         } catch (IOException ex) {
             System.err.println("Aviso: Não foi possível deletar o arquivo físico: " + filePath);
