@@ -29,7 +29,7 @@
 
 .modal-title {
     font-size: 1.8rem;
-    color: #000000;
+    color: #1a1a1a;
     margin-bottom: 40px;
 }
 
@@ -54,7 +54,7 @@
 .form-group label {
     font-size: 1rem;
     font-weight: 600;
-    color: #555555;
+    color: #333333;
 }
 
 .form-group input {
@@ -63,11 +63,29 @@
     border-radius: 12px;
     background-color: #f8fcfc;
     font-size: 1rem;
+    color: #1a1a1a;
     outline: none;
     transition: border-color 0.2s;
 }
 
 .form-group input:focus {
+    border-color: #2ecc71; 
+}
+
+.form-group textarea {
+    padding: 14px;
+    border: 1px solid #c0c0c0;
+    border-radius: 12px;
+    background-color: #f8fcfc;
+    font-size: 1rem;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.form-group textarea:focus {
     border-color: #2ecc71; 
 }
 
@@ -103,7 +121,7 @@
 .upload-section label {
     font-size: 1rem;
     font-weight: 600;
-    color: #555555;
+    color: #333333;
 }
 
 .upload-box {
@@ -123,7 +141,7 @@
 .upload-box span {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #666666;
+    color: #555555; 
     text-align: center;
     padding: 0 10px;
     pointer-events: none; 
@@ -137,4 +155,15 @@
     height: 100%;
     opacity: 0; 
     cursor: pointer;
+}
+
+.upload-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 12px; 
+    position: absolute;
+    top: 0;
+    left: 0;
 }

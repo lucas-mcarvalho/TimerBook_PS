@@ -1,50 +1,52 @@
 import React, { useState } from 'react';
 import '../styles/HomeAddBookModal.css';
+import { registerBook } from '../features/books/booksApi.js';
+import { Book } from '../pages/Home';
 
-//precisa receber da Home para funcionar
 interface HomeAddBookModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddBook: (newBook: { title: string; author: string; year: string }) => void;
+  onAddBook: (newBook: Book) => void;
 }
 
 const HomeAddBookModal: React.FC<HomeAddBookModalProps> = ({ isOpen, onClose, onAddBook }) => {
-  const [newTitle, setNewTitle] = useState('');
-  const [newAuthor, setNewAuthor] = useState('');
-  const [newYear, setNewYear] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState(''); 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newName.trim()) return;
 
-    if (!newTitle.trim() || !newAuthor.trim() || !newYear.trim()) return;
-
-    //estrutura para a API
-    const formData = new FormData();
-    formData.append('title', newTitle);
-    formData.append('author', newAuthor);
-    formData.append('year', newYear);
-    if (coverFile) formData.append('cover', coverFile);
-    if (pdfFile) formData.append('pdf', pdfFile);
+    setIsLoading(true);
 
     try {
-      //chamada API
-      //const response = await fetch('http://localhost:8080/api/books', { method: 'POST', body: formData });
-      
-      //simulação local
-      onAddBook({ title: newTitle, author: newAuthor, year: newYear });
+      const bookData = { name: newName, description: newDescription };
+      const savedBookFromServer = await registerBook(
+        bookData, 
+        coverFile || undefined, 
+        pdfFile || undefined
+      );
 
-      setNewTitle('');
-      setNewAuthor('');
-      setNewYear('');
-      setCoverFile(null);
-      setPdfFile(null);
+      const coverPreview = coverFile ? URL.createObjectURL(coverFile) : undefined;
+
+      onAddBook({ 
+        ...savedBookFromServer, 
+        cover: coverPreview 
+      });
+
+      setNewName(''); setNewDescription(''); setCoverFile(null); setPdfFile(null);
       onClose();
+      
     } catch (error) {
-      console.error("Erro ao comunicar com a API:", error);
+      console.error("Erro ao salvar:", error);
+      alert("Ops! Falha ao conectar com o servidor.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,44 +54,37 @@ const HomeAddBookModal: React.FC<HomeAddBookModalProps> = ({ isOpen, onClose, on
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">Adição de novo livro</h2>
-        
         <form onSubmit={handleSubmit}>
           <div className="modal-body-flex">
-            
             <div className="modal-inputs-col">
               <div className="form-group">
-                <label>Qual é o nome?</label>
-                <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required />
+                <label>Nome *</label>
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} required placeholder="Ex: O Pequeno Príncipe" />
               </div>
               <div className="form-group">
-                <label>Qual é o autor?</label>
-                <input type="text" value={newAuthor} onChange={(e) => setNewAuthor(e.target.value)} required />
+                <label>Descrição</label>
+                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} placeholder="Digite um breve resumo do livro..." />
               </div>
-              <div className="form-group">
-                <label>Qual é a data de publicação?</label>
-                <input type="text" value={newYear} onChange={(e) => setNewYear(e.target.value)} required />
-              </div>
-              <button type="submit" className="btn-concluir">Concluir</button>
+              <button type="submit" className="btn-concluir" disabled={isLoading}>
+                {isLoading ? 'Salvando...' : 'Concluir'}
+              </button>
             </div>
-
             <div className="modal-uploads-col">
               <div className="upload-section">
-                <label>Upload de capa</label>
+                <label>Upload de capa (opcional)</label>
                 <div className="upload-box">
                   <input type="file" accept="image/*" className="file-input-hidden" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
                   <span>{coverFile ? coverFile.name : "Pré-visualização"}</span>
                 </div>
               </div>
-
               <div className="upload-section">
-                <label>Upload de PDF</label>
+                <label>Upload de PDF (opcional)</label>
                 <div className="upload-box">
                   <input type="file" accept="application/pdf" className="file-input-hidden" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} />
                   <span>{pdfFile ? pdfFile.name : "Pré-visualização"}</span>
                 </div>
               </div>
             </div>
-
           </div>
         </form>
       </div>

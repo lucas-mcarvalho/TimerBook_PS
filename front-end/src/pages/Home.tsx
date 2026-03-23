@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/Home.css';
-import '../styles/HomeDark.css'; //tema escuro
+import '../styles/HomeDark.css'; 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
 import homeIcon from '../assets/Home/HomeIcon.svg';
 import BookIcon from '../assets/Home/BookIcon.svg';
@@ -12,11 +13,13 @@ import PencilIcon from '../assets/Home/PencilIcon.svg';
 
 import HomeAddBookModal from '../components/HomeAddBookModal';
 
+import { getBooks, deleteBook } from '../features/books/booksApi.js';
+
 export interface Book {
   id: number;
-  title: string;
-  author: string;
-  year: string;
+  name: string;
+  description: string;
+  cover?: string; 
 }
 
 const Home: React.FC = () => {
@@ -26,20 +29,39 @@ const Home: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const savedTheme = localStorage.getItem('timerbook-theme');
+    return savedTheme === 'dark';
+  });
 
-  const handleDeleteBook = (idToRemove: number) => {
-    setBooks(books.filter(book => book.id !== idToRemove));
+  useEffect(() => {
+    localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    async function fetchMyBooks() {
+      try {
+        const livrosDoBanco = await getBooks();
+        setBooks(livrosDoBanco);
+      } catch (error) {
+        console.error("Não consegui puxar os livros:", error);
+      }
+    }
+    fetchMyBooks();
+  }, []);
+
+  const handleDeleteBook = async (idToRemove: number) => {
+    try {
+      await deleteBook(idToRemove);
+      setBooks(prev => prev.filter(book => book.id !== idToRemove));
+    } catch (error) {
+      console.error("Erro ao apagar o livro:", error);
+      alert("Ops! Não consegui apagar o livro. O servidor pode estar fora do ar.");
+    }
   };
 
-  const handleAddNewBook = (bookData: { title: string; author: string; year: string }) => {
-    const newBook: Book = {
-      id: Date.now(),
-      title: bookData.title,
-      author: bookData.author,
-      year: bookData.year
-    };
-    setBooks([...books, newBook]);
+  const handleAddNewBook = (serverBook: Book) => {
+    setBooks(prev => [...prev, serverBook]);
   };
 
   return (
@@ -62,9 +84,9 @@ const Home: React.FC = () => {
           ) : (
             <div className="sidebar-shortcuts">
               {books.slice(0, 5).map((book) => (
-                <a href="#" key={book.id} className="sidebar-shortcut-item">
-                  {book.title}
-                </a>
+                <Link to={`/leitor/${book.id}`} key={book.id} className="sidebar-shortcut-item">
+                  {book.name}
+                </Link>
               ))}
             </div>
           )}
@@ -96,21 +118,41 @@ const Home: React.FC = () => {
             </a>
           ) : (
             books.map((book) => (
-              <a href="#" key={book.id} className="book-card">
+              <Link to={`/leitor/${book.id}`} key={book.id} className="book-card">
                 {isEditing && (
                   <button 
                     className="btn-delete-book"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteBook(book.id); }}
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation(); 
+                      handleDeleteBook(book.id); 
+                    }}
                   >
                     X
                   </button>
                 )}
-                <div className="book-cover-wrapper"><div className="book-cover-placeholder">{book.title.charAt(0)}</div></div>
-                <div className="book-info">
-                  <h3 className="book-title">{book.title}</h3>
-                  <span className="book-year">{book.year}</span>
+                
+                <div className="book-cover-wrapper">
+                  <img 
+                    src={book.cover?.startsWith('blob:') 
+                      ? book.cover 
+                      : `http://localhost:8080/book/cover/${book.id}`} 
+                    alt={`Capa de ${book.name}`} 
+                    className="book-cover-image" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="book-cover-placeholder">{book.name ? book.name.charAt(0) : '?'}</div>
                 </div>
-              </a>
+
+                <div className="book-info">
+                  <h3 className="book-title">{book.name}</h3>
+                  <span className="book-year">
+                    {book.description || 'Sem descrição'}
+                  </span>
+                </div>
+              </Link>
             ))
           )}
         </div>

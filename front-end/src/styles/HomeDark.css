@@ -28,7 +28,6 @@ h1, h2, h3, span, p, label, input,
     color: #ffffff;
 }
 
-/*transforma os SVGs pretos em brancos*/
 .dark-theme .nav-icon {
     filter: brightness(0) invert(1);
     transition: filter 0.3s;
@@ -93,7 +92,8 @@ h1, h2, h3, span, p, label, input,
     color: #a0aec0;
 }
 
-.dark-theme .form-group input {
+.dark-theme .form-group input, 
+.dark-theme .form-group textarea {
     background-color: #0b1221;
     border-color: #1e2f4c;
     color: #ffffff;
@@ -108,7 +108,6 @@ h1, h2, h3, span, p, label, input,
     color: #a0aec0;
 }
 
-/*quando o lápis estiver ligado no tema escuro, ele ganha uma cor de destaque*/
 .dark-theme .btn-edit-book.editing-active {
     background-color: #4da3ff;
     box-shadow: 0 0 12px rgba(77, 163, 255, 0.4);
