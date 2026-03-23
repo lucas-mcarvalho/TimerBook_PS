@@ -20,6 +20,8 @@ export interface Book {
   name: string;
   description: string;
   cover?: string; 
+  coverUrl?: string;
+  dataPath?: string;
 }
 
 const Home: React.FC = () => {
@@ -84,7 +86,7 @@ const Home: React.FC = () => {
           ) : (
             <div className="sidebar-shortcuts">
               {books.slice(0, 5).map((book) => (
-                <Link to={`/leitor/${book.id}`} key={book.id} className="sidebar-shortcut-item">
+                <Link to="/leitor" state={{ filePath: book.dataPath }} key={book.id} className="sidebar-shortcut-item">
                   {book.name}
                 </Link>
               ))}
@@ -118,7 +120,7 @@ const Home: React.FC = () => {
             </a>
           ) : (
             books.map((book) => (
-              <Link to={`/leitor/${book.id}`} key={book.id} className="book-card">
+              <Link to="/leitor" state={{ filePath: book.dataPath }} key={book.id} className="book-card">
                 {isEditing && (
                   <button 
                     className="btn-delete-book"
@@ -133,16 +135,18 @@ const Home: React.FC = () => {
                 )}
                 
                 <div className="book-cover-wrapper">
-                  <img 
-                    src={book.cover?.startsWith('blob:') 
-                      ? book.cover 
-                      : `http://localhost:8080/book/cover/${book.id}`} 
-                    alt={`Capa de ${book.name}`} 
-                    className="book-cover-image" 
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  {(book.cover || book.coverUrl) && (
+                    <img 
+                      src={book.cover?.startsWith('blob:') 
+                        ? book.cover 
+                        : `http://localhost:8080/${book.coverUrl}`} 
+                      alt={`Capa de ${book.name}`} 
+                      className="book-cover-image" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
                   <div className="book-cover-placeholder">{book.name ? book.name.charAt(0) : '?'}</div>
                 </div>
 
