@@ -30,14 +30,14 @@ public class ReadingController {
     @PostMapping("/start")
     @Operation(
             summary = "Inicia uma nova leitura",
-            description = "Cria uma nova leitura para um livro específico. " +
-                    "A leitura começa com a data/hora atual e página 0. " +
-                    "Retorna o ID da leitura para usar nas sessões de leitura."
+            description = "Cria uma nova leitura para um livro específico e inicia automaticamente uma sessão de leitura. " +
+                    "A leitura começa com a data/hora atual. " +
+                    "Retorna o ID da leitura para usar nas próximas ações."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Leitura criada com sucesso",
+                    description = "Leitura e sessão criadas com sucesso",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Reading.class)
@@ -57,7 +57,7 @@ public class ReadingController {
     public ResponseEntity<Reading> startReading(
             @Parameter(
                     name = "body",
-                    description = "Dados para iniciar a leitura. Contém o ID do livro.",
+                    description = "Dados para iniciar a leitura. Contém o ID do livro e página inicial (opcional).",
                     required = true,
                     schema = @Schema(implementation = InitReadingDTO.class)
             )

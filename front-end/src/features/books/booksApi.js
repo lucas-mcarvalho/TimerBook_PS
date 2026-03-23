@@ -26,18 +26,27 @@ export async function registerBook(book, coverFile, pdfFile) {
 
   return response.json();
 }
-
 export async function deleteBook(id) {
   const response = await fetch(`http://localhost:8080/book/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
   });
 
   if (!response.ok) {
-    throw new Error("Erro ao deletar livro");
+    // tenta pegar erro com segurança
+    const text = await response.text();
+    throw new Error(text || "Erro ao deletar livro");
   }
 
-  return response.json();
-}   
+  // se não tem conteúdo, retorna direto
+  if (response.status === 204) {
+    return true;
+  }
+
+  // tenta converter só se tiver conteúdo
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
 
 export async function getBooks() {
   const response = await fetch("http://localhost:8080/book");

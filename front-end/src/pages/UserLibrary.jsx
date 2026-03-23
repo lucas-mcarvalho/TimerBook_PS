@@ -9,7 +9,7 @@ function BookCard({ book, onRead, onDelete }) {
       {book.coverUrl && (
         <div className="book-cover">
           <img 
-            src={`http://localhost:8080/files/${book.coverUrl}`} 
+            src={`http://localhost:8080/${book.coverUrl}`} 
             alt={book.name} 
             style={{ width: "100%", height: "auto" }}
           />
