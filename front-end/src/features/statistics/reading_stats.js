@@ -19,14 +19,3 @@ export async function getReadingStreakByReadingId(readingId) {
 }
 
 
-
-
-//export async function getReadingStats(bookId) {
-    const response = await fetch(`http://localhost:8080/readings/stats/${bookId}`);
-
-    if (!response.ok) {
-        throw new Error("Erro ao buscar estatísticas de leitura");
-    }
-
-    return response.json();
-//}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getReadingStatsByReadingId, getReadingStreakByReadingId } from "../features/books/booksApi.js";
+import { getReadingStatsByReadingId, getReadingStreakByReadingId } from "../features/statistics/reading_stats.js";
 
 export default function FrameStats({ readingId }) {
   const [stats, setStats] = useState(null);
