@@ -1,4 +1,5 @@
 com/timerbook/TimerBook/services/FileStorageService.class
+com/timerbook/TimerBook/config/WebConfig.class
 com/timerbook/TimerBook/controllers/ReadingSessionController.class
 com/timerbook/TimerBook/models/Reading.class
 com/timerbook/TimerBook/controllers/ReadingController.class
