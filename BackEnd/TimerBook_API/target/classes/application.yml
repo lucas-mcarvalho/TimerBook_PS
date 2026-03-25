@@ -15,7 +15,7 @@ spring:
     #Mysql para rodar o projeto localmente.
     #url: jdbc:mysql://localhost:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     #Mysql para rodar o projeto dentro do container.
-   # url: jdbc:mysql://mysql:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    # url: jdbc:mysql://mysql:3306/timerbook?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 
   driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
@@ -26,8 +26,8 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
-      #Postgresql(Em teste ainda)
-          dialect: org.hibernate.dialect.PostgreSQLDialect
+        #Postgresql(Em teste ainda)
+        dialect: org.hibernate.dialect.PostgreSQLDialect
       #dialect: org.hibernate.dialect.PostgreSQL10Dialect
     show-sql: false
     open-in-view: false
