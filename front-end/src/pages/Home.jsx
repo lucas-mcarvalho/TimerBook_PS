@@ -87,7 +87,7 @@ const Home = () => {
             <div className="sidebar-shortcuts" style={{marginTop: '20px'}}>
               <span style={{fontSize: '0.8rem', color: '#888', marginLeft: '10px'}}>Recentes:</span>
               {books.slice(0, 5).map((book) => (
-                <Link to="/leitor" state={{ filePath: book.dataPath }} key={book.id} className="sidebar-shortcut-item">
+                <Link to="/leitor" state={{ book: book }} key={book.id} className="sidebar-shortcut-item">
                   {book.name}
                 </Link>
               ))}
@@ -114,7 +114,7 @@ const Home = () => {
             </button>
           ) : (
             books.map((book) => (
-              <Link to="/leitor" state={{ filePath: book.dataPath }} key={book.id} className="book-card">
+              <Link to="/leitor" state={{ book: book }} key={book.id} className="book-card">
                 {isEditing && (
                   <button 
                     className="btn-delete-book"
