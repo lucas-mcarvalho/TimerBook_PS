@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import PdfViewer from "../components/PdfViewer";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { askAI } from "../lib/llama.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import ReactMarkdown from "react-markdown";
 
 export default function Leitor() {
+  const { state } = useLocation();
+  const book = state?.book;
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,34 +15,47 @@ export default function Leitor() {
   const [extracting, setExtracting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pdfFile, setPdfFile] = useState(null);
-  const PAGE_RANGE = 2; 
+  const PAGE_RANGE = 2;
+
+  // Se não houver book, exibe mensagem de erro
+  if (!book) {
+    return (
+      <div>
+        <Link to="/">Voltar</Link>
+        <p>Livro não encontrado.</p>
+      </div>
+    );
+  }
+
+  // Monta a URL do PDF
+  const pdfUrl = book.dataPath?.startsWith("blob:")
+    ? book.dataPath
+    : `http://localhost:8080/${book.dataPath}`;
 
   // Carrega o PDF ao montar o componente
   useEffect(() => {
     const loadPDF = async () => {
       try {
-        const response = await fetch("/Memorias_do_Subsolo.pdf");
+        const response = await fetch(pdfUrl);
         const blob = await response.blob();
         setPdfFile(blob);
       } catch (error) {
         console.error("Erro ao carregar PDF:", error);
       }
     };
-
-    loadPDF();
-  }, []);
+    if (pdfUrl) {
+      loadPDF();
+    }
+  }, [pdfUrl]);
 
   // Extrai range de páginas quando a página atual muda
   useEffect(() => {
     if (!pdfFile) return;
-
     const extractRange = async () => {
       setExtracting(true);
       try {
-        
         const startPage = Math.max(1, currentPage - PAGE_RANGE);
         const endPage = currentPage + PAGE_RANGE;
-
         const text = await extractPDFRange(pdfFile, startPage, endPage);
         setPdfContext(text);
         console.log(`Páginas ${startPage}-${endPage} carregadas`);
@@ -50,14 +65,12 @@ export default function Leitor() {
         setExtracting(false);
       }
     };
-
     extractRange();
   }, [currentPage, pdfFile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!question.trim()) return;
-
     setLoading(true);
     try {
       console.log("Pergunta enviada:", question);
@@ -74,7 +87,7 @@ export default function Leitor() {
     <div>
       <Link to="/">Ir para Home</Link>
       <h1>Leitor</h1>
-      <PdfViewer file="/Memorias_do_Subsolo.pdf" onPageChange={setCurrentPage} />
+      <PdfViewer file={pdfUrl} onPageChange={setCurrentPage} />
 
       <div style={{ marginTop: 20, padding: 20, border: "1px solid #ccc" }}>
         <h2>Assistente de Leitura</h2>

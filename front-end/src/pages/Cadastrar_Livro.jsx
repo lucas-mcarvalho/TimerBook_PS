@@ -5,10 +5,7 @@ export default function CadastrarLivro() {
 
   const [formData, setFormData] = useState({
     name: "",
-    author: "",
-    isbn: "",
-    publicationYear: "",
-    description: "",
+    // Removido campos não enviados ao backend
   });
 
   const [coverFile, setCoverFile] = useState(null);
@@ -19,7 +16,6 @@ export default function CadastrarLivro() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -38,34 +34,24 @@ export default function CadastrarLivro() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setError(null);
     setSuccess(false);
-
     try {
-
       const bookData = {
         name: formData.name,
-        description: formData.description,
       };
-
       await registerBook(
         bookData,
         coverFile ?? undefined,
         pdfFile ?? undefined
       );
-
       setSuccess(true);
-
       setFormData({
-        name: "",
-        description: ""
+        name: ""
       });
-
       setCoverFile(null);
       setPdfFile(null);
-
     } catch (err) {
       setError(
         err instanceof Error
@@ -95,16 +81,6 @@ export default function CadastrarLivro() {
             value={formData.name}
             onChange={handleInputChange}
             required
-          />
-        </div>x
-
-        <div>
-          <label>Descrição</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows={4}
           />
         </div>
 
