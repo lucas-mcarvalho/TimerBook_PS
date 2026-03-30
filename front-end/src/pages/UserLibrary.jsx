@@ -60,8 +60,9 @@ function UserLibrary() {
   };
 
   const handleRead = (book) => {
-    // Redireciona para a página de leitura, passando dataPath
-    navigate("/leitor", { state: { filePath: book.dataPath } });
+    console.log("Lendo livro:", book);
+    // Redireciona para a página de leitura, passando o objeto book inteiro
+    navigate("/leitor", { state: { book } });
   };
 
   const handleDelete = async (bookId) => {
