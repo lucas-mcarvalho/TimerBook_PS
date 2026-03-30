@@ -1,0 +1,117 @@
+.dashboard-container, 
+.sidebar, 
+.logo-text, 
+.nav-icon, 
+.nav-item, 
+h1, h2, h3, span, p, label, input, 
+.action-icon-btn, 
+.btn-edit-book, 
+.modal-content-large, 
+.upload-box {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, filter 0.4s ease !important;
+}
+/*TEMA ESCURO*/
+.dark-theme {
+    background-color: #0b1221;
+    color: #ffffff;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.dark-theme .sidebar {
+    background-color: #121e31;
+    border-right: 1px solid #1e2f4c;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.dark-theme .logo-text {
+    color: #ffffff;
+}
+
+.dark-theme .nav-icon {
+    filter: brightness(0) invert(1);
+    transition: filter 0.3s;
+}
+
+.dark-theme .nav-item {
+    color: #a0aec0;
+}
+
+.dark-theme .nav-item:hover {
+    background-color: #1e2f4c;
+    color: #ffffff;
+}
+
+.dark-theme .nav-item.active {
+    color: #4da3ff; 
+}
+
+.dark-theme .main-content h1,
+.dark-theme .book-title {
+    color: #ffffff;
+}
+
+.dark-theme .book-year {
+    color: #94a3b8;
+}
+
+.dark-theme .empty-books-msg {
+    color: #718096;
+}
+
+.dark-theme .sidebar-shortcut-item {
+    color: #94a3b8;
+}
+
+.dark-theme .sidebar-shortcut-item:hover {
+    color: #4da3ff;
+}
+
+.dark-theme .action-icon-btn,
+.dark-theme .btn-edit-book {
+    background-color: #2b497f;
+    color: #ffffff;
+}
+
+.dark-theme .action-icon-btn:hover,
+.dark-theme .btn-edit-book:hover {
+    background-color: #3b60a3;
+}
+
+.dark-theme .modal-content-large {
+    background-color: #121e31;
+    color: #ffffff;
+}
+
+.dark-theme .modal-title {
+    color: #ffffff;
+}
+
+.dark-theme .form-group label,
+.dark-theme .upload-section label {
+    color: #a0aec0;
+}
+
+.dark-theme .form-group input, 
+.dark-theme .form-group textarea {
+    background-color: #0b1221;
+    border-color: #1e2f4c;
+    color: #ffffff;
+}
+
+.dark-theme .upload-box {
+    background: linear-gradient(to bottom, #1e2f4c, #121e31);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.dark-theme .upload-box span {
+    color: #a0aec0;
+}
+
+.dark-theme .btn-edit-book.editing-active {
+    background-color: #4da3ff;
+    box-shadow: 0 0 12px rgba(77, 163, 255, 0.4);
+}
+
+.dark-theme .btn-edit-book.editing-active .nav-icon {
+    filter: brightness(0);
+}
