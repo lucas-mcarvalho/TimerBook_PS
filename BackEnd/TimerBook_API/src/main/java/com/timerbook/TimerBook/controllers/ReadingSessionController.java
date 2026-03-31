@@ -67,4 +67,51 @@ public class ReadingSessionController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
+
+    @PutMapping("/{sessionId}/finish")
+    @Operation(
+        summary = "Finaliza uma sessão de leitura",
+        description = "Finaliza a sessão de leitura atualizando a página final e a data/hora de término. Retorna a sessão atualizada."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Sessão de leitura finalizada com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ReadingSession.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Requisição inválida, como sessão não encontrada ou dados incorretos",
+            content = @Content(mediaType = "application/json")
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Erro interno do servidor ao finalizar a sessão de leitura",
+            content = @Content(mediaType = "application/json")
+        )
+    })
+    public ResponseEntity<ReadingSession> finishReadingSession(
+        @Parameter(
+                name = "sessionId",
+                description = "ID da sessão de leitura a ser finalizada",
+                required = true,
+                example = "1"
+        ) 
+        @PathVariable Long sessionId, 
+        @Parameter(
+                name = "endPage",
+                description = "Página onde a sessão de leitura foi finalizada",
+                required = true,
+                example = "50"
+        ) @RequestParam Integer endPage) {
+        try {
+                ReadingSession session = readingSessionService.finishReadingSession(sessionId, endPage);
+                return ResponseEntity.ok(session);
+        } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
 }

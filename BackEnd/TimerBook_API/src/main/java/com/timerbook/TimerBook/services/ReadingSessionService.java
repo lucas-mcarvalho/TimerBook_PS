@@ -33,4 +33,17 @@ public class ReadingSessionService {
 
         return readingSessionRepository.save(session);
     }
+
+    public ReadingSession finishReadingSession(Long sessionId, Integer endPage) {
+        Optional<ReadingSession> session = readingSessionRepository.findById(sessionId);
+        if (session.isEmpty()) {
+            throw new IllegalArgumentException("Sessão de leitura não encontrada");
+        }
+
+        ReadingSession existingSession = session.get();
+        existingSession.setEndPage(endPage);
+        existingSession.setEndedAt(LocalDateTime.now());
+
+        return readingSessionRepository.save(existingSession);
+    }
 }
