@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.controllers;
 
+import com.timerbook.TimerBook.dto.FinishReadingSessionDTO;
 import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.dto.StartReadingSessionDTO;
 import com.timerbook.TimerBook.models.Reading;
@@ -96,24 +97,16 @@ public class ReadingSessionController {
         )
     })
     public ResponseEntity<ReadingSession> finishReadingSession(
-        @Parameter(
-                name = "sessionId",
-                description = "ID da sessão de leitura a ser finalizada",
-                required = true,
-                example = "1"
-        ) 
-        @PathVariable Long sessionId, 
-        @Parameter(
-                name = "endPage",
-                description = "Página onde a sessão de leitura foi finalizada",
-                required = true,
-                example = "50"
-        ) @RequestParam Integer endPage) {
+            @Parameter(name = "sessionId", description = "...", required = true)
+            @PathVariable Long sessionId,
+            @Parameter(name = "body", description = "Página final da sessão", required = true,
+                    schema = @Schema(implementation = FinishReadingSessionDTO.class))
+            @RequestBody FinishReadingSessionDTO dto) {
         try {
-                ReadingSession session = readingSessionService.finishReadingSession(sessionId, endPage);
-                return ResponseEntity.ok(session);
+            ReadingSession session = readingSessionService.finishReadingSession(sessionId, dto.getEndPage());
+            return ResponseEntity.ok(session);
         } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
