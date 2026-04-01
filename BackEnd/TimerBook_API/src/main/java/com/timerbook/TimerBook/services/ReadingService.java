@@ -33,18 +33,25 @@ public class ReadingService {
 
         Integer startPage = dto.getStartPage() != null ? dto.getStartPage() : 0;
 
-        // Cria a leitura
-        Reading reading = new Reading();
-        reading.setBook(book.get());
-        reading.setCurrentPage(startPage);
-        reading.setStartedAt(LocalDateTime.now());
-        reading.setFinishedAt(null);
+        Optional<Reading> activeReadingOpt = readingRepository.findByBookIdAndFinishedAtIsNull(dto.getBookId());
 
-        Reading savedReading = readingRepository.save(reading);
+        Reading reading;
 
-        // 🎯 SEMPRE cria uma sessão inicial automaticamente
+        if (activeReadingOpt.isPresent()) {
+            reading = activeReadingOpt.get();
+            reading.setCurrentPage(startPage);
+            reading = readingRepository.save(reading);
+        } else {
+            reading = new Reading();
+            reading.setBook(book.get());
+            reading.setCurrentPage(startPage);
+            reading.setStartedAt(LocalDateTime.now());
+            reading.setFinishedAt(null);
+            reading = readingRepository.save(reading);
+        }
+
         ReadingSession session = new ReadingSession();
-        session.setReading(savedReading);
+        session.setReading(reading);
         session.setStartPage(startPage);
         session.setEndPage(startPage);
         session.setStartedAt(LocalDateTime.now());
@@ -52,9 +59,8 @@ public class ReadingService {
 
         readingSessionRepository.save(session);
 
-        return savedReading;
+        return reading;
     }
-
     public Reading finishReading(Long readingId, FinishReadingDTO dto) {
         Optional<Reading> reading = readingRepository.findById(readingId);
         if (reading.isEmpty()) {
