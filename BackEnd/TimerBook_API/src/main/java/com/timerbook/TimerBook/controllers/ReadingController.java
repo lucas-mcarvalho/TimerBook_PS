@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/readings")
 @Tag(
@@ -161,5 +163,78 @@ public class ReadingController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+    }
+
+
+    @GetMapping("/book/{bookId}")
+    @Operation(
+            summary = "Busca todas as leituras de um livro",
+            description = "Retorna uma lista com todas as leituras (períodos de leitura) de um livro específico, incluindo leituras finalizadas e em andamento."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista de leituras retornada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    type = "array",
+                                    implementation = Reading.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Livro com o ID fornecido não foi encontrado",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    public ResponseEntity<List<Reading>> getReadingsByBookId(
+            @Parameter(
+                    name = "bookId",
+                    description = "ID do livro para buscar suas leituras",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable Long bookId) {
+        try {
+            List<Reading> readings = readingService.getReadingsByBookId(bookId);
+            return ResponseEntity.ok(readings);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping
+    @Operation(
+            summary = "Lista todas as leituras",
+            description = "Retorna uma lista com todas as leituras registradas no sistema."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista de leituras retornada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    type = "array",
+                                    implementation = Reading.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    public ResponseEntity<List<Reading>> getAllReadings() {
+        List<Reading> readings = readingService.getAll();
+        return ResponseEntity.ok(readings);
     }
 }

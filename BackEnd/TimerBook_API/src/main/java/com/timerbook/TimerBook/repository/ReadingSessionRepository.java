@@ -48,4 +48,6 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     );
 
     List<ReadingSession> findByReadingIdOrderByStartedAtAsc(Long readingId);
+
+    List<ReadingSession> findByReadingId(Long readingId);
 }
