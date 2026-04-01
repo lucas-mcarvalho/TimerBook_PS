@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { askAI } from "../lib/llama.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import ReactMarkdown from "react-markdown";
+// ...existing code...
 
 export default function Leitor() {
   const { state } = useLocation();
@@ -15,6 +16,7 @@ export default function Leitor() {
   const [extracting, setExtracting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pdfFile, setPdfFile] = useState(null);
+  // ...existing code...
   const PAGE_RANGE = 2;
 
   // Se não houver book, exibe mensagem de erro
@@ -47,6 +49,8 @@ export default function Leitor() {
       loadPDF();
     }
   }, [pdfUrl]);
+
+  // ...existing code...
 
   // Extrai range de páginas quando a página atual muda
   useEffect(() => {
@@ -83,6 +87,9 @@ export default function Leitor() {
     }
   };
 
+  // Handler para encerrar sessão
+  // ...existing code...
+
   return (
     <div>
       <Link to="/">Ir para Home</Link>
@@ -91,6 +98,7 @@ export default function Leitor() {
 
       <div style={{ marginTop: 20, padding: 20, border: "1px solid #ccc" }}>
         <h2>Assistente de Leitura</h2>
+        {/* ...existing code... */}
         {extracting && <p>Carregando páginas...</p>}
         {pdfContext && <p style={{ fontSize: 12, color: "#666" }}>✓ Páginas {Math.max(1, currentPage - PAGE_RANGE)}-{currentPage + PAGE_RANGE} carregadas</p>}
 

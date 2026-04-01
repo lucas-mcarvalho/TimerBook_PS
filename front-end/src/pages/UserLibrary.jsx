@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
+import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
+
 
 // Componente para cada livro
 function BookCard({ book, onRead, onDelete }) {
@@ -59,10 +61,27 @@ function UserLibrary() {
     }
   };
 
-  const handleRead = (book) => {
+  const handleRead = async (book) => {
     console.log("Lendo livro:", book);
-    // Redireciona para a página de leitura, passando o objeto book inteiro
-    navigate("/leitor", { state: { book } });
+    try { 
+      const response = await startReading(book.id, 10);
+
+      console.log("Leitura iniciada:", response);
+      console.log("Sessão de leitura iniciada para livro ID:", book.id);
+      let lastSession = (await getSessionsByReadingId(response.id))[0]; 
+      console.log("Sessão de leitura atual:", lastSession);
+  
+
+     await endReadingSession(lastSession.id, 50); // Finaliza a sessão na página 50 (exemplo)
+
+      // Pequeno delay para garantir que o log apareça antes do redirecionamento
+      setTimeout(() => {
+        navigate("/leitor", { state: { book } });
+      }, 100);
+    } catch (err) {
+      console.error("Erro ao iniciar leitura:", err);
+      setError("Erro ao iniciar leitura: " + err.message);
+    } 
   };
 
   const handleDelete = async (bookId) => {
