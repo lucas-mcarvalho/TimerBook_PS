@@ -8,6 +8,7 @@ import com.timerbook.TimerBook.repository.ReadingSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,5 +46,23 @@ public class ReadingSessionService {
         existingSession.setEndedAt(LocalDateTime.now());
 
         return readingSessionRepository.save(existingSession);
+    }
+
+
+    public List<ReadingSession> getAll(){
+            return  readingSessionRepository.findAll();
+    }
+
+
+    public ReadingSession getById(Long id) {
+        return readingSessionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sessão não encontrada"));
+    }
+
+    public List<ReadingSession> getSessionsByReadingId(Long readingId) {
+        if (!readingRepository.existsById(readingId)) {
+            throw new IllegalArgumentException("Leitura não encontrada");
+        }
+        return readingSessionRepository.findByReadingId(readingId);
     }
 }

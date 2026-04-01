@@ -13,6 +13,7 @@ public class ReadingSession implements Serializable {
     private Long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reading_id", nullable = false)
+    @JsonBackReference
     private Reading reading;
     private Integer startPage;
     private Integer endPage;

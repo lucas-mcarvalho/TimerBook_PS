@@ -11,6 +11,7 @@ import com.timerbook.TimerBook.repository.ReadingSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -74,5 +75,21 @@ public class ReadingService {
             throw new IllegalArgumentException("Leitura não encontrada");
         }
         return reading.get();
+    }
+
+    public List<Reading> getReadingsByBookId(Long bookId) {
+        if (!bookRepository.existsById(bookId)) {
+            throw new IllegalArgumentException("Livro não encontrado");
+        }
+        return readingRepository.findByBookId(bookId);
+    }
+
+    public Reading getById(Long id) {
+        return readingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Leitura não encontrada"));
+    }
+
+    public List<Reading> getAll() {
+        return readingRepository.findAll();
     }
 }

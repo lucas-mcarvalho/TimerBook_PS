@@ -1,9 +1,12 @@
 package com.timerbook.TimerBook.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -24,6 +27,10 @@ public class Reading implements Serializable {
     
     private LocalDateTime finishedAt;
 
+
+    @OneToMany(mappedBy = "reading", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<ReadingSession> sessions = new ArrayList<>();
     public Reading() {}
 
     public Reading(Long id, Book book, Integer currentPage, LocalDateTime startedAt, LocalDateTime finishedAt) {
@@ -70,6 +77,9 @@ public class Reading implements Serializable {
         return finishedAt;
     }
 
+    public List<ReadingSession> getSessions() {
+        return sessions;
+    }
     public void setFinishedAt(LocalDateTime finishedAt) {
         this.finishedAt = finishedAt;
     }

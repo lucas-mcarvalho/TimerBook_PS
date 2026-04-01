@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/reading-sessions")
 @Tag(
@@ -112,6 +114,113 @@ public class ReadingSessionController {
                 return ResponseEntity.ok(session);
         } catch (IllegalArgumentException e) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Busca uma sessão de leitura específica",
+            description = "Retorna os detalhes de uma sessão de leitura pelo seu ID."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Sessão de leitura encontrada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ReadingSession.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Sessão de leitura com o ID fornecido não foi encontrada",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor ao buscar a sessão de leitura",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    public ResponseEntity<ReadingSession> getSessionById(@PathVariable Long id){
+        try {
+            ReadingSession session = readingSessionService.getById(id);
+            return ResponseEntity.ok(session);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    @GetMapping
+    @Operation(
+            summary = "Lista todas as sessões de leitura",
+            description = "Retorna uma lista com todas as sessões de leitura registradas no sistema, incluindo as finalizadas e as em andamento."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista de sessões de leitura retornada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    type = "array",
+                                    implementation = ReadingSession.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor ao listar as sessões de leitura",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    public ResponseEntity<List<ReadingSession>> getAllSessions() {
+        List<ReadingSession> sessions = readingSessionService.getAll();
+        return ResponseEntity.ok(sessions);
+    }
+    @GetMapping("/reading/{readingId}")
+    @Operation(
+            summary = "Busca todas as sessões de uma leitura específica",
+            description = "Retorna uma lista com todas as sessões de leitura de uma leitura específica, incluindo finalizadas e em andamento."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Lista de sessões retornada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    type = "array",
+                                    implementation = ReadingSession.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Leitura com o ID fornecido não foi encontrada",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Erro interno do servidor",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    public ResponseEntity<List<ReadingSession>> getSessionsByReadingId(
+            @Parameter(
+                    name = "readingId",
+                    description = "ID da leitura para buscar suas sessões",
+                    required = true,
+                    example = "1"
+            )
+            @PathVariable Long readingId) {
+        try {
+            List<ReadingSession> sessions = readingSessionService.getSessionsByReadingId(readingId);
+            return ResponseEntity.ok(sessions);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }
