@@ -62,26 +62,30 @@ function UserLibrary() {
   };
 
   const handleRead = async (book) => {
-    console.log("Lendo livro:", book);
-    try { 
-      const response = await startReading(book.id, 10);
-
-      console.log("Leitura iniciada:", response);
-      console.log("Sessão de leitura iniciada para livro ID:", book.id);
-      let lastSession = (await getSessionsByReadingId(response.id))[0]; 
-      console.log("Sessão de leitura atual:", lastSession);
-  
-
-     await endReadingSession(lastSession.id, 50); // Finaliza a sessão na página 50 (exemplo)
-
-      // Pequeno delay para garantir que o log apareça antes do redirecionamento
-      setTimeout(() => {
-        navigate("/leitor", { state: { book } });
-      }, 100);
+    try {
+      // Primeiro, inicia a leitura para obter o id da leitura
+      const readingResponse = await startReading(book.id);
+      const readingId = readingResponse.id;
+      // Buscar todas as sessões associadas à leitura
+      const sessions = await getSessionsByReadingId(readingId);
+      // Ordenar por startedAt decrescente (mais recente primeiro)
+      const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+      const lastSession = sortedSessions[1];
+      const currentSession = sortedSessions[0];
+      console.log("Última sessão encontrada:", lastSession);
+      // Descobrir a última página lida
+      let startPage = 1;
+      if (lastSession) {
+        
+        startPage = lastSession.endPage;
+      }
+      
+      console.log("Página inicial para leitura:", startPage);
+      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
       setError("Erro ao iniciar leitura: " + err.message);
-    } 
+    }
   };
 
   const handleDelete = async (bookId) => {
