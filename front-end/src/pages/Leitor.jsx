@@ -5,6 +5,7 @@ import { endReadingSession } from "../features/books/readSessions.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 
 export default function Leitor() {
   const navigate = useNavigate();
