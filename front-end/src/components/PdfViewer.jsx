@@ -6,9 +6,21 @@ import "../styles/AnnotationLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
   
-function PdfViewer({ file, onPageChange }) {
+
+import { useEffect } from "react";
+
+function PdfViewer({ file, initialPage = 1, onPageChange }) {
   const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber, setPageNumber] = useState(initialPage);
+
+
+  // Atualiza a página inicial se o arquivo ou initialPage mudar
+  useEffect(() => {
+    setPageNumber(initialPage);
+    if (onPageChange) {
+      onPageChange(initialPage);
+    }
+  }, [file, initialPage]);
 
   function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
