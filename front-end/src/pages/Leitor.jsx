@@ -108,50 +108,127 @@ export default function Leitor() {
   };
 
   return (
-    <div>
-      <Link to="/">Ir para Home</Link>
-      <h1>Leitor</h1>
-      <PdfViewer file={pdfUrl} initialPage={initialPage} onPageChange={setCurrentPage} />
+    <div className="w-full h-screen bg-[#0b1220] text-gray-100 flex overflow-hidden">
 
-      <div style={{ marginTop: 20, padding: 20, border: "1px solid #ccc" }}>
-        {sessionId && (
-          <button onClick={handleEndSession} disabled={endingSession} style={{ marginBottom: 16 }}>
-            {endingSession ? "Encerrando..." : "Encerrar sessão de leitura"}
-          </button>
-        )}
-        <h2>Assistente de Leitura</h2>
-        {extracting && <p>Carregando páginas...</p>}
-        {pdfContext && <p style={{ fontSize: 12, color: "#666" }}>✓ Páginas {Math.max(1, currentPage - PAGE_RANGE)}-{currentPage + PAGE_RANGE} carregadas</p>}
+      {/* ==========================================
+          LADO ESQUERDO (PDF): Ocupa o espaço que sobrar
+          ========================================== */}
+      {/* flex-1 manda essa div crescer o máximo possível empurrando a IA pra direita */}
+      <div className="flex-1 h-full flex flex-col p-4 md:p-8">
 
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Faça uma pergunta sobre o PDF..."
-            style={{ width: "100%", padding: 8, marginBottom: 10 }}
-            disabled={extracting || !pdfContext}
-          />
-          <button type="submit" disabled={loading || extracting || !pdfContext}>
-            {loading ? "Respondendo..." : extracting ? "Carregando..." : "Perguntar"}
+        <header className="mb-4">
+          <Link to="/" className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block">
+            ← Voltar
+          </Link>
+          <h1 className="text-3xl font-bold">Leitor de PDF</h1>
+        </header>
+
+        {/* Caixa escura do Livro */}
+        <div className="flex-1 bg-[#14233c] rounded-xl border border-white/10 flex flex-col overflow-hidden">
+          <div className="p-3 border-b border-white/10 bg-[#1a2c4e]">
+            <h2 className="text-lg font-semibold">Livro</h2>
+          </div>
+          
+          <div className="flex-1 overflow-auto p-4 flex justify-center">
+            <PdfViewer
+              file="/Memorias_do_Subsolo.pdf"
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </div>
+
+      </div>
+
+     <div className="w-[420px] h-full bg-[#0f1a2d] border-l border-white/5 flex flex-col p-6 flex-shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.3)]">
+        
+        {/* Cabeçalho do Agente */}
+        <div className="mb-8 relative">
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`w-3 h-3 rounded-full ${pdfContext ? 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]' : 'bg-gray-600 animate-pulse'}`}></div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+              Assistente
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 rounded border ${
+              pdfContext ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/5' : 'border-gray-700 text-gray-500'
+            }`}>
+              {extracting ? "Analisando..." : pdfContext ? "Live Context" : "Offline"}
+            </span>
+            <p className="text-xs text-gray-500 font-medium italic">
+              {extracting ? "Lendo Dostoievski..." : pdfContext ? "Pronto para debate." : "Aguardando PDF..."}
+            </p>
+          </div>
+        </div>
+
+        {/* Área de Chat (Scrollbox) */}
+        <div className="flex-1 bg-[#070c16]/50 border border-white/5 rounded-2xl p-5 mb-6 overflow-y-auto custom-scrollbar shadow-inner relative group">
+          {answer ? (
+            <div className="space-y-4 animate-in fade-in duration-700">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <span className="text-[10px] font-bold tracking-tighter uppercase border border-cyan-400/30 px-1 rounded">IA-Core</span>
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-cyan-400/20 to-transparent"></div>
+              </div>
+              
+              <div className="prose prose-invert max-w-none text-sm text-gray-300 leading-relaxed font-light selection:bg-cyan-500/30">
+                <ReactMarkdown>{answer}</ReactMarkdown>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center opacity-20 group-hover:opacity-30 transition-opacity">
+               <svg className="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+               </svg>
+               <p className="text-sm font-medium tracking-wide">Inicie o diálogo abaixo</p>
+            </div>
+          )}
+        </div>
+
+        {/* Input e Ações */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-[#14233c]/30 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
+          <div className="relative">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Pergunte sobre a obra..."
+              disabled={extracting || !pdfContext}
+              rows="3"
+              className="w-full bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none resize-none pr-10"
+            />
+            <div className="absolute bottom-0 right-0 p-1">
+               <span className="text-[10px] text-gray-600 font-mono">⌘+Enter</span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || extracting || !pdfContext}
+            className="group relative w-full overflow-hidden rounded-xl bg-blue-600 py-3 font-bold text-white transition-all hover:bg-blue-500 active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed shadow-lg shadow-blue-900/40"
+          >
+            {/* Efeito de brilho no botão ao passar o mouse */}
+            <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
+              <div className="relative h-full w-8 bg-white/20"></div>
+            </div>
+            
+            <span className="relative flex items-center justify-center gap-2">
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Processando...</span>
+                </>
+              ) : (
+                <>
+                  <span>Enviar Pergunta</span>
+                  <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                </>
+              )}
+            </span>
           </button>
         </form>
 
-        {answer && (
-          <div
-            style={{
-              marginTop: 20,
-              padding: 10,
-              backgroundColor: "#f0f0f0",
-              maxHeight: 300,
-              overflowY: "auto",
-            }}
-          >
-            <strong>Resposta:</strong>
-            <ReactMarkdown>{answer}</ReactMarkdown>
-          </div>
-        )}
       </div>
+
     </div>
   );
 }
