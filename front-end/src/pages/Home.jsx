@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Home.css';
 import '../styles/HomeDark.css'; 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
@@ -17,9 +17,10 @@ import { getBooks, deleteBook } from '../features/books/booksApi.js';
 const Home = () => {
   const [menuAtivo, setMenuAtivo] = useState('inicio');
   const [books, setBooks] = useState([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  const navigate = useNavigate();
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
@@ -56,6 +57,31 @@ const Home = () => {
     setBooks(prev => [...prev, serverBook]);
   };
 
+  const handleOpenStats = async (bookId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
+
+      if (!response.ok) {
+        throw new Error("Não foi possível buscar as leituras do livro.");
+      }
+
+      const readings = await response.json();
+
+      if (!readings || readings.length === 0) {
+        alert("Esse livro ainda não possui leituras registradas.");
+        return;
+      }
+
+      // pega a leitura mais recente
+      const latestReading = readings[readings.length - 1];
+
+      navigate(`/estatisticas/${latestReading.id}`);
+    } catch (error) {
+      console.error("Erro ao abrir estatísticas:", error);
+      alert("Erro ao abrir estatísticas.");
+    }
+  };
+
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
       <aside className="sidebar">
@@ -65,29 +91,54 @@ const Home = () => {
         </div>
         
         <nav className="sidebar-nav">
-          <Link to="/" className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`} onClick={() => setMenuAtivo('inicio')}>
+          <Link
+            to="/"
+            className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}
+            onClick={() => setMenuAtivo('inicio')}
+          >
             <img src={homeIcon} alt="Início" className="nav-icon" /> Início
           </Link>
           
-          <Link to="/meus-livros" className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`} onClick={() => setMenuAtivo('livros')}>
+          <Link
+            to="/meus-livros"
+            className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}
+            onClick={() => setMenuAtivo('livros')}
+          >
             <img src={BookIcon} alt="Livros" className="nav-icon" /> Biblioteca
           </Link>
 
-          <Link to="/cadastrar-livro" className={`nav-item ${menuAtivo === 'cadastro' ? 'active' : ''}`} onClick={() => setMenuAtivo('cadastro')}>
+          <Link
+            to="/cadastrar-livro"
+            className={`nav-item ${menuAtivo === 'cadastro' ? 'active' : ''}`}
+            onClick={() => setMenuAtivo('cadastro')}
+          >
             <img src={PencilIcon} alt="Cadastrar" className="nav-icon" /> Adicionar Livro
           </Link>
 
-          <Link to="/leitor" className={`nav-item ${menuAtivo === 'leitor' ? 'active' : ''}`} onClick={() => setMenuAtivo('leitor')}>
+          <Link
+            to="/leitor"
+            className={`nav-item ${menuAtivo === 'leitor' ? 'active' : ''}`}
+            onClick={() => setMenuAtivo('leitor')}
+          >
             <img src={BookIcon} alt="Leitor" className="nav-icon" /> Leitor PDF
           </Link>
 
           {books.length === 0 ? (
-            <div className="empty-books-msg" style={{marginTop: '20px'}}>Sem livros cadastrados</div>
+            <div className="empty-books-msg" style={{ marginTop: '20px' }}>
+              Sem livros cadastrados
+            </div>
           ) : (
-            <div className="sidebar-shortcuts" style={{marginTop: '20px'}}>
-              <span style={{fontSize: '0.8rem', color: '#888', marginLeft: '10px'}}>Recentes:</span>
+            <div className="sidebar-shortcuts" style={{ marginTop: '20px' }}>
+              <span style={{ fontSize: '0.8rem', color: '#888', marginLeft: '10px' }}>
+                Recentes:
+              </span>
               {books.slice(0, 5).map((book) => (
-                <Link to="/leitor" state={{ book: book }} key={book.id} className="sidebar-shortcut-item">
+                <Link
+                  to="/leitor"
+                  state={{ book: book }}
+                  key={book.id}
+                  className="sidebar-shortcut-item"
+                >
                   {book.name}
                 </Link>
               ))}
@@ -96,7 +147,9 @@ const Home = () => {
         </nav>
         
         <div className="sidebar-footer">
-          <button className="action-icon-btn"><img src={ConfigIcon} alt="Configurações" className="nav-icon" /></button>
+          <button className="action-icon-btn">
+            <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
+          </button>
           
           <button className="action-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
             <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
@@ -108,13 +161,26 @@ const Home = () => {
         <h1>Sua Biblioteca</h1>
         <div className="books-grid">
           {books.length === 0 ? (
-            <button className="book-card add-new-card" onClick={() => setIsModalOpen(true)} style={{border: 'none', background: 'transparent'}}>
-              <div className="book-cover-wrapper"><div className="book-cover-placeholder">+</div></div>
-              <div className="book-info"><h3 className="book-title">Adicionar novo livro</h3></div>
+            <button
+              className="book-card add-new-card"
+              onClick={() => setIsModalOpen(true)}
+              style={{ border: 'none', background: 'transparent' }}
+            >
+              <div className="book-cover-wrapper">
+                <div className="book-cover-placeholder">+</div>
+              </div>
+              <div className="book-info">
+                <h3 className="book-title">Adicionar novo livro</h3>
+              </div>
             </button>
           ) : (
             books.map((book) => (
-              <Link to="/leitor" state={{ book: book }} key={book.id} className="book-card">
+              <Link
+                to="/leitor"
+                state={{ book: book }}
+                key={book.id}
+                className="book-card"
+              >
                 {isEditing && (
                   <button 
                     className="btn-delete-book"
@@ -131,17 +197,21 @@ const Home = () => {
                 <div className="book-cover-wrapper">
                   {(book.cover || book.coverUrl) && (
                     <img 
-                      src={book.cover?.startsWith('blob:') 
-                        ? book.cover 
-                        : `http://localhost:8080/${book.coverUrl}`} 
-                      alt={`Capa de ${book.name}`} 
-                      className="book-cover-image" 
+                      src={
+                        book.cover?.startsWith('blob:')
+                          ? book.cover
+                          : `http://localhost:8080/${book.coverUrl}`
+                      }
+                      alt={`Capa de ${book.name}`}
+                      className="book-cover-image"
                       onError={(e) => {
                         e.target.style.display = 'none';
                       }}
                     />
                   )}
-                  <div className="book-cover-placeholder">{book.name ? book.name.charAt(0) : '?'}</div>
+                  <div className="book-cover-placeholder">
+                    {book.name ? book.name.charAt(0) : '?'}
+                  </div>
                 </div>
 
                 <div className="book-info">
@@ -149,16 +219,39 @@ const Home = () => {
                   <span className="book-year">
                     {book.description || 'Sem descrição'}
                   </span>
+
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleOpenStats(book.id);
+                    }}
+                    style={{
+                      marginTop: '10px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#2d89ef',
+                      color: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Ver estatísticas
+                  </button>
                 </div>
               </Link>
             ))
           )}
         </div>
+
         <div className="bottom-actions">
           <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
             Adicionar Livro
           </button>
-          <button className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`} onClick={() => setIsEditing(!isEditing)}>
+          <button
+            className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`}
+            onClick={() => setIsEditing(!isEditing)}
+          >
             <img src={PencilIcon} alt="Lápis" className="nav-icon" />
           </button>
         </div>
@@ -169,7 +262,6 @@ const Home = () => {
         onClose={() => setIsModalOpen(false)} 
         onAddBook={handleAddNewBook} 
       />
-      
     </div>
   );
 };

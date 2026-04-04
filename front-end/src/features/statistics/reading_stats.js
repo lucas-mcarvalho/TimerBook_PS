@@ -17,5 +17,3 @@ export async function getReadingStreakByReadingId(readingId) {
 
     return response.json();
 }
-
-
