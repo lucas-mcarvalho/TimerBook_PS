@@ -1,9 +1,7 @@
-CREATE TABLE tb_book (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS books (
+                                     id          BIGSERIAL PRIMARY KEY,
+                                     name        VARCHAR(255),
     description TEXT,
-    cover_url VARCHAR(512),
-    data_path VARCHAR(512),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    cover_url   VARCHAR(500),
+    data_path   VARCHAR(500)
+    );

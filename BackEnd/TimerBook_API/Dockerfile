@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk as builder
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 COPY . .
 RUN apt-get update && apt-get install -y maven
