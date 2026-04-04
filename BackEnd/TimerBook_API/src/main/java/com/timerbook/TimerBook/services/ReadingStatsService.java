@@ -96,7 +96,7 @@ public class ReadingStatsService {
             totalSeconds = readingSessionRepository.sumDurationSecondsByReadingAndPeriod(readingId, start, end);
         }
 
-        long sessionsCount = readingSessionRepository.countByReadingBookIdAndStartedAtBetween(readingId, start, end);
+        long sessionsCount = readingSessionRepository.countByReadingIdAndStartedAtBetween(readingId, start, end);
 
         double avg = (sessionsCount == 0) ? 0.0 : ((double) totalSeconds / (double) sessionsCount);
 

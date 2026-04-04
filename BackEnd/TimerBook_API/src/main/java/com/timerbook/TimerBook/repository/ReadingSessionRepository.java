@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReadingSessionRepository extends JpaRepository<ReadingSession, Long> {
-    long countByReadingBookIdAndStartedAtBetween(Long bookId, LocalDateTime start, LocalDateTime end);
+        long countByReadingIdAndStartedAtBetween(Long readingId, LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT COALESCE(SUM(rs.endPage - rs.startPage), 0) " +
             "FROM ReadingSession rs " +
@@ -20,7 +20,7 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
             @Param("end") LocalDateTime end
     );
 
-    @Query(value = "SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, rs.started_at, rs.ended_at)), 0) " +
+        @Query(value = "SELECT COALESCE(CAST(SUM(EXTRACT(EPOCH FROM (rs.ended_at - rs.started_at))) AS BIGINT), 0) " +
             "FROM reading_session rs " +
             "WHERE rs.reading_id = :readingId " +
             "AND rs.started_at BETWEEN :start AND :end",
@@ -36,7 +36,7 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
                                                   @Param("start") LocalDateTime start,
                                                   @Param("end") LocalDateTime end);
 
-    @Query(value = "SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, rs.started_at, COALESCE(rs.ended_at, NOW()))), 0) " +
+        @Query(value = "SELECT COALESCE(CAST(SUM(EXTRACT(EPOCH FROM (COALESCE(rs.ended_at, CURRENT_TIMESTAMP) - rs.started_at))) AS BIGINT), 0) " +
             "FROM reading_session rs " +
             "WHERE rs.reading_id = :readingId " +
             "AND rs.started_at BETWEEN :start AND :end",
