@@ -3,8 +3,6 @@ import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
 
-
-// Componente para cada livro
 function BookCard({ book, onRead, onDelete }) {
   return (
     <div className="book-card" style={{ border: "1px solid #ccc", padding: 10, width: 200 }}>
@@ -35,14 +33,12 @@ function BookCard({ book, onRead, onDelete }) {
   );
 }
 
-// Página principal da biblioteca do usuário
 function UserLibrary() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Carregar livros ao montar a página
   useEffect(() => {
     loadBooks();
   }, []);
@@ -63,25 +59,30 @@ function UserLibrary() {
 
   const handleRead = async (book) => {
     try {
-      // Primeiro, inicia a leitura para obter o id da leitura
       const readingResponse = await startReading(book.id);
       const readingId = readingResponse.id;
-      // Buscar todas as sessões associadas à leitura
+      
       const sessions = await getSessionsByReadingId(readingId);
-      // Ordenar por startedAt decrescente (mais recente primeiro)
+      
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
       const lastSession = sortedSessions[1];
       const currentSession = sortedSessions[0];
-      console.log("Última sessão encontrada:", lastSession);
-      // Descobrir a última página lida
+      
       let startPage = 1;
       if (lastSession) {
-        
         startPage = lastSession.endPage;
       }
       
-      console.log("Página inicial para leitura:", startPage);
-      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
+      const urlDoPdf = book.pdfUrl ? `http://localhost:8080/${book.pdfUrl}` : null;
+      
+      navigate("/leitor", { 
+        state: { 
+          book: { ...book, pdfUrlCompleta: urlDoPdf },
+          sessionId: currentSession?.id, 
+          initialPage: startPage 
+        } 
+      });
+      
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
       setError("Erro ao iniciar leitura: " + err.message);

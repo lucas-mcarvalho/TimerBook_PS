@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
 
@@ -8,6 +8,51 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
   const [coverFile, setCoverFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(coverFile);
+    setCoverPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [coverFile]);
+
+  useEffect(() => {
+    if (!pdfFile) {
+      setPdfPreviewUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(pdfFile);
+    setPdfPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [pdfFile]);
+
+  const coverViewer = useMemo(() => {
+    if (!coverPreviewUrl) return null;
+    return (
+      <img 
+        src={coverPreviewUrl} 
+        alt="Capa preview" 
+        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', pointerEvents: 'none' }} 
+      />
+    );
+  }, [coverPreviewUrl]);
+
+  const pdfViewer = useMemo(() => {
+    if (!pdfPreviewUrl) return null;
+    return (
+      <iframe 
+        src={`${pdfPreviewUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
+        style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', pointerEvents: 'none' }} 
+        title="PDF Preview" 
+      />
+    );
+  }, [pdfPreviewUrl]);
 
   if (!isOpen) return null;
 
@@ -25,11 +70,9 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
         pdfFile || undefined
       );
 
-      const coverPreview = coverFile ? URL.createObjectURL(coverFile) : undefined;
-
       onAddBook({ 
         ...savedBookFromServer, 
-        cover: coverPreview 
+        cover: coverPreviewUrl 
       });
 
       setNewName(''); setNewDescription(''); setCoverFile(null); setPdfFile(null);
@@ -62,22 +105,35 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
                 {isLoading ? 'Salvando...' : 'Concluir'}
               </button>
             </div>
+            
             <div className="modal-uploads-col">
               <div className="upload-section">
                 <label>Upload de capa (opcional)</label>
-                <div className="upload-box">
-                  <input type="file" accept="image/*" className="file-input-hidden" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
-                  <span>{coverFile ? coverFile.name : "Pré-visualização"}</span>
+                <div className="upload-box" style={{ position: 'relative' }}>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="file-input-hidden" 
+                    onChange={(e) => setCoverFile(e.target.files?.[0] || null)} 
+                  />
+                  {coverViewer ? coverViewer : <span>Pré-visualização</span>}
                 </div>
               </div>
+              
               <div className="upload-section">
                 <label>Upload de PDF (opcional)</label>
-                <div className="upload-box">
-                  <input type="file" accept="application/pdf" className="file-input-hidden" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} />
-                  <span>{pdfFile ? pdfFile.name : "Pré-visualização"}</span>
+                <div className="upload-box" style={{ position: 'relative' }}>
+                  <input 
+                    type="file" 
+                    accept="application/pdf" 
+                    className="file-input-hidden" 
+                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)} 
+                  />
+                  {pdfViewer ? pdfViewer : <span>Pré-visualização</span>}
                 </div>
               </div>
             </div>
+            
           </div>
         </form>
       </div>
