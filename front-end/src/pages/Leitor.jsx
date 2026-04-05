@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import PdfViewer from "../components/PdfViewer";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { endReadingSession } from "../features/books/readSessions.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
+import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 
 export default function Leitor() {
@@ -12,9 +13,7 @@ export default function Leitor() {
   const book = state?.book;
   const sessionId = state?.sessionId;
   const initialPage = state?.initialPage || 1;
-  
   console.log("Sessão recebida:", sessionId, "Página inicial:", initialPage);
-  
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,20 +23,6 @@ export default function Leitor() {
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const PAGE_RANGE = 2;
-
-  // Se não houver book, exibe mensagem de erro e botão de voltar
-  if (!book) {
-    return (
-      <div className="p-8 text-white">
-        <button onClick={() => navigate(-1)} className="text-blue-400 hover:underline">← Voltar</button>
-        <p className="mt-4">Livro não encontrado.</p>
-      </div>
-    );
-  }
-
-  const pdfUrl = book.pdfUrlCompleta || (book.dataPath?.startsWith("blob:")
-    ? book.dataPath
-    : `http://localhost:8080/${book.dataPath}`);
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -55,6 +40,21 @@ export default function Leitor() {
       setEndingSession(false);
     }
   };
+
+  // Se não houver book, exibe mensagem de erro
+  if (!book) {
+    return (
+      <div>
+        <Link to="/">Voltar</Link>
+        <p>Livro não encontrado.</p>
+      </div>
+    );
+  }
+
+  // Monta a URL do PDF
+  const pdfUrl = book.dataPath?.startsWith("blob:")
+    ? book.dataPath
+    : `http://localhost:8080/${book.dataPath}`;
 
   // Carrega o PDF ao montar o componente
   useEffect(() => {
@@ -113,27 +113,34 @@ export default function Leitor() {
       {/* ==========================================
           LADO ESQUERDO (PDF): Ocupa o espaço que sobrar
           ========================================== */}
+      {/* flex-1 manda essa div crescer o máximo possível empurrando a IA pra direita */}
       <div className="flex-1 h-full flex flex-col p-4 md:p-8">
 
         <header className="mb-4">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block font-medium cursor-pointer"
-          >
+          <Link to="/" className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block">
             ← Voltar
-          </button>
+          </Link>
           <h1 className="text-3xl font-bold">Leitor de PDF</h1>
         </header>
 
         {/* Caixa escura do Livro */}
         <div className="flex-1 bg-[#14233c] rounded-xl border border-white/10 flex flex-col overflow-hidden">
-          <div className="p-3 border-b border-white/10 bg-[#1a2c4e] flex justify-between items-center">
-            <h2 className="text-lg font-semibold">{book.name}</h2> {/* Mostra o nome real do livro */}
+          <div className="p-3 border-b border-white/10 bg-[#1a2c4e] flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Livro</h2>
+            {sessionId && (
+              <button
+                onClick={handleEndSession}
+                disabled={endingSession}
+                className="ml-4 px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-xs disabled:bg-gray-700 disabled:cursor-not-allowed transition"
+              >
+                {endingSession ? "Encerrando..." : "Encerrar sessão de leitura"}
+              </button>
+            )}
           </div>
-          
           <div className="flex-1 overflow-auto p-4 flex justify-center">
             <PdfViewer
-              file={pdfUrl}
+              file={pdfFile}
+              initialPage={initialPage}
               onPageChange={setCurrentPage}
             />
           </div>
@@ -159,7 +166,7 @@ export default function Leitor() {
               {extracting ? "Analisando..." : pdfContext ? "Live Context" : "Offline"}
             </span>
             <p className="text-xs text-gray-500 font-medium italic">
-              {extracting ? `Lendo ${book.name}...` : pdfContext ? "Pronto para debate." : "Aguardando PDF..."}
+              {extracting ? "Lendo Dostoievski..." : pdfContext ? "Pronto para debate." : "Aguardando PDF..."}
             </p>
           </div>
         </div>

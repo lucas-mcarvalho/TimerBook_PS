@@ -1,33 +1,63 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
 
-function BookCard({ book, onRead, onDelete }) {
+import '../styles/Layout.css';
+import '../styles/Library.css';
+import '../styles/Home.css';
+import '../styles/HomeDark.css'; 
+import PencilIcon from '../assets/Home/PencilIcon.svg';
+import Sidebar from '../components/Sidebar';
+import HomeAddBookModal from '../components/HomeAddBookModal';
+
+function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
   return (
-    <div className="book-card" style={{ border: "1px solid #ccc", padding: 10, width: 200 }}>
-      {book.coverUrl && (
-        <div className="book-cover">
-          <img 
-            src={`http://localhost:8080/${book.coverUrl}`} 
-            alt={book.name} 
-            style={{ width: "100%", height: "auto" }}
-          />
-        </div>
-      )}
-      <div className="book-info">
-        <h2 className="book-title">{book.name}</h2>
-        <p className="book-description">{book.description}</p>
-        <div className="book-actions" style={{ marginTop: 10 }}>
-          <button onClick={() => onRead(book)}>Ler</button>
-          <button onClick={() => {
+    <div 
+      className="book-card" 
+      onClick={() => !isEditing && onRead(book)} 
+      style={{ cursor: isEditing ? 'default' : 'pointer' }}
+    >
+      {isEditing && (
+        <button 
+          className="btn-delete-book"
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation();
             if (window.confirm(`Deseja realmente deletar "${book.name}"?`)) {
               onDelete(book.id);
             }
-          }} style={{ marginLeft: 5 }}>
-            Deletar
-          </button>
-        </div>
+          }}
+        >
+          X
+        </button>
+      )}
+
+      <div className="book-cover-wrapper">
+        {(book.coverUrl) && (
+          <img 
+            src={`http://localhost:8080/${book.coverUrl}`} 
+            alt={`Capa de ${book.name}`} 
+            className="book-cover-image" 
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
+        <div className="book-cover-placeholder">{book.name ? book.name.charAt(0) : '?'}</div>
+      </div>
+
+      <div className="book-info">
+        <h3 className="book-title">{book.name}</h3>
+        <span className="book-year">
+          {book.description || 'Sem descrição'}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenStats(book.id); }}
+          style={{ marginTop: 10, width: '100%', background: '#2d89ef', color: '#fff', padding: '8px 0', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer' }}
+        >
+          Ver estatísticas
+        </button>
       </div>
     </div>
   );
@@ -37,7 +67,19 @@ function UserLibrary() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('timerbook-theme');
+    return savedTheme === 'dark';
+  });
+  
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   useEffect(() => {
     loadBooks();
@@ -57,13 +99,15 @@ function UserLibrary() {
     }
   };
 
+  const handleAddNewBook = (serverBook) => {
+    setBooks(prev => [...prev, serverBook]);
+  };
+
   const handleRead = async (book) => {
     try {
       const readingResponse = await startReading(book.id);
       const readingId = readingResponse.id;
-      
       const sessions = await getSessionsByReadingId(readingId);
-      
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
       const lastSession = sortedSessions[1];
       const currentSession = sortedSessions[0];
@@ -73,19 +117,30 @@ function UserLibrary() {
         startPage = lastSession.endPage;
       }
       
-      const urlDoPdf = book.pdfUrl ? `http://localhost:8080/${book.pdfUrl}` : null;
-      
-      navigate("/leitor", { 
-        state: { 
-          book: { ...book, pdfUrlCompleta: urlDoPdf },
-          sessionId: currentSession?.id, 
-          initialPage: startPage 
-        } 
-      });
-      
+      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
       setError("Erro ao iniciar leitura: " + err.message);
+    }
+  };
+   const handleOpenStats = async (bookId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
+      if (!response.ok) {
+        throw new Error("Não foi possível buscar as leituras do livro.");
+      }
+      const readings = await response.json();
+      if (!readings || readings.length === 0) {
+        alert("Esse livro ainda não possui leituras registradas.");
+        return;
+      }
+      // pega a leitura mais recente
+      const latestReading = readings[readings.length - 1];
+      // Usa navigate do escopo UserLibrary
+      navigate(`/estatisticas/${latestReading.id}`);
+    } catch (error) {
+      console.error("Erro ao abrir estatísticas:", error);
+      alert("Erro ao abrir estatísticas.");
     }
   };
 
@@ -99,27 +154,61 @@ function UserLibrary() {
     }
   };
 
-  if (loading) return <p>Carregando livros...</p>;
-  if (error) return <p>{error}</p>;
-
   return (
-    <div className="user-library">
-      <h1>Minha Biblioteca</h1>
+    <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+      
+      <Sidebar 
+        menuAtivo="livros" 
+        books={books} 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+      />
 
-      {books.length === 0 ? (
-        <p>Nenhum livro cadastrado ainda.</p>
-      ) : (
-        <div className="books-grid" style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-          {books.map((book) => (
-            <BookCard 
-              key={book.id} 
-              book={book} 
-              onRead={handleRead} 
-              onDelete={handleDelete} 
-            />
-          ))}
+      <main className="main-content">
+        <h1>Minha Biblioteca</h1>
+        
+        {loading ? (
+          <p>Carregando seus livros...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>{error}</p>
+        ) : (
+          <div className="books-grid">
+            {books.length === 0 ? (
+              <button className="book-card add-new-card" onClick={() => setIsModalOpen(true)} style={{border: 'none', background: 'transparent'}}>
+                <div className="book-cover-wrapper"><div className="book-cover-placeholder">+</div></div>
+                <div className="book-info"><h3 className="book-title">Adicionar novo livro</h3></div>
+              </button>
+            ) : (
+              books.map((book) => (
+                <BookCard 
+                  key={book.id} 
+                  book={book} 
+                  onRead={handleRead} 
+                  onDelete={handleDelete} 
+                  isEditing={isEditing}
+                  onOpenStats={handleOpenStats}
+                />
+              ))
+            )}
+          </div>
+        )}
+        
+        <div className="bottom-actions">
+          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
+            Adicionar Livro
+          </button>
+          <button className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`} onClick={() => setIsEditing(!isEditing)}>
+            <img src={PencilIcon} alt="Lápis" className="nav-icon" />
+          </button>
         </div>
-      )}
+      </main>
+
+      <HomeAddBookModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAddBook={handleAddNewBook} 
+      />
+      
     </div>
   );
 }
