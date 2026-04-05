@@ -6,12 +6,16 @@
     flex-direction: column;
     position: relative; 
     overflow-y: auto;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .main-content h1 {
     font-size: 1.8rem;
     color: #000000;
     margin-bottom: 40px;
+    text-align: left;
+    width: 100%;
 }
 
 .books-grid {
