@@ -13,7 +13,11 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     @Query("SELECT COALESCE(SUM(rs.endPage - rs.startPage), 0) " +
             "FROM ReadingSession rs " +
             "WHERE rs.reading.id = :readingId " +
-            "AND rs.startedAt BETWEEN :start AND :end")
+            "AND rs.startedAt BETWEEN :start AND :end " +
+            "AND rs.endedAt IS NOT NULL " +
+            "AND rs.startPage IS NOT NULL " +
+            "AND rs.endPage IS NOT NULL " +
+            "AND rs.endPage >= rs.startPage")
     Integer sumPagesReadByReadingAndPeriod(
             @Param("readingId") Long readingId,
             @Param("start") LocalDateTime start,
