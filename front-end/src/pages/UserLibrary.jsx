@@ -11,7 +11,7 @@ import PencilIcon from '../assets/Home/PencilIcon.svg';
 import Sidebar from '../components/Sidebar';
 import HomeAddBookModal from '../components/HomeAddBookModal';
 
-function BookCard({ book, onRead, onDelete, isEditing }) {
+function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
   return (
     <div 
       className="book-card" 
@@ -52,6 +52,12 @@ function BookCard({ book, onRead, onDelete, isEditing }) {
         <span className="book-year">
           {book.description || 'Sem descrição'}
         </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenStats(book.id); }}
+          style={{ marginTop: 10, width: '100%', background: '#2d89ef', color: '#fff', padding: '8px 0', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer' }}
+        >
+          Ver estatísticas
+        </button>
       </div>
     </div>
   );
@@ -117,6 +123,26 @@ function UserLibrary() {
       setError("Erro ao iniciar leitura: " + err.message);
     }
   };
+   const handleOpenStats = async (bookId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
+      if (!response.ok) {
+        throw new Error("Não foi possível buscar as leituras do livro.");
+      }
+      const readings = await response.json();
+      if (!readings || readings.length === 0) {
+        alert("Esse livro ainda não possui leituras registradas.");
+        return;
+      }
+      // pega a leitura mais recente
+      const latestReading = readings[readings.length - 1];
+      // Usa navigate do escopo UserLibrary
+      navigate(`/estatisticas/${latestReading.id}`);
+    } catch (error) {
+      console.error("Erro ao abrir estatísticas:", error);
+      alert("Erro ao abrir estatísticas.");
+    }
+  };
 
   const handleDelete = async (bookId) => {
     try {
@@ -160,6 +186,7 @@ function UserLibrary() {
                   onRead={handleRead} 
                   onDelete={handleDelete} 
                   isEditing={isEditing}
+                  onOpenStats={handleOpenStats}
                 />
               ))
             )}
