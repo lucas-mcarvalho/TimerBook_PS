@@ -1,48 +1,80 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
 
+import '../styles/Layout.css';
+import '../styles/Library.css';
+import '../styles/Home.css';
+import '../styles/HomeDark.css'; 
+import PencilIcon from '../assets/Home/PencilIcon.svg';
+import Sidebar from '../components/Sidebar';
+import HomeAddBookModal from '../components/HomeAddBookModal';
 
-// Componente para cada livro
-function BookCard({ book, onRead, onDelete }) {
+function BookCard({ book, onRead, onDelete, isEditing }) {
   return (
-    <div className="book-card" style={{ border: "1px solid #ccc", padding: 10, width: 200 }}>
-      {book.coverUrl && (
-        <div className="book-cover">
-          <img 
-            src={`http://localhost:8080/${book.coverUrl}`} 
-            alt={book.name} 
-            style={{ width: "100%", height: "auto" }}
-          />
-        </div>
-      )}
-      <div className="book-info">
-        <h2 className="book-title">{book.name}</h2>
-        <p className="book-description">{book.description}</p>
-        <div className="book-actions" style={{ marginTop: 10 }}>
-          <button onClick={() => onRead(book)}>Ler</button>
-          <button onClick={() => {
+    <div 
+      className="book-card" 
+      onClick={() => !isEditing && onRead(book)} 
+      style={{ cursor: isEditing ? 'default' : 'pointer' }}
+    >
+      {isEditing && (
+        <button 
+          className="btn-delete-book"
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation();
             if (window.confirm(`Deseja realmente deletar "${book.name}"?`)) {
               onDelete(book.id);
             }
-          }} style={{ marginLeft: 5 }}>
-            Deletar
-          </button>
-        </div>
+          }}
+        >
+          X
+        </button>
+      )}
+
+      <div className="book-cover-wrapper">
+        {(book.coverUrl) && (
+          <img 
+            src={`http://localhost:8080/${book.coverUrl}`} 
+            alt={`Capa de ${book.name}`} 
+            className="book-cover-image" 
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
+        <div className="book-cover-placeholder">{book.name ? book.name.charAt(0) : '?'}</div>
+      </div>
+
+      <div className="book-info">
+        <h3 className="book-title">{book.name}</h3>
+        <span className="book-year">
+          {book.description || 'Sem descrição'}
+        </span>
       </div>
     </div>
   );
 }
 
-// Página principal da biblioteca do usuário
 function UserLibrary() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('timerbook-theme');
+    return savedTheme === 'dark';
+  });
+  
   const navigate = useNavigate();
 
-  // Carregar livros ao montar a página
+  useEffect(() => {
+    localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   useEffect(() => {
     loadBooks();
   }, []);
@@ -61,26 +93,24 @@ function UserLibrary() {
     }
   };
 
+  const handleAddNewBook = (serverBook) => {
+    setBooks(prev => [...prev, serverBook]);
+  };
+
   const handleRead = async (book) => {
     try {
-      // Primeiro, inicia a leitura para obter o id da leitura
       const readingResponse = await startReading(book.id);
       const readingId = readingResponse.id;
-      // Buscar todas as sessões associadas à leitura
       const sessions = await getSessionsByReadingId(readingId);
-      // Ordenar por startedAt decrescente (mais recente primeiro)
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
       const lastSession = sortedSessions[1];
       const currentSession = sortedSessions[0];
-      console.log("Última sessão encontrada:", lastSession);
-      // Descobrir a última página lida
+      
       let startPage = 1;
       if (lastSession) {
-        
         startPage = lastSession.endPage;
       }
       
-      console.log("Página inicial para leitura:", startPage);
       navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
@@ -98,27 +128,60 @@ function UserLibrary() {
     }
   };
 
-  if (loading) return <p>Carregando livros...</p>;
-  if (error) return <p>{error}</p>;
-
   return (
-    <div className="user-library">
-      <h1>Minha Biblioteca</h1>
+    <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+      
+      <Sidebar 
+        menuAtivo="livros" 
+        books={books} 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+      />
 
-      {books.length === 0 ? (
-        <p>Nenhum livro cadastrado ainda.</p>
-      ) : (
-        <div className="books-grid" style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-          {books.map((book) => (
-            <BookCard 
-              key={book.id} 
-              book={book} 
-              onRead={handleRead} 
-              onDelete={handleDelete} 
-            />
-          ))}
+      <main className="main-content">
+        <h1>Minha Biblioteca</h1>
+        
+        {loading ? (
+          <p>Carregando seus livros...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>{error}</p>
+        ) : (
+          <div className="books-grid">
+            {books.length === 0 ? (
+              <button className="book-card add-new-card" onClick={() => setIsModalOpen(true)} style={{border: 'none', background: 'transparent'}}>
+                <div className="book-cover-wrapper"><div className="book-cover-placeholder">+</div></div>
+                <div className="book-info"><h3 className="book-title">Adicionar novo livro</h3></div>
+              </button>
+            ) : (
+              books.map((book) => (
+                <BookCard 
+                  key={book.id} 
+                  book={book} 
+                  onRead={handleRead} 
+                  onDelete={handleDelete} 
+                  isEditing={isEditing}
+                />
+              ))
+            )}
+          </div>
+        )}
+        
+        <div className="bottom-actions">
+          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
+            Adicionar Livro
+          </button>
+          <button className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`} onClick={() => setIsEditing(!isEditing)}>
+            <img src={PencilIcon} alt="Lápis" className="nav-icon" />
+          </button>
         </div>
-      )}
+      </main>
+
+      <HomeAddBookModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAddBook={handleAddNewBook} 
+      />
+      
     </div>
   );
 }

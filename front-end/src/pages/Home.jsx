@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { getBooks } from "../features/books/booksApi.js"; 
+
+import '../styles/Layout.css'; 
+import '../styles/Waves.css'; 
 import '../styles/Home.css';
 import '../styles/HomeDark.css'; 
-import logoImg from '../assets/Home/TimerbookLogo.svg';
-import homeIcon from '../assets/Home/HomeIcon.svg';
-import BookIcon from '../assets/Home/BookIcon.svg';
+import Sidebar from '../components/Sidebar';
 import ProfileIcon from '../assets/Home/ProfileIcon.svg';
-import ConfigIcon from '../assets/Home/ConfigIcon.svg';
-import MoonIcon from '../assets/Home/MoonIcon.svg';
-import SunIcon from '../assets/Home/SunIcon.svg';
-import PencilIcon from '../assets/Home/PencilIcon.svg';
-
-import HomeAddBookModal from '../components/HomeAddBookModal';
-import { getBooks, deleteBook } from '../features/books/booksApi.js';
 
 const Home = () => {
-  const [menuAtivo, setMenuAtivo] = useState('inicio');
   const [books, setBooks] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
-  const navigate = useNavigate();
-  
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
     return savedTheme === 'dark';
@@ -32,236 +22,73 @@ const Home = () => {
   }, [isDarkMode]);
 
   useEffect(() => {
-    async function fetchMyBooks() {
+    const fetchBooks = async () => {
       try {
-        const livrosDoBanco = await getBooks();
-        setBooks(livrosDoBanco);
-      } catch (error) {
-        console.error("Não consegui puxar os livros:", error);
+        const booksData = await getBooks();
+        setBooks(booksData);
+      } catch (err) {
+        console.error("Erro ao carregar livros na Home:", err);
       }
-    }
-    fetchMyBooks();
+    };
+
+    fetchBooks();
   }, []);
-
-  const handleDeleteBook = async (idToRemove) => {
-    try {
-      await deleteBook(idToRemove);
-      setBooks(prev => prev.filter(book => book.id !== idToRemove));
-    } catch (error) {
-      console.error("Erro ao apagar o livro:", error);
-      alert("Ops! Não consegui apagar o livro. O servidor pode estar fora do ar.");
-    }
-  };
-
-  const handleAddNewBook = (serverBook) => {
-    setBooks(prev => [...prev, serverBook]);
-  };
-
-  const handleOpenStats = async (bookId) => {
-    try {
-      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
-
-      if (!response.ok) {
-        throw new Error("Não foi possível buscar as leituras do livro.");
-      }
-
-      const readings = await response.json();
-
-      if (!readings || readings.length === 0) {
-        alert("Esse livro ainda não possui leituras registradas.");
-        return;
-      }
-
-      // pega a leitura mais recente
-      const latestReading = readings[readings.length - 1];
-
-      navigate(`/estatisticas/${latestReading.id}`);
-    } catch (error) {
-      console.error("Erro ao abrir estatísticas:", error);
-      alert("Erro ao abrir estatísticas.");
-    }
-  };
 
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <img src={logoImg} alt="Logo TimerBook" className="logo-icon" />
-          <span className="logo-text">TimerBook</span>
-        </div>
-        
-        <nav className="sidebar-nav">
-          <Link
-            to="/"
-            className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}
-            onClick={() => setMenuAtivo('inicio')}
-          >
-            <img src={homeIcon} alt="Início" className="nav-icon" /> Início
-          </Link>
-          
-          <Link
-            to="/meus-livros"
-            className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}
-            onClick={() => setMenuAtivo('livros')}
-          >
-            <img src={BookIcon} alt="Livros" className="nav-icon" /> Biblioteca
-          </Link>
-
-          <Link
-            to="/cadastrar-livro"
-            className={`nav-item ${menuAtivo === 'cadastro' ? 'active' : ''}`}
-            onClick={() => setMenuAtivo('cadastro')}
-          >
-            <img src={PencilIcon} alt="Cadastrar" className="nav-icon" /> Adicionar Livro
-          </Link>
-
-          <Link
-            to="/leitor"
-            className={`nav-item ${menuAtivo === 'leitor' ? 'active' : ''}`}
-            onClick={() => setMenuAtivo('leitor')}
-          >
-            <img src={BookIcon} alt="Leitor" className="nav-icon" /> Leitor PDF
-          </Link>
-
-          {books.length === 0 ? (
-            <div className="empty-books-msg" style={{ marginTop: '20px' }}>
-              Sem livros cadastrados
-            </div>
-          ) : (
-            <div className="sidebar-shortcuts" style={{ marginTop: '20px' }}>
-              <span style={{ fontSize: '0.8rem', color: '#888', marginLeft: '10px' }}>
-                Recentes:
-              </span>
-              {books.slice(0, 5).map((book) => (
-                <Link
-                  to="/leitor"
-                  state={{ book: book }}
-                  key={book.id}
-                  className="sidebar-shortcut-item"
-                >
-                  {book.name}
-                </Link>
-              ))}
-            </div>
-          )}
-        </nav>
-        
-        <div className="sidebar-footer">
-          <button className="action-icon-btn">
-            <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
-          </button>
-          
-          <button className="action-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
-            <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
-          </button>
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <h1>Sua Biblioteca</h1>
-        <div className="books-grid">
-          {books.length === 0 ? (
-            <button
-              className="book-card add-new-card"
-              onClick={() => setIsModalOpen(true)}
-              style={{ border: 'none', background: 'transparent' }}
-            >
-              <div className="book-cover-wrapper">
-                <div className="book-cover-placeholder">+</div>
-              </div>
-              <div className="book-info">
-                <h3 className="book-title">Adicionar novo livro</h3>
-              </div>
-            </button>
-          ) : (
-            books.map((book) => (
-              <Link
-                to="/leitor"
-                state={{ book: book }}
-                key={book.id}
-                className="book-card"
-              >
-                {isEditing && (
-                  <button 
-                    className="btn-delete-book"
-                    onClick={(e) => { 
-                      e.preventDefault(); 
-                      e.stopPropagation(); 
-                      handleDeleteBook(book.id); 
-                    }}
-                  >
-                    X
-                  </button>
-                )}
-                
-                <div className="book-cover-wrapper">
-                  {(book.cover || book.coverUrl) && (
-                    <img 
-                      src={
-                        book.cover?.startsWith('blob:')
-                          ? book.cover
-                          : `http://localhost:8080/${book.coverUrl}`
-                      }
-                      alt={`Capa de ${book.name}`}
-                      className="book-cover-image"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  <div className="book-cover-placeholder">
-                    {book.name ? book.name.charAt(0) : '?'}
-                  </div>
-                </div>
-
-                <div className="book-info">
-                  <h3 className="book-title">{book.name}</h3>
-                  <span className="book-year">
-                    {book.description || 'Sem descrição'}
-                  </span>
-
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleOpenStats(book.id);
-                    }}
-                    style={{
-                      marginTop: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: '#2d89ef',
-                      color: '#fff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Ver estatísticas
-                  </button>
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-
-        <div className="bottom-actions">
-          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
-            Adicionar Livro
-          </button>
-          <button
-            className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`}
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <img src={PencilIcon} alt="Lápis" className="nav-icon" />
-          </button>
-        </div>
-      </main>
-
-      <HomeAddBookModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onAddBook={handleAddNewBook} 
+      
+      <Sidebar 
+        menuAtivo="inicio" 
+        books={books} 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
       />
+
+      <main className="main-content welcome-container">
+        
+        <div className="waves-container">
+          <svg className="ribbon-svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="white" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="white" stopOpacity="0.1" />
+                <stop offset="100%" stopColor="white" stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
+
+            <path className="ribbon ribbon1" 
+                  d="M-100,150 C200,-50 600,350 1100,100 L1100,120 C600,380 200,-10 -100,170 Z" 
+                  fill="url(#glassGradient)" />
+            
+            <path className="ribbon ribbon2" 
+                  d="M-100,200 C400,400 600,-100 1100,200 L1100,220 C600,-60 400,450 -100,210 Z" 
+                  fill="url(#glassGradient)" />
+            
+            <path className="ribbon ribbon3" 
+                  d="M-100,100 C250,250 800,250 1100,100 L1100,105 C800,280 250,280 -100,120 Z" 
+                  fill="url(#glassGradient)" />
+          </svg>
+        </div>
+
+        <div className="welcome-content-wrapper">
+          <div className="welcome-header">
+            <div className="profile-image-container">
+              <img src={ProfileIcon} alt="Foto de Perfil" className="profile-image-default" />
+            </div>
+            
+            <h1 className="welcome-title">Bem-vindo de volta!</h1>
+            <p className="welcome-subtitle">Usuário</p>
+          </div>
+
+          <div className="welcome-actions">
+            <Link to="/meus-livros" className="btn-go-library">
+              Acessar Minha Biblioteca
+            </Link>
+          </div>
+        </div>
+
+      </main>
+      
     </div>
   );
 };
