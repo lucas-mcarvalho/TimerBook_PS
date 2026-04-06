@@ -1,7 +1,5 @@
 # TimerBook
 
-<img src="./TimerbookLogo.png" width="300" />
-
 **Curso: Ciência da Computação**
 
 **Professor: Dr. Edeílson Milhomem**
@@ -91,13 +89,13 @@ FrontEnd/
     ```
 
 
-🐳 Como rodar com Docker 
-2.  **Subir os Containers**
+
+2.  **🐳 Subir os Containers**
     Na raiz do projeto, abra o terminal, troque para a branch correta e execute:
 
     ```bash
-    git checkout docker
-    docker-compose up -d --build
+    git checkout main
+    docker-compose up --build
     ```
     *Aguarde alguns instantes. O banco de dados será criado e configurado automaticamente na primeira execução.*
 
