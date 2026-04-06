@@ -41,8 +41,8 @@ O projeto TimerBook tem como objetivo ser um software para gerenciamento de suas
 ## 🔗 Links Úteis
 
 
-* **Planejamento no Trello:**[Trello](https://trello.com/b/WXQL66Tj/timerbook-sistema-de-gerenciamento-de-leitura)
-* **User Stories & Protótipo (Figma):** [Ver Telas no Figma](https://www.figma.com/proto/IihsrG5vSCSRwtLC64WnLd/User-Stories?node-id=0-1&t=epDzeNh9tx9MlHN4-1)
+* **Planejamento no Trello:**[Trello](https://trello.com/b/HtVptYfz/timerbook)
+* **User Stories & Protótipo (Figma):** [Ver Telas no Figma](https://www.figma.com/design/dgX72w2shMIYEC9jvOFopp/TimerBook?node-id=1-5&p=f&t=HIWQvvAN6rVbJlLf-0)
 
 
 ## 🖥️ Estrutura do Projeto
