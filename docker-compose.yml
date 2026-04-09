@@ -47,6 +47,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+    environment:
+      - APP_UPLOAD_DIR=/uploads
+      - SPRING_PROFILES_ACTIVE=dev
 volumes:
   postgres_data:

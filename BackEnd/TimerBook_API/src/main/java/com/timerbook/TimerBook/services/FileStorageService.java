@@ -21,7 +21,7 @@ public class FileStorageService {
 
     public FileStorageService() {
         try {
-            this.fileStorageLocation = Paths.get("/uploads").toAbsolutePath().normalize();
+            this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
             Files.createDirectories(this.fileStorageLocation);
             System.out.println("Upload directory: " + this.fileStorageLocation);
         } catch (Exception ex) {
