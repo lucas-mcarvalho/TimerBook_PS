@@ -4,18 +4,21 @@ import com.timerbook.TimerBook.dto.UserDTO;
 
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final FileStorageService fileStorageService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private FileStorageService fileStorageService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, FileStorageService fileStorageService) {
-        this.userRepository = userRepository;
-        this.fileStorageService = fileStorageService;
-    }
+
 
     public User create(UserDTO dto) {
         String photoPath = null;
@@ -26,7 +29,7 @@ public class UserService {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhotopath(photoPath);
 
         return userRepository.save(user);
