@@ -1,46 +1,92 @@
 package com.timerbook.TimerBook.services;
 
+import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
+import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.BookRepository;
+import com.timerbook.TimerBook.repository.UserRepository;
 import com.timerbook.TimerBook.services.exception.BookException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BookService {
 
-    @Autowired
-    private BookRepository bookRepository;
+    private final BookRepository bookRepository;
+    private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
-    public List<Book> findALl(){
+    public BookService(BookRepository bookRepository,
+                       UserRepository userRepository,
+                       FileStorageService fileStorageService) {
+        this.bookRepository = bookRepository;
+        this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
+    }
+
+    public List<Book> findAll() {
         return bookRepository.findAll();
     }
 
-    public  void create(Book book){
-        bookRepository.save(book);
+    public Book findById(Long id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new BookException("Livro não encontrado"));
     }
 
-    public void update(Long id,Book book){
+    public Book create(Long userId, BookDTO dto) {
 
-            Book book1 = findById(id);
-            book1.setName(book.getName());
-            book1.setCoverUrl(book.getCoverUrl());
-            book1.setDataPath(book.getDataPath());
-            book1.setDescription(book.getDescription());
-            bookRepository.save(book1);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        String coverPath = null;
+        if (dto.getCover() != null && !dto.getCover().isEmpty()) {
+            coverPath = fileStorageService.storeFile(dto.getCover(), "covers");
+        }
+
+        String pdfPath = null;
+        if (dto.getData() != null && !dto.getData().isEmpty()) {
+            pdfPath = fileStorageService.storeFile(dto.getData(), "pdfs");
+        }
+
+        Book book = new Book();
+        book.setName(dto.getName());
+        book.setDescription(dto.getDescription());
+        book.setCoverUrl(coverPath);
+        book.setDataPath(pdfPath);
+        book.setUser(user);
+
+        return bookRepository.save(book);
     }
 
-    public void delete(Long id){
-       findById(id);
-       bookRepository.deleteById(id);
+    public Book update(Long id, BookDTO dto) {
+
+        Book book = findById(id);
+
+        book.setName(dto.getName());
+        book.setDescription(dto.getDescription());
+
+        if (dto.getCover() != null && !dto.getCover().isEmpty()) {
+            fileStorageService.deleteFile(book.getCoverUrl());
+            String newCover = fileStorageService.storeFile(dto.getCover(), "covers");
+            book.setCoverUrl(newCover);
+        }
+
+        if (dto.getData() != null && !dto.getData().isEmpty()) {
+            fileStorageService.deleteFile(book.getDataPath());
+            String newPdf = fileStorageService.storeFile(dto.getData(), "pdfs");
+            book.setDataPath(newPdf);
+        }
+
+        return bookRepository.save(book);
     }
 
-    public Book findById(Long id){
-        Optional<Book> obj = bookRepository.findById(id);
-        return obj.orElseThrow(() -> new BookException("Id nao encontrado"));
+    public void delete(Long id) {
+        Book book = findById(id);
+
+        fileStorageService.deleteFile(book.getCoverUrl());
+        fileStorageService.deleteFile(book.getDataPath());
+
+        bookRepository.delete(book);
     }
 }
