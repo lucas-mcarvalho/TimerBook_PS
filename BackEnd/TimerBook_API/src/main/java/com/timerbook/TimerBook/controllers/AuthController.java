@@ -19,8 +19,17 @@ import com.timerbook.TimerBook.repository.RoleRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
 import com.timerbook.TimerBook.services.TokenService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Auth", description = "Autenticacao e registro de usuarios")
 public class AuthController {
     
     @Autowired
@@ -36,7 +45,30 @@ public class AuthController {
     private RoleRepository roleRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseDTO> login(@RequestBody LoginRequestDTO body) {
+        @Operation(
+            summary = "Realiza login",
+            description = "Autentica um usuario por email e senha e retorna um token JWT para acesso as rotas protegidas."
+        )
+        @ApiResponses({
+            @ApiResponse(
+                responseCode = "200",
+                description = "Login realizado com sucesso",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseDTO.class)
+                )
+            ),
+            @ApiResponse(responseCode = "400", description = "Credenciais invalidas"),
+            @ApiResponse(responseCode = "404", description = "Usuario nao encontrado")
+        })
+        public ResponseEntity<ResponseDTO> login(
+            @Parameter(
+                name = "body",
+                description = "Credenciais de acesso: email e senha",
+                required = true,
+                schema = @Schema(implementation = LoginRequestDTO.class)
+            )
+            @RequestBody LoginRequestDTO body) {
         User user = this.userRepository.findByEmail(body.email())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -49,7 +81,29 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseDTO> register(@RequestBody RegisterRequestDTO body) {
+        @Operation(
+            summary = "Registra novo usuario",
+            description = "Cria uma conta de usuario, atribui com ROLE_USER e retorna um token JWT."
+        )
+        @ApiResponses({
+            @ApiResponse(
+                responseCode = "200",
+                description = "Usuario registrado com sucesso",
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ResponseDTO.class)
+                )
+            ),
+            @ApiResponse(responseCode = "400", description = "Email ja cadastrado ou dados invalidos")
+        })
+        public ResponseEntity<ResponseDTO> register(
+            @Parameter(
+                name = "body",
+                description = "Dados de cadastro: username, email e senha",
+                required = true,
+                schema = @Schema(implementation = RegisterRequestDTO.class)
+            )
+            @RequestBody RegisterRequestDTO body) {
         Optional<User> user = this.userRepository.findByEmail(body.email());
         
         if (user.isEmpty()) {
@@ -62,9 +116,9 @@ public class AuthController {
             Role userRole = roleRepository.findByAuthority("ROLE_USER");
 
             if (userRole == null) {
-            userRole = new Role(null, "ROLE_USER");
-            roleRepository.save(userRole);
-}
+                userRole = new Role(null, "ROLE_USER");
+                roleRepository.save(userRole);
+            }
             if (userRole != null) {
                 newUser.getRoles().add(userRole);
             }
