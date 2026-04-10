@@ -59,9 +59,9 @@ public class AuthController {
             newUser.setEmail(body.email());
             newUser.setPassword(passwordEncoder.encode(body.password()));
             
-            Role basicRole = roleRepository.findByAuthority("ROLE_BASIC");
-            if (basicRole != null) {
-                newUser.getRoles().add(basicRole);
+            Role userRole = roleRepository.findByAuthority("ROLE_USER");
+            if (userRole != null) {
+                newUser.getRoles().add(userRole);
             }
 
             this.userRepository.save(newUser);
