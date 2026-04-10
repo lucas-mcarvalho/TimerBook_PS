@@ -60,6 +60,11 @@ public class AuthController {
             newUser.setPassword(passwordEncoder.encode(body.password()));
             
             Role userRole = roleRepository.findByAuthority("ROLE_USER");
+
+            if (userRole == null) {
+            userRole = new Role(null, "ROLE_USER");
+            roleRepository.save(userRole);
+}
             if (userRole != null) {
                 newUser.getRoles().add(userRole);
             }
