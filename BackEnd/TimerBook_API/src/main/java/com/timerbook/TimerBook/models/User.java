@@ -4,8 +4,10 @@ package com.timerbook.TimerBook.models;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -21,6 +23,15 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Book> books = new ArrayList<>();
+
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "tb_user_role",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     public User(){
 
@@ -68,6 +79,10 @@ public class User {
 
     public List<Book> getBooks() {
         return books;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.services;
 
 import com.timerbook.TimerBook.models.User;
+import com.timerbook.TimerBook.models.Role;
 import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,11 +19,10 @@ public class CustomDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
 
-
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
-                .roles("USER")
+                .authorities(user.getRoles().toArray(new Role[0]))
                 .build();
     }
 }
