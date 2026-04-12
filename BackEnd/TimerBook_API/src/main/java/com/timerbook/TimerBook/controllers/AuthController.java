@@ -117,4 +117,57 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+
+    @PostMapping("/register")
+    @Operation(
+            summary = "Registra novo usuario",
+            description = "Cria uma conta de usuario, atribui com ROLE_USER e retorna um token JWT."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Usuario registrado com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Email ja cadastrado ou dados invalidos")
+    })
+    public ResponseEntity<ResponseDTO> register(
+            @Parameter(
+                    name = "body",
+                    description = "Dados de cadastro: username, email e senha",
+                    required = true,
+                    schema = @Schema(implementation = RegisterRequestDTO.class)
+            )
+            @RequestBody RegisterRequestDTO body) {
+        Optional<User> user = this.userRepository.findByEmail(body.email());
+
+        if (user.isEmpty()) {
+            User newUser = new User();
+
+            newUser.setUsername(body.username());
+            newUser.setEmail(body.email());
+            newUser.setPassword(passwordEncoder.encode(body.password()));
+
+            Role userRole = roleRepository.findByAuthority("ROLE_USER");
+
+            if (userRole == null) {
+                userRole = new Role(null, "ROLE_USER");
+                roleRepository.save(userRole);
+            }
+            if (userRole != null) {
+                newUser.getRoles().add(userRole);
+            }
+
+            this.userRepository.save(newUser);
+            String token = this.tokenService.generateToken(newUser);
+
+            return ResponseEntity.ok(new ResponseDTO(newUser.getUsername(), token));
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
