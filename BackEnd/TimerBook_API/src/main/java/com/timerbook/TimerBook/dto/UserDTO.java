@@ -14,6 +14,7 @@ public class UserDTO {
     @Schema(description = "Foto do usuário")
     private MultipartFile photopath;
 
+
     public String getUsername() {
         return username;
     }
