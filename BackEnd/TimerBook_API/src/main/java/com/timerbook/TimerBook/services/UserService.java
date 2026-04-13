@@ -1,6 +1,5 @@
 package com.timerbook.TimerBook.services;
 
-import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
 
 import com.timerbook.TimerBook.models.Role;
@@ -10,9 +9,7 @@ import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -27,7 +24,12 @@ public class UserService {
     private RoleRepository roleRepository;
 
 
+    @Transactional
     public User create(UserDTO dto) {
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email já cadastrado");
+        }
+
         String photoPath = null;
         if (dto.getPhotopath() != null && !dto.getPhotopath().isEmpty()) {
             photoPath = fileStorageService.storeFile(dto.getPhotopath(), "users");
@@ -40,14 +42,10 @@ public class UserService {
         user.setPhotopath(photoPath);
 
         Role userRole = roleRepository.findByAuthority("ROLE_USER");
-
         if (userRole == null) {
-            userRole = new Role(null, "ROLE_USER");
-            roleRepository.save(userRole);
+            throw new RuntimeException("ROLE_USER não encontrada. Verifique se as migrations foram executadas.");
         }
-        if (userRole != null) {
-            user.getRoles().add(userRole);
-        }
+        user.getRoles().add(userRole);
 
         return userRepository.save(user);
     }
