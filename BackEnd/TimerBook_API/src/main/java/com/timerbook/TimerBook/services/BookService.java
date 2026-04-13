@@ -9,6 +9,7 @@ import com.timerbook.TimerBook.services.exception.BookException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -89,4 +90,9 @@ public class BookService {
 
         bookRepository.delete(book);
     }
+
+    public List<Book> findByUserId(Long userId) {
+        return bookRepository.findByUserId(userId);
+    }
+
 }
