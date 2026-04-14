@@ -53,7 +53,7 @@ public class TokenService {
     }
 
     private Instant generateExpirationDate() {
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.UTC);
+        return LocalDateTime.now().plusMinutes(15).toInstant(ZoneOffset.UTC);
     }
 
     public String createRefreshToken(User user) {
@@ -63,7 +63,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("timerbook-login-api")
                     .withSubject(user.getEmail())
-                    .withExpiresAt(LocalDateTime.now().plusHours(24).toInstant(ZoneOffset.UTC))
+                    .withExpiresAt(LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.UTC))
                     .sign(algorithm);
 
         } catch (Exception e) {
