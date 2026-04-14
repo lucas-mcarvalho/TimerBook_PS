@@ -94,4 +94,10 @@ public class BookController implements BookcontrollerDocs {
         bookService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @GetMapping("/user/{userId}")
+    public List<Book> getBooksByUser(@PathVariable Long userId) {
+        return bookService.findByUserId(userId);
+    }
 }
