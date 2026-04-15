@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/auth/register").permitAll()
+                        .requestMatchers("/email/send").permitAll()
                         .requestMatchers("/api-docs/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/book/**").hasRole("USER")
                         .anyRequest().authenticated()
