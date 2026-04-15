@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: timerbook
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username : # Email da conta de envio
+    password: # Senha da conta de envio
+    properties:
+        mail.smtp.auth: true
+        mail.smtp.starttls.enable: true
+        mail.smtp.starttls.required: true
 
   servlet:
     multipart:
