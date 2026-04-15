@@ -20,6 +20,7 @@ public class User {
     private String email;
     private String password;
     private String photopath;
+    private String refreshToken;
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -76,7 +77,7 @@ public class User {
     }
 
     public void setPhotopath(String photopath) {
-        photopath = photopath;
+        this.photopath = photopath;
     }
 
     public List<Book> getBooks() {
@@ -85,6 +86,15 @@ public class User {
 
     public Set<Role> getRoles() {
         return roles;
+    }
+
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     @Override
