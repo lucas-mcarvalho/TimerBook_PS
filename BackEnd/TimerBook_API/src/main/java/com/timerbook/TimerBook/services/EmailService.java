@@ -24,7 +24,7 @@ public class EmailService {
                     .withMessage(emailRequest.getMessage())
                     .send(emailConfig);
         } catch (MessagingException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Failed to send e-mail", e);
         }
     }
 }
