@@ -1,50 +1,38 @@
+import api from "../axiosApi";
+
 export async function registerBook(book, coverFile, pdfFile) {
   const formData = new FormData();
+
   formData.append(
     "book",
     new Blob([JSON.stringify(book)], { type: "application/json" })
   );
+
   if (coverFile) {
     formData.append("cover", coverFile);
   }
+
   if (pdfFile) {
     formData.append("pdf", pdfFile);
   }
+
   try {
-    const response = await fetch("http://localhost:8080/book/create", {
-      method: "POST",
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Erro ao cadastrar livro");
-    }
-    const data = await response.json();
-    return data;
+    const response = await api.post("/book/create", formData);
+
+    return response.data;
   } catch (error) {
-    console.error("Erro:", error);
+    console.error("Erro:", error.response?.data || error.message);
     throw error;
   }
 }
 export async function deleteBook(id) {
-  const response = await fetch(`http://localhost:8080/book/${id}`, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    // tenta pegar erro com segurança
-    const text = await response.text();
-    throw new Error(text || "Erro ao deletar livro");
+  try {
+    const response = await api.delete(`/book/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao deletar livro:", error.response?.data || error.message);
+    throw error;
   }
-
-  // se não tem conteúdo, retorna direto
-  if (response.status === 204) {
-    return true;
-  }
-
-  // tenta converter só se tiver conteúdo
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
 }
 
 
