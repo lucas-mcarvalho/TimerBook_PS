@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { loginUser } from "../features/auth/user.js";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,8 +27,12 @@ export default function Login() {
     setSuccess(false);
 
     try {
-      await loginUser(formData);
+      await loginUser(
+        formData.email,
+        formData.password
+      );
       setSuccess(true);
+      navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {
@@ -64,9 +71,9 @@ export default function Login() {
         </div>
 
         <br />
-        <a href="#" onClick={handleSubmit}>
+        <button type="submit" onClick={handleSubmit} disabled={loading}>
           {loading ? "Entrando..." : "Entrar"}
-        </a>
+        </button>
       </form>
 
       <br />

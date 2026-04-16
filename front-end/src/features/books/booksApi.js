@@ -37,12 +37,12 @@ export async function deleteBook(id) {
 
 
 export async function getBooks() {
-  const response = await fetch("http://localhost:8080/book");
-
-  if (!response.ok) {
-    throw new Error("Erro ao buscar livros");
+  
+  try{
+    const response = await api.get("/book");
+    return response.data;
+  }catch(error) {
+    console.error("Erro ao buscar livros:", error.response?.data || error.message);
+    throw error;
   }
-
-  return response.json();
-} 
-
+}

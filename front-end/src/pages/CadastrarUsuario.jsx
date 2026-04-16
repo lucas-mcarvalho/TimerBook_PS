@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-
+import { registerUser } from "../features/auth/user.js";
 export default function CadastrarUsuario() {
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
+    photo: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -25,9 +26,15 @@ export default function CadastrarUsuario() {
     setSuccess(false);
 
     try {
-      await registerUser(formData);
+       
+      await registerUser(
+        formData.username,
+        formData.email,
+        formData.password,
+        formData.photo
+      );
       setSuccess(true);
-      setFormData({ name: "", email: "", password: "" });
+      setFormData({ username: "", email: "", password: "", photo: null });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar usuário");
     } finally {
@@ -44,11 +51,11 @@ export default function CadastrarUsuario() {
 
       <form>
         <div>
-          <label>Nome Completo *</label>
+          <label>Username*</label>
           <input
             type="text"
-            name="name"
-            value={formData.name}
+            name="username"
+            value={formData.username}
             onChange={handleInputChange}
             required
           />
@@ -75,11 +82,12 @@ export default function CadastrarUsuario() {
             required
           />
         </div>
+      
 
         <br />
-        <a href="#" onClick={handleSubmit}>
+        <button type="submit" disabled={loading} onClick={handleSubmit}>
           {loading ? "Cadastrando..." : "Cadastrar"}
-        </a>
+        </button>
       </form>
 
       <br />

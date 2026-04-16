@@ -6,33 +6,37 @@ export async function registerUser(username, email, password, photo) {
   formData.append("username", username);
   formData.append("email", email);
   formData.append("password", password);
-  
-  if(photo) {
+
+  if (photo) {
     formData.append("photo", photo);
   }
 
-  try{
+  try {
+
     const response = await api.post("/auth/register", formData);
     return response.data;
-  }catch(error) {
-    console.error("Erro ao cadastrar usuário:", error.response?.data || error.message);
+  }catch (error) {
+    console.error(
+      "Erro ao cadastrar usuário:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
 export async function loginUser(email, password) {
-  const formData = new FormData();
-  formData.append("email", email);
-  formData.append("password", password);
+  
 
   try {
-    const response = await api.post("/auth/login", formData);
-
-    const { accessToken, refreshToken } = response.data;
+    const response = await api.post("/auth/login", {
+        email,
+        password,
+   });
 
     // salva tokens
-    localStorage.setItem("token", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("token", response.data.token);
+    localStorage.setItem("refreshToken", response.data.refreshToken);
+    console.log("Login bem-sucedido:", response.data);
 
     return response.data;
   } catch (error) {
