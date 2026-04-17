@@ -17,6 +17,17 @@ public class BookDTO {
     @Schema(description = "Arquivo PDF")
     private MultipartFile data;
 
+    public BookDTO(){
+
+    }
+
+
+    public BookDTO(String name, String description, MultipartFile cover, MultipartFile data) {
+        this.name = name;
+        this.description = description;
+        this.cover = cover;
+        this.data = data;
+    }
 
     public String getName() {
         return name;

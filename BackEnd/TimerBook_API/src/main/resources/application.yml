@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: timerbook
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+        mail.smtp.auth: true
+        mail.smtp.starttls.enable: true
+        mail.smtp.starttls.required: true
 
   servlet:
     multipart:
@@ -21,3 +30,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+
+api:
+  security:
+    token:
+      secret: MYJWTSECRET

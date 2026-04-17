@@ -1,11 +1,14 @@
 package com.timerbook.TimerBook.models;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -17,10 +20,21 @@ public class User {
     private String email;
     private String password;
     private String photopath;
+    private String refreshToken;
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Book> books = new ArrayList<>();
+
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "tb_user_role",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     public User(){
 
@@ -71,11 +85,24 @@ public class User {
     }
 
     public void setPhotopath(String photopath) {
-        photopath = photopath;
+        this.photopath = photopath;
     }
 
     public List<Book> getBooks() {
         return books;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     @Override

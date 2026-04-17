@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.controllers;
 
 
+import com.timerbook.TimerBook.controllers.docs.BookcontrollerDocs;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.services.BookService;
@@ -20,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/book")
 @Tag(name = "Book", description = "Api de livros")
-public class BookController {
+public class BookController implements BookcontrollerDocs {
 
     private final BookService bookService;
 
@@ -28,32 +29,14 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    @Operation(
-            summary = "Criar livro",
-            description = "Cria um livro com capa (imagem) e PDF opcionais"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Livro criado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Erro de validação"),
-            @ApiResponse(responseCode = "500", description = "Erro interno")
-    })
+
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Book> create(
-            @Parameter(description = "ID do usuário dono do livro", example = "1")
             @RequestParam Long userId,
-
-            @Parameter(description = "Nome do livro", example = "Harry Potter")
             @RequestPart("name") String name,
-
-            @Parameter(description = "Descrição do livro", example = "Livro de fantasia")
             @RequestPart("description") String description,
-
-            @Parameter(description = "Imagem de capa (arquivo)")
             @RequestPart(value = "cover", required = false) MultipartFile cover,
-
-            @Parameter(description = "Arquivo PDF do livro")
             @RequestPart(value = "pdf", required = false) MultipartFile pdf) {
-
         BookDTO dto = new BookDTO();
         dto.setName(name);
         dto.setDescription(description);
@@ -64,8 +47,6 @@ public class BookController {
         return ResponseEntity.status(HttpStatus.CREATED).body(book);
     }
 
-    @Operation(summary = "Listar livros", description = "Retorna todos os livros")
-    @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping
     public ResponseEntity<List<Book>> getAll() {
         return ResponseEntity.ok(bookService.findAll());
@@ -104,8 +85,7 @@ public class BookController {
         return ResponseEntity.ok(bookService.update(id, dto));
     }
 
-    @Operation(summary = "Deletar livro")
-    @ApiResponse(responseCode = "204", description = "Livro deletado com sucesso")
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @Parameter(description = "ID do livro", example = "1")
@@ -113,5 +93,11 @@ public class BookController {
 
         bookService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/user/{userId}")
+    public List<Book> getBooksByUser(@PathVariable Long userId) {
+        return bookService.findByUserId(userId);
     }
 }
