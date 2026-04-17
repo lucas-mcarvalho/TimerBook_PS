@@ -21,6 +21,10 @@ public class Reading implements Serializable {
     @JoinColumn(name = "book_id")
     private Book book;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     private Integer currentPage;
 
     private LocalDateTime startedAt;
@@ -84,16 +88,23 @@ public class Reading implements Serializable {
         this.finishedAt = finishedAt;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Reading reading = (Reading) o;
-        return Objects.equals(id, reading.id);
+        return Objects.equals(id, reading.id) && Objects.equals(book, reading.book) && Objects.equals(user, reading.user) && Objects.equals(currentPage, reading.currentPage) && Objects.equals(startedAt, reading.startedAt) && Objects.equals(finishedAt, reading.finishedAt) && Objects.equals(sessions, reading.sessions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hash(id, book, user, currentPage, startedAt, finishedAt, sessions);
     }
 }
