@@ -74,4 +74,10 @@ public class UserController implements UserControllerDocs {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getMe(
+            @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(userService.getMe(authHeader));
+    }
 }
