@@ -1,6 +1,6 @@
 import api from "../axiosApi";
 
-export async function registerBook(book, coverFile, pdfFile) {
+export async function registerBook(userId, book, coverFile, pdfFile) {
   const formData = new FormData();
 
   formData.append(
@@ -17,7 +17,7 @@ export async function registerBook(book, coverFile, pdfFile) {
   }
 
   try {
-    const response = await api.post("/book/create", formData);
+    const response = await api.post(`/book/create/${userId}`, formData);
 
     return response.data;
   } catch (error) {
@@ -36,13 +36,23 @@ export async function deleteBook(id) {
 }
 
 
-export async function getBooks() {
-  
-  try{
-    const response = await api.get("/book");
-    return response.data;
-  }catch(error) {
-    console.error("Erro ao buscar livros:", error.response?.data || error.message);
-    throw error;
+  export async function getBooks() {
+    
+    try{
+      const response = await api.get("/book");
+      return response.data;
+    }catch(error) {
+      console.error("Erro ao buscar livros:", error.response?.data || error.message);
+      throw error;
+    }
   }
-}
+
+  export async function getBookByUserId(id) {
+    try {
+      const response = await api.get(`/book/user/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar livros do usuário:", error.response?.data || error.message);
+      throw error;
+    }
+  }
