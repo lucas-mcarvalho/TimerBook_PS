@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "http://localhost:8080"
 });
 
 // 🔹 REQUEST → adiciona access token (exceto rotas de auth)
@@ -18,6 +18,8 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  console.log("Requisição:", token);
+
   return config;
 });
 
@@ -27,7 +29,8 @@ const refreshAccessToken = async () => {
 
   const response = await axios.post(
     "http://localhost:8080/auth/refresh",
-    { refreshToken }
+    { refreshToken },
+    { withCredentials: true }
   );
 
   const { accessToken } = response.data;
