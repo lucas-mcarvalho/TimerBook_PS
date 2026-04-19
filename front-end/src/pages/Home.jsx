@@ -27,7 +27,7 @@ const Home = () => {
     const fetchBooks = async () => {
       try {
         const userData = await getUser();
-        console.log("Dados do usuário na Home:", userData);
+      
         const booksData = await getBooks();
         setBooks(booksData);
       } catch (err) {

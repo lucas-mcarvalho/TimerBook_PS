@@ -6,6 +6,7 @@ import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import api from "../features/axiosApi.js"
 
 export default function Leitor() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Leitor() {
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const PAGE_RANGE = 2;
+  const [pdfUrlObject, setPdfUrlObject] = useState(null);
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -58,19 +60,22 @@ export default function Leitor() {
 
   // Carrega o PDF ao montar o componente
   useEffect(() => {
-    const loadPDF = async () => {
-      try {
-        const response = await fetch(pdfUrl);
-        const blob = await response.blob();
-        setPdfFile(blob);
-      } catch (error) {
-        console.error("Erro ao carregar PDF:", error);
-      }
-    };
-    if (pdfUrl) {
-      loadPDF();
+  const loadPDF = async () => {
+    try {
+      const response = await api.get(`/${book.dataPath}`, {
+        responseType: "blob",
+      });
+      console.log("PDF carregado do backend:", response);
+      setPdfFile(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar PDF:", error);
     }
-  }, [pdfUrl]);
+  };
+
+  if (book?.dataPath) {
+    loadPDF();
+  }
+}, [book]);
 
   // Extrai range de páginas quando a página atual muda
   useEffect(() => {
@@ -137,10 +142,14 @@ export default function Leitor() {
           </div>
           
           <div className="flex-1 overflow-auto p-4 flex justify-center">
-            <PdfViewer
-              file="/Memorias_do_Subsolo.pdf"
-              onPageChange={setCurrentPage}
-            />
+            {pdfUrlObject ? (
+                <PdfViewer
+                  file={pdfUrlObject}
+                  onPageChange={setCurrentPage}
+                />
+              ) : (
+                <p>Carregando PDF...</p>
+            )}
           </div>
         </div>
 
