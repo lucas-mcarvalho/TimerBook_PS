@@ -117,9 +117,16 @@ export default function Leitor() {
       <div className="flex-1 h-full flex flex-col p-4 md:p-8">
 
         <header className="mb-4">
-          <Link to="/" className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block">
+         <Link
+            to="/"
+            onClick={async (e) => {
+              e.preventDefault(); // impede navegação automática
+              await handleEndSession(); // executa sua lógica
+            }}
+            className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block"
+          >
             ← Voltar
-          </Link>
+        </Link>
           <h1 className="text-3xl font-bold">Leitor de PDF</h1>
         </header>
 
