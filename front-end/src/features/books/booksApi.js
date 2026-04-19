@@ -8,16 +8,19 @@ export async function registerBook(userId, book, coverFile, pdfFile) {
     new Blob([JSON.stringify(book)], { type: "application/json" })
   );
 
+  formData.append("userId", userId);
+  
   if (coverFile) {
     formData.append("cover", coverFile);
   }
 
   if (pdfFile) {
     formData.append("pdf", pdfFile);
-  }
+  } 
+  
 
   try {
-    const response = await api.post(`/book/create/${userId}`, formData);
+    const response = await api.post(`/book/create`, formData);
 
     return response.data;
   } catch (error) {

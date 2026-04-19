@@ -48,6 +48,10 @@ public class User {
         photopath = photopath;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public String getUsername() {
         return username;
     }
