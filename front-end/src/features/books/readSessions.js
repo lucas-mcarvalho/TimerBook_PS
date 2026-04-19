@@ -1,30 +1,24 @@
-export async function startReading(bookId, startPage) {
+import api from "../axiosApi";
+
+export async function startReading(userId, bookId, startPage) {
     startPage = startPage || 1; // Define página inicial padrão como 1
-    const response = await fetch("http://localhost:8080/readings/start", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ bookId, startPage })
-    });
-
-    if (!response.ok) {
-        throw new Error("Erro ao iniciar sessão de leitura");
+    try {
+        const response = await api.post(`/readings/${userId}/start`, { bookId, startPage });
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao iniciar leitura:", error);
+        throw new Error("Erro ao iniciar leitura");
     }
-
-    return response.json();
 }
 
 export async function endReading(readingId) {
-    const response = await fetch(`http://localhost:8080/readings/${readingId}/finish`, {
-        method: "PUT"
-    });
-
-    if (!response.ok) {
-        throw new Error("Erro ao finalizar sessão de leitura");
+    try {
+        const response = await api.put(`http://localhost:8080/readings/${readingId}/finish`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao finalizar leitura:", error);
+        throw new Error("Erro ao finalizar leitura");
     }
-
-    return response.json();
 }
 
 /*** 
@@ -46,38 +40,32 @@ export async function startReadingSession(bookId, startPage){
 ***/
 
 export async function endReadingSession(sessionId, endPage){
-    const response = await fetch(`http://localhost:8080/reading-sessions/${sessionId}/finish`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ endPage })
-    });
-
-    if (!response.ok) {
+    try {
+        const response = await api.put(`http://localhost:8080/reading-sessions/${sessionId}/finish`, { endPage });
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao finalizar sessão de leitura:", error);
         throw new Error("Erro ao finalizar sessão de leitura");
     }
-
-    return response.json();
 }
 
 export async function getReadingSessions() {
-    const response = await fetch("http://localhost:8080/reading-sessions");
-
-    if (!response.ok) {
+    try {
+        const response = await api.get("http://localhost:8080/reading-sessions");
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar sessões de leitura:", error);
         throw new Error("Erro ao buscar sessões de leitura");
     }
-
-    return response.json();
 }
 
 
 export async function getSessionsByReadingId(readingId) {
-    const response = await fetch(`http://localhost:8080/reading-sessions/reading/${readingId}`);
-
-    if (!response.ok) {
-        throw new Error("Erro ao buscar sessões de leitura por ID");
+    try {
+        const response = await api.get(`http://localhost:8080/reading-sessions/reading/${readingId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar sessões por leitura:", error);
+        throw new Error("Erro ao buscar sessões por leitura");
     }
-
-    return response.json();
 }   
