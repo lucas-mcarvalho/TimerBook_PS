@@ -1,0 +1,293 @@
+.login-container, 
+.form-block, 
+.login-form-card, 
+.animation-block,
+.login-container .form-group input,
+.login-container .form-group label,
+.logo-block h1,
+.welcome-text,
+.action-icon-btn {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, filter 0.4s ease !important;
+}
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.form-block {
+  flex: 1.2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0b1221;
+}
+
+.login-form-card {
+  width: 90%;
+  max-width: 450px;
+  padding: 40px;
+  background-color: #121e31;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid #1e2f4c;
+}
+
+.logo-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.logo-block h1 {
+  font-size: 2.2rem;
+  color: #ffffff;
+  margin: 0;
+  font-weight: 700;
+}
+
+.logo-block img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  transform: scale(2.5); 
+  margin-right: 5px; 
+}
+
+.welcome-text {
+  font-size: 1.1rem;
+  color: #a0aec0;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.profile-form {
+  width: 100%;
+}
+
+.login-container .form-group {
+  width: 100%;
+  text-align: left; 
+}
+
+.login-container .form-group label {
+  display: block;
+  text-align: left; 
+  margin-bottom: 8px; 
+  color: #a0aec0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.login-container .form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: #0b1221;
+  border: 1px solid #1e2f4c;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.login-container .form-group input:focus {
+  outline: none;
+  border-color: #2ecc71;
+}
+
+.form-footer-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.form-footer-links a {
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.animation-block {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #121e31;
+  perspective: 1500px;
+}
+
+.book-scene {
+  width: 280px;
+  height: 400px;
+  position: relative;
+  transform-style: preserve-3d;
+  margin: 0 auto;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.book-scene.is-open {
+  transform: translateX(140px) rotateY(15deg);
+}
+
+.book-cover-back, .book-cover-front, .book-page-right, .book-page-moving {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  transform-origin: left center;
+  border-radius: 4px 15px 15px 4px;
+  transform-style: preserve-3d;
+}
+
+.book-cover-back {
+  background-color: #1a365d;
+  border: 2px solid #0f223f;
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.book-page-right {
+  width: 96%; height: 96%;
+  top: 2%; left: 2%;
+  background-color: #f2f9fa;
+  border-radius: 2px 12px 12px 2px;
+  border: 1px solid #e0e0e0;
+  z-index: 2;
+  box-shadow: inset 5px 0 10px rgba(0,0,0,0.02);
+}
+
+.book-page-moving {
+  width: 96%; height: 96%;
+  top: 2%; left: 2%;
+  background: linear-gradient(to right, #e8e8e8 0%, #ffffff 10%, #f2f9fa 100%);
+  border-radius: 2px 12px 12px 2px;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+  overflow: hidden;
+  z-index: 4;
+}
+
+.book-cover-front {
+  background-color: #2b5292;
+  border: 2px solid #1a365d;
+  display: flex; justify-content: center; align-items: center;
+  box-shadow: inset 4px 0 10px rgba(0,0,0,0.1);
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.8s;
+  z-index: 10;
+}
+.book-scene.is-open .book-cover-front {
+  transform: rotateY(-180deg);
+  box-shadow: -5px 5px 15px rgba(0,0,0,0.1);
+}
+
+.cover-logo {
+  width: 80%;
+  height: auto;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+.book-scene.is-open .cover-logo {
+  opacity: 0;
+}
+
+.page-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0.6;
+}
+
+.fake-line {
+  height: 6px;
+  background-color: #2b5292;
+  border-radius: 3px;
+  width: 100%;
+  animation: typeLine 0.2s ease-out;
+}
+
+.fake-line:last-child {
+  width: 60%;
+}
+
+@keyframes typeLine {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+
+.status-message {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+.status-error {
+  background-color: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+.status-success {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.login-theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.action-icon-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background-color: #e0e0e0;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.nav-icon {
+  width: 25px !important;
+  height: 25px !important;
+  object-fit: contain;
+}
+
+.login-container .btn-concluir:hover {
+  background-color: #2ecc71 !important;
+}
+
+.login-container.light-theme .action-icon-btn,
+.login-container.light-theme .action-icon-btn:hover {
+  background-color: #e0e0e0 !important;
+}
+
+.login-container.dark-theme .action-icon-btn,
+.login-container.dark-theme .action-icon-btn:hover {
+  background-color: #2b497f !important; 
+}
+
+.login-container .form-group input:-webkit-autofill,
+.login-container .form-group input:-webkit-autofill:hover, 
+.login-container .form-group input:-webkit-autofill:focus, 
+.login-container .form-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+    -webkit-text-fill-color: #1a1a1a !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+}
+
+.login-container.dark-theme .form-group input:-webkit-autofill,
+.login-container.dark-theme .form-group input:-webkit-autofill:hover, 
+.login-container.dark-theme .form-group input:-webkit-autofill:focus, 
+.login-container.dark-theme .form-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #0b1221 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+}
