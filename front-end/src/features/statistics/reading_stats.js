@@ -1,19 +1,20 @@
-export async function getReadingStatsByReadingId(readingId) {
-    const response = await fetch(`http://localhost:8080/stats/reading/${readingId}`);
+import api from "../axiosApi";
 
-    if (!response.ok) {
+export async function getReadingStatsByReadingId(readingId) {
+    console.log("Fetching reading stats for readingId:", readingId);    
+    try {
+        const response = await api.get(`/stats/reading/${readingId}`);
+        return response.data;
+    } catch (error) {
         throw new Error("Erro ao buscar estatísticas de leitura");
     }
-
-    return response.json();
 }
 
 export async function getReadingStreakByReadingId(readingId) {
-    const response = await fetch(`http://localhost:8080/stats/reading/${readingId}/streak`);
-
-    if (!response.ok) {
+    try {
+        const response = await api.get(`/stats/reading/${readingId}/streak`);
+        return response.data;
+    } catch (error) {
         throw new Error("Erro ao buscar streak de leitura");
     }
-
-    return response.json();
 }

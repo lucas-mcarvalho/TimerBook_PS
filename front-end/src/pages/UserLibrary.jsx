@@ -129,25 +129,8 @@ function UserLibrary() {
       setError("Erro ao iniciar leitura: " + err.message);
     }
   };
-   const handleOpenStats = async (bookId) => {
-    try {
-      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
-      if (!response.ok) {
-        throw new Error("Não foi possível buscar as leituras do livro.");
-      }
-      const readings = await response.json();
-      if (!readings || readings.length === 0) {
-        alert("Esse livro ainda não possui leituras registradas.");
-        return;
-      }
-      // pega a leitura mais recente
-      const latestReading = readings[readings.length - 1];
-      // Usa navigate do escopo UserLibrary
-      navigate(`/estatisticas/${latestReading.id}`);
-    } catch (error) {
-      console.error("Erro ao abrir estatísticas:", error);
-      alert("Erro ao abrir estatísticas.");
-    }
+   const handleOpenStats = async (readingId) => {
+     navigate(`/estatisticas/${readingId}`);
   };
 
   const handleDelete = async (bookId) => {
