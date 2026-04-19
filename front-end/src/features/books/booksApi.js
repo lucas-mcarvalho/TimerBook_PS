@@ -3,24 +3,23 @@ import api from "../axiosApi";
 export async function registerBook(userId, book, coverFile, pdfFile) {
   const formData = new FormData();
 
-  formData.append(
-    "book",
-    new Blob([JSON.stringify(book)], { type: "application/json" })
-  );
+   formData.append("name", book.name);
+   formData.append("description", book.description);
 
-  formData.append("userId", userId);
-  
   if (coverFile) {
     formData.append("cover", coverFile);
   }
 
   if (pdfFile) {
     formData.append("pdf", pdfFile);
-  } 
-  
+    console.log("PDF file appended to formData:", pdfFile);
+  }
 
   try {
-    const response = await api.post(`/book/create`, formData);
+    const response = await api.post(
+      `/book/create?userId=${userId}`,
+      formData
+    );
 
     return response.data;
   } catch (error) {
