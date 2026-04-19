@@ -1,6 +1,8 @@
 // src/components/PdfViewer.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import "../styles/TextLayer.css";
+import "../styles/AnnotationLayer.css";
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
@@ -12,6 +14,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange }) {
 
   // Atualiza a página inicial se o arquivo ou initialPage mudar
   useEffect(() => {
+    console.log("PdfViewer useEffect disparado com file:", file, "initialPage:", initialPage);
     setPageNumber(initialPage);
     if (onPageChange) {
       onPageChange(initialPage);
@@ -27,6 +30,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange }) {
     if (onPageChange) {
       onPageChange(newPage);
     }
+    
   }
 
   return (

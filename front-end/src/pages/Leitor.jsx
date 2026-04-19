@@ -142,14 +142,14 @@ export default function Leitor() {
           </div>
           
           <div className="flex-1 overflow-auto p-4 flex justify-center">
-            {pdfUrlObject ? (
+            {pdfFile ? (
                 <PdfViewer
-                  file={pdfUrlObject}
+                  file={pdfFile}
                   onPageChange={setCurrentPage}
                 />
               ) : (
                 <p>Carregando PDF...</p>
-            )}
+              )}
           </div>
         </div>
 
