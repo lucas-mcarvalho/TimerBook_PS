@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
+import {getUser} from "../features/user/userApi.js";
 
 import '../styles/Layout.css';
 import '../styles/Library.css';
@@ -105,7 +106,12 @@ function UserLibrary() {
 
   const handleRead = async (book) => {
     try {
-      const readingResponse = await startReading(book.id);
+      //Melhorar esse trecho, apenas
+      const response = await getUser();
+      const userId = response.data.id;
+
+
+      const readingResponse = await startReading(userId, book.id);
       const readingId = readingResponse.id;
       const sessions = await getSessionsByReadingId(readingId);
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
