@@ -45,7 +45,15 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
-        photopath = photopath;
+        this.photopath = photopath;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getId() {

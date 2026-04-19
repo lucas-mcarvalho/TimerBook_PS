@@ -5,13 +5,7 @@ import com.timerbook.TimerBook.dto.FinishReadingDTO;
 import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.services.ReadingService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,30 +15,30 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/readings")
-
 public class ReadingController implements ReadingControllerDocs {
 
     @Autowired
     private ReadingService readingService;
 
-    @PostMapping("/start")
+    @PostMapping("/{userId}/start")
     public ResponseEntity<Reading> startReading(
+            @PathVariable Long userId,
             @RequestBody InitReadingDTO dto) {
         try {
-            Reading reading = readingService.initializeReading(dto);
+            Reading reading = readingService.initializeReading(userId, dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(reading);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    @PutMapping("/{readingId}/finish")
-
+    @PutMapping("/{userId}/{readingId}/finish")
     public ResponseEntity<Reading> finishReading(
+            @PathVariable Long userId,
             @PathVariable Long readingId,
             @RequestBody FinishReadingDTO dto) {
         try {
-            Reading reading = readingService.finishReading(readingId, dto);
+            Reading reading = readingService.finishReading(userId, readingId, dto);
             return ResponseEntity.ok(reading);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -68,12 +62,12 @@ public class ReadingController implements ReadingControllerDocs {
         }
     }
 
-
-    @GetMapping("/book/{bookId}")
+    @GetMapping("/{userId}/{bookId}")
     public ResponseEntity<List<Reading>> getReadingsByBookId(
+            @PathVariable Long userId,
             @PathVariable Long bookId) {
         try {
-            List<Reading> readings = readingService.getReadingsByBookId(bookId);
+            List<Reading> readings = readingService.getReadingsByBookId(userId, bookId);
             return ResponseEntity.ok(readings);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
