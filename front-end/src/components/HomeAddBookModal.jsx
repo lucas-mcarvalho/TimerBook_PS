@@ -106,7 +106,7 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
           <div className="modal-body-flex">
             <div className="modal-inputs-col">
               <div className="form-group">
-                <label>Nome *</label>
+                <label>Nome</label>
                 <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} required placeholder="Ex: O Pequeno Príncipe" />
               </div>
               <div className="form-group">
@@ -120,7 +120,7 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
             
             <div className="modal-uploads-col">
               <div className="upload-section">
-                <label>Upload de capa (opcional)</label>
+                <label>Capa (opcional)</label>
                 <div className="upload-box" style={{ position: 'relative' }}>
                   <input 
                     type="file" 
@@ -133,7 +133,7 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
               </div>
               
               <div className="upload-section">
-                <label>Upload de PDF (opcional)</label>
+                <label>Upload de PDF</label>
                 <div className="upload-box" style={{ position: 'relative' }}>
                   <input 
                     type="file" 

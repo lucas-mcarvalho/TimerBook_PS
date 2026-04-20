@@ -191,3 +191,24 @@
 .dark-theme .profile-container .status-error {
     background-color: rgba(255, 71, 87, 0.1);
 }
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    color: #1a1a1a;
+    border-radius: 12px;
+    padding: 0 25px;
+    height: 45px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.dark-theme .btn-secondary {
+    background-color: #2b497f;
+    color: #ffffff;
+}

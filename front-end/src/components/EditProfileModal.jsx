@@ -70,7 +70,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
           <div className="modal-body-flex">
             <div className="modal-inputs-col">
               <div className="form-group">
-                <label>Nome de Usuário *</label>
+                <label>Nome de Usuário</label>
                 <input 
                   type="text" 
                   value={formData.username} 
@@ -80,7 +80,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
               </div>
 
               <div className="form-group">
-                <label>Email *</label>
+                <label>Email</label>
                 <input 
                   type="email" 
                   value={formData.email} 

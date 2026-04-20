@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+// 👇 NOVO: Importando o useNavigate para fazer o redirecionamento
+import { useNavigate } from "react-router-dom"; 
 import { getUser } from "../features/user/userApi.js"; 
 import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
@@ -19,6 +21,9 @@ export default function PerfilUsuario() {
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  
+  // 👇 NOVO: Inicializando o navigate
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
@@ -99,11 +104,20 @@ export default function PerfilUsuario() {
           )}
         </div>
 
-        <div className="bottom-actions">
+        {/* 👇 MODIFICADO: Adicionado gap para separar os botões e o novo botão de senha */}
+        <div className="bottom-actions" style={{ display: 'flex', gap: '15px' }}>
           <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
             Editar Perfil
           </button>
+          
+          <button 
+            className="btn-secondary" 
+            onClick={() => navigate('/esqueceu-senha')}
+          >
+            Redefinir Senha
+          </button>
         </div>
+        
       </main>
 
       <EditProfileModal 
