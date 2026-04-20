@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import api from "../features/axiosApi.js";
+// import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js"; // Comentado se não estiver em uso
 
 const Estatisticas = () => {
   const [stats, setStats] = useState(null);
@@ -18,8 +19,8 @@ const Estatisticas = () => {
           throw new Error("ID da leitura não informado.");
         }
 
-        const reponse = await api.get(`/stats/reading/${readingId}`);
-       const data = reponse.data;
+        const response = await api.get(`/stats/reading/${readingId}`);
+        const data = response.data;
         console.log("Stats recebidos:", data);
         setStats(data);
       } catch (error) {
@@ -42,39 +43,210 @@ const Estatisticas = () => {
     return `${hours}h ${minutes}min`;
   };
 
-  if (loading) return <p>Carregando estatísticas...</p>;
-  if (erro) return <p>{erro}</p>;
-  if (!stats) return <p>Nenhuma estatística disponível.</p>;
+  if (loading) return <div style={styles.centerMsg}>Carregando estatísticas...</div>;
+  if (erro) return <div style={styles.centerMsg}>{erro}</div>;
+  if (!stats) return <div style={styles.centerMsg}>Nenhuma estatística disponível.</div>;
+
+  const chartData = [
+    { nome: "Páginas lidas", valor: stats.pagesRead ?? 0 },
+    { nome: "Sessões", valor: stats.sessionsCount ?? 0 },
+    { nome: "Streak atual", valor: stats.currentStreakDays ?? 0 },
+    { nome: "Melhor streak", valor: stats.maxStreakDays ?? 0 },
+  ];
+
+  const timeChartData = [
+    { nome: "Tempo total", valor: stats.totalSeconds ?? 0 },
+    { nome: "Média/sessão", valor: Number(stats.averageSecondsPerSession ?? 0) },
+  ];
+
+  const chartColor = "#4F46E5"; // Cor azul/índigo agradável
 
   return (
-    <div style={{ padding: "20px" }}>
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          marginBottom: "20px",
-          padding: "10px 15px",
-          cursor: "pointer",
-          borderRadius: "8px",
-          border: "none",
-          background: "#4CAF50",
-          color: "white"
-        }}
-      >
-        ← Voltar para Home
-      </button>
+    <div style={styles.pageContainer}>
+      <div style={styles.contentWrapper}>
+        
+        <button onClick={() => navigate("/")} style={styles.backButton}>
+          ← Voltar para Home
+        </button>
 
-      <h1>📊 Estatísticas de Leitura</h1>
+        <h1 style={styles.title}>📊 Estatísticas de Leitura</h1>
 
-      <div style={{ display: "grid", gap: "10px", marginTop: "20px" }}>
-        <div>📖 <strong>Páginas lidas:</strong> {stats.pagesRead ?? 0}</div>
-        <div>⏱️ <strong>Tempo total:</strong> {formatTime(stats.totalSeconds)}</div>
-        <div>⚡ <strong>Média por sessão:</strong> {Number(stats.averageSecondsPerSession ?? 0).toFixed(1)}s</div>
-        <div>🔁 <strong>Sessões:</strong> {stats.sessionsCount ?? 0}</div>
-        <div>🔥 <strong>Sequência atual:</strong> {stats.currentStreakDays ?? 0} dias</div>
-        <div>🏆 <strong>Melhor sequência:</strong> {stats.maxStreakDays ?? 0} dias</div>
+        {/* Grid de Cards de Informação */}
+        <div style={styles.gridContainer}>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>📖</span>
+            <span style={styles.statLabel}>Páginas lidas</span>
+            <span style={styles.statValue}>{stats.pagesRead ?? 0}</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>⏱️</span>
+            <span style={styles.statLabel}>Tempo total</span>
+            <span style={styles.statValue}>{formatTime(stats.totalSeconds)}</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>⚡</span>
+            <span style={styles.statLabel}>Média por sessão</span>
+            <span style={styles.statValue}>{Number(stats.averageSecondsPerSession ?? 0).toFixed(1)}s</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>🔁</span>
+            <span style={styles.statLabel}>Sessões</span>
+            <span style={styles.statValue}>{stats.sessionsCount ?? 0}</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>🔥</span>
+            <span style={styles.statLabel}>Sequência atual</span>
+            <span style={styles.statValue}>{stats.currentStreakDays ?? 0} dias</span>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statIcon}>🏆</span>
+            <span style={styles.statLabel}>Melhor sequência</span>
+            <span style={styles.statValue}>{stats.maxStreakDays ?? 0} dias</span>
+          </div>
+        </div>
+
+        {/* Gráfico 1 - Comparativo Geral */}
+        <div style={styles.chartCard}>
+          <h2 style={styles.chartTitle}>Comparativo geral</h2>
+          <div style={styles.chartWrapper}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(79, 70, 229, 0.1)' }} 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                />
+                <Bar 
+                  dataKey="valor" 
+                  fill={chartColor} 
+                  barSize={45} 
+                  radius={[8, 8, 0, 0]} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico 2 - Tempo de Leitura */}
+        <div style={styles.chartCard}>
+          <h2 style={styles.chartTitle}>Tempo de leitura (segundos)</h2>
+          <div style={styles.chartWrapper}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={timeChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(79, 70, 229, 0.1)' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                />
+                <Bar 
+                  dataKey="valor" 
+                  fill="#10B981" /* Verde para diferenciar o segundo gráfico */
+                  barSize={45} 
+                  radius={[8, 8, 0, 0]} 
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
       </div>
     </div>
   );
+};
+
+// Objeto de estilos para limpar o JSX e facilitar a manutenção
+const styles = {
+  pageContainer: {
+    backgroundColor: "#F3F4F6", // Fundo cinza bem claro para destacar os cards brancos
+    minHeight: "100vh",
+    padding: "40px 20px",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  },
+  contentWrapper: {
+    maxWidth: "1000px",
+    margin: "0 auto",
+  },
+  centerMsg: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    fontSize: "1.2rem",
+    color: "#4B5563",
+    backgroundColor: "#F3F4F6",
+  },
+  backButton: {
+    marginBottom: "24px",
+    padding: "10px 16px",
+    cursor: "pointer",
+    borderRadius: "8px",
+    border: "1px solid #D1D5DB",
+    background: "#FFFFFF",
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: "14px",
+    transition: "all 0.2s",
+    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+  },
+  title: {
+    color: "#111827",
+    fontSize: "28px",
+    fontWeight: "bold",
+    marginBottom: "30px",
+  },
+  gridContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: "20px",
+    marginBottom: "40px",
+  },
+  statCard: {
+    backgroundColor: "#FFFFFF",
+    padding: "24px",
+    borderRadius: "16px",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  statIcon: {
+    fontSize: "24px",
+    marginBottom: "12px",
+  },
+  statLabel: {
+    fontSize: "14px",
+    color: "#6B7280",
+    fontWeight: "500",
+    marginBottom: "4px",
+  },
+  statValue: {
+    fontSize: "24px",
+    color: "#111827",
+    fontWeight: "bold",
+  },
+  chartCard: {
+    backgroundColor: "#FFFFFF",
+    padding: "30px",
+    borderRadius: "16px",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    marginBottom: "30px",
+  },
+  chartTitle: {
+    color: "#374151",
+    fontSize: "18px",
+    fontWeight: "600",
+    marginBottom: "20px",
+    borderBottom: "1px solid #F3F4F6",
+    paddingBottom: "15px",
+  },
+  chartWrapper: {
+    width: "100%",
+    height: "350px", // Altura fixa para o gráfico
+  }
 };
 
 export default Estatisticas;
