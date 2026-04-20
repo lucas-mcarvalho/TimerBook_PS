@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSessionsByReadingId, startReading } from '../features/books/readSessions.js'; 
+// 👇 Importando a função getUser
+import { getUser } from '../features/user/userApi.js';
 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
 import homeIcon from '../assets/Home/HomeIcon.svg';
@@ -9,13 +11,18 @@ import ProfileIcon from '../assets/Home/ProfileIcon.svg';
 import ConfigIcon from '../assets/Home/ConfigIcon.svg';
 import MoonIcon from '../assets/Home/MoonIcon.svg';
 import SunIcon from '../assets/Home/SunIcon.svg';
+import '../styles/Sidebar.css';
 
 const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal }) => {
   const navigate = useNavigate();
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const handleReadShortcut = async (book) => {
     try {
-      const readingResponse = await startReading(book.id);
+      const userResponse = await getUser();
+      const userId = userResponse.data?.id || userResponse.id;
+
+      const readingResponse = await startReading(userId, book.id);
       const readingId = readingResponse.id;
       const sessions = await getSessionsByReadingId(readingId);
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
@@ -32,6 +39,12 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
       console.error("Erro ao iniciar leitura pelo atalho:", err);
       alert("Ops! Erro ao tentar abrir o livro: " + err.message);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    navigate("/login"); 
   };
 
   return (
@@ -80,9 +93,22 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           </button>
         )}
         
-        <button className="action-icon-btn">
-          <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button 
+            className="action-icon-btn" 
+            onClick={() => setIsConfigOpen(!isConfigOpen)}
+          >
+            <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
+          </button>
+
+          {isConfigOpen && (
+            <div className="config-popover">
+              <button className="popover-item logout-btn" onClick={handleLogout}>
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
         
         <button className="action-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
           <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />

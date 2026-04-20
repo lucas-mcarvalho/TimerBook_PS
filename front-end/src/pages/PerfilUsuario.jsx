@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getUser } from "../features/user/userApi.js"; 
+import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
 import ProfileIcon from '../assets/Home/ProfileIcon.svg'; 
@@ -14,6 +15,7 @@ export default function PerfilUsuario() {
   });
 
   const [userInfo, setUserInfo] = useState(null);
+  const [books, setBooks] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -23,17 +25,21 @@ export default function PerfilUsuario() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    async function fetchUser() {
+    async function fetchData() {
       try {
         const userData = await getUser();
         setUserInfo(userData.data || userData);
+
+        const booksData = await getBooks();
+        setBooks(booksData);
+
       } catch (err) {
-        console.error("Erro ao carregar perfil:", err);
+        console.error("Erro ao carregar dados do perfil:", err);
       } finally {
         setFetching(false);
       }
     }
-    fetchUser();
+    fetchData();
   }, []);
 
   const handleUpdateSuccess = (updatedData) => {
@@ -45,7 +51,7 @@ export default function PerfilUsuario() {
   if (fetching) {
     return (
       <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
-        <Sidebar menuAtivo="perfil" isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+        <Sidebar menuAtivo="perfil" books={books} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <h2>Carregando perfil...</h2>
         </main>
@@ -55,7 +61,7 @@ export default function PerfilUsuario() {
 
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
-      <Sidebar menuAtivo="perfil" isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+      <Sidebar menuAtivo="perfil" books={books} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
       
       <main className="main-content">
         <h1>Meu Perfil</h1>
