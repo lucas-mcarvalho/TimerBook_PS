@@ -51,12 +51,11 @@ public interface UserControllerDocs {
 
     @Operation(summary = "Atualizar usuário")
     public ResponseEntity<User> update(
-            @Parameter(description = "ID do usuário", example = "1")
             @PathVariable Long id,
-
             @RequestPart("username") String username,
             @RequestPart("email") String email,
-            @RequestPart(value = "photo", required = false) MultipartFile photo);
+            @RequestPart(value = "photo", required = false) MultipartFile photo,
+            @RequestPart(value = "removePhoto", required = false) String removePhotoStr);
 
 
     @Operation(summary = "Deletar usuário")

@@ -70,8 +70,8 @@ export default function PerfilUsuario() {
                 <img 
                   src={
                     (userInfo?.photopath || userInfo?.photo) 
-                      ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}` 
-                      : ProfileIcon
+                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}?t=${Date.now()}` 
+                    : ProfileIcon
                   } 
                   alt="Foto" 
                   className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}

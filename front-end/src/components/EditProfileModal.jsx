@@ -18,8 +18,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
         email: userInfo.email || ""
       });
       const photoPath = userInfo.photopath || userInfo.photo;
-      setPhotoPreview(photoPath ? `http://localhost:8080/${photoPath}` : null);
-      
+      setPhotoPreview(photoPath ? `http://localhost:8080/${photoPath}?t=${Date.now()}` : null);
       setPhotoFile(null);
       setRemovePhotoFlag(false);
       setError(null);

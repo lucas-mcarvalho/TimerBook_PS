@@ -13,7 +13,8 @@ public class UserDTO {
     private String password;
     @Schema(description = "Foto do usuário")
     private MultipartFile photopath;
-
+    @Schema(description = "Verifica se tem foto")
+    private Boolean  removePhoto;
 
     public String getUsername() {
         return username;
@@ -45,5 +46,13 @@ public class UserDTO {
 
     public void setPhotopath(MultipartFile photopath) {
         this.photopath = photopath;
+    }
+
+    public Boolean getRemovePhoto() {
+        return removePhoto;
+    }
+
+    public void setRemovePhoto(Boolean removePhoto) {
+        this.removePhoto = removePhoto;
     }
 }
