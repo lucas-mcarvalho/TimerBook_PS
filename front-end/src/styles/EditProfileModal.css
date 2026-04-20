@@ -1,0 +1,39 @@
+.profile-modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: #888;
+    cursor: pointer;
+}
+
+.profile-upload-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 220px;
+}
+
+.profile-upload-box {
+    width: 180px !important;
+    height: 180px !important;
+    border-radius: 12px !important;
+    background: linear-gradient(to bottom, #e8e8e8, #cfcfcf);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.profile-upload-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dark-theme .profile-upload-box {
+    background: linear-gradient(to bottom, #1e2f4c, #121e31);
+}
+
