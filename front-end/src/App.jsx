@@ -14,13 +14,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/leitor" element={<Leitor />} />
         <Route path="/cadastrar-livro" element={<Cadastrar_Livro />} />
         <Route path="/meus-livros" element={<UserLibrary />} />
         <Route path="/minhas-estatisticas" element={<ReadingStatsPage />} />
         <Route path="/estatisticas/:readingId" element={<Estatisticas />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
         <Route path="/perfil" element={<PerfilUsuario />} />

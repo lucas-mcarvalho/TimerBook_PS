@@ -63,7 +63,7 @@ export default function Login() {
     try {
       await loginUser(formData.email, formData.password);
       setSuccess(true);
-      navigate('/');
+      navigate('/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {

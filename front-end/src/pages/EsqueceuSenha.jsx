@@ -91,7 +91,7 @@ export default function EsqueceuSenha() {
             </button>
 
             <div className="form-footer-links">
-              <a href="/login">Voltar para o Login</a>
+              <a href="/">Voltar para o Login</a>
             </div>
           </form>
 

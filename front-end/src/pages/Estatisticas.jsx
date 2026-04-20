@@ -65,8 +65,8 @@ const Estatisticas = () => {
     <div style={styles.pageContainer}>
       <div style={styles.contentWrapper}>
         
-        <button onClick={() => navigate("/")} style={styles.backButton}>
-          ← Voltar para Home
+        <button onClick={() => navigate("/meus-livros")} style={styles.backButton}>
+          ← Voltar
         </button>
 
         <h1 style={styles.title}>📊 Estatísticas de Leitura</h1>

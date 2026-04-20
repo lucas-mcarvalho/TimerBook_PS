@@ -65,7 +65,7 @@ export default function RedefinirSenha() {
     try {
       await passwordRecoveryService.resetPassword(token, formData.password);
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Erro ao redefinir a senha.");
     } finally {
@@ -192,7 +192,7 @@ export default function RedefinirSenha() {
             </button>
 
             <div className="form-footer-links">
-              <a href="/login">Voltar para o Login</a>
+              <a href="/">Voltar para o Login</a>
             </div>
 
           </form>

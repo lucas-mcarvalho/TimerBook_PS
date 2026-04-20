@@ -44,7 +44,7 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
-    navigate("/login"); 
+    navigate("/"); 
   };
 
   return (
@@ -55,7 +55,7 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
       </div>
       
       <nav className="sidebar-nav">
-        <Link to="/" className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}>
+        <Link to="/home" className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}>
           <img src={homeIcon} alt="Início" className="nav-icon" /> Início
         </Link>
         

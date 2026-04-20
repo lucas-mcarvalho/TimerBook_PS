@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { registerUser } from "../features/auth/user.js";
+import { useNavigate} from "react-router-dom";
 
 import TimerBookLogo from "../assets/Home/TimerbookLogo.svg";
 
@@ -7,7 +8,10 @@ import "../styles/Login.css";
 import "../styles/LoginLight.css";
 import "../styles/HomeDark.css";
 
+
+
 export default function CadastrarUsuario() {
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem("timerbook-theme");
     return saved === "dark";
@@ -32,6 +36,7 @@ export default function CadastrarUsuario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (loading) return;
 
     setError(null);
@@ -40,12 +45,13 @@ export default function CadastrarUsuario() {
     // 🔴 validação de senha
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem.");
-      return;
+      return; 
     }
 
     setLoading(true);
 
     try {
+      
       await registerUser(
         formData.username,
         formData.email,
@@ -62,6 +68,8 @@ export default function CadastrarUsuario() {
         confirmPassword: "",
         photo: null,
       });
+      navigate("/");
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar usuário");
     } finally {
@@ -154,12 +162,13 @@ export default function CadastrarUsuario() {
               style={{ width: "100%", marginTop: "25px" }}
             >
               {loading ? "Cadastrando..." : "Cadastrar"}
+
             </button>
 
           </form>
 
           <div className="form-footer-links">
-            <a href="/login">Já tenho uma conta</a>
+            <a href="/">Já tenho uma conta</a>
           </div>
 
         </div>

@@ -35,7 +35,7 @@ export default function Leitor() {
     try {
       await endReadingSession(sessionId, currentPage);
       alert("Sessão de leitura encerrada!");
-      navigate("/");
+      navigate("/meus-livros");
     } catch (err) {
       alert("Erro ao encerrar sessão: " + err.message);
     } finally {
@@ -47,7 +47,7 @@ export default function Leitor() {
   if (!book) {
     return (
       <div>
-        <Link to="/">Voltar</Link>
+        <Link to="/home">Voltar</Link>
         <p>Livro não encontrado.</p>
       </div>
     );
