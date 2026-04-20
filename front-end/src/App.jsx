@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import CadastrarUsuario from "./pages/CadastrarUsuario";
 import EsqueceuSenha from "./pages/EsqueceuSenha";
 import PerfilUsuario from "./pages/PerfilUsuario";
-
+import RedefinirSenha from "./pages/RedefinirSenha";
 function App() {
   return (
     <BrowserRouter>
@@ -24,6 +24,7 @@ function App() {
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
       </Routes>
     </BrowserRouter>  
   );

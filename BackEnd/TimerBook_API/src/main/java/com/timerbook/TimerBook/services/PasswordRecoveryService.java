@@ -35,11 +35,12 @@ public class PasswordRecoveryService {
         tokenEntity.setExpiresAt(LocalDateTime.now().plusMinutes(2));
 
         tokenRepository.save(tokenEntity);
+        String linkRecuperacao = "http://localhost:5173/redefinir-senha?token=" + generatedToken;
 
         EmailRequestDTO emailRequest = new EmailRequestDTO();
         emailRequest.setTo(email);
         emailRequest.setSubject("Recuperação de Senha - TimerBook");
-        emailRequest.setMessage("Olá! Você solicitou a recuperação de senha. \n\nSeu token é: " + generatedToken);
+        emailRequest.setMessage("Olá! Você solicitou a recuperação de senha. \n\nclique no link e redefina a senha: "+linkRecuperacao);
         emailService.sendEmail(emailRequest);
     }
 

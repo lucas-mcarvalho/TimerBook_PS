@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-
+import { useState } from "react";
+// Importe o serviço do Axios que criamos (ajuste o caminho se necessário)
+import { passwordRecoveryService } from "../features/auth/passwordRecoveryService.js";
 export default function EsqueceuSenha() {
   const [formData, setFormData] = useState({
     email: "",
@@ -7,7 +8,7 @@ export default function EsqueceuSenha() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(null); // Guardará a mensagem de sucesso
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -20,14 +21,16 @@ export default function EsqueceuSenha() {
 
     setLoading(true);
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
 
     try {
-      await resetPassword(formData.email);
-      setSuccess(true);
-      setFormData({ email: "" });
+      // Chama a função do Axios passando o email
+      const response = await passwordRecoveryService.requestRecovery(formData.email);
+      setSuccess(response.message || "E-mail de recuperação enviado com sucesso!");
+      setFormData({ email: "" }); // Limpa o input após o envio
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao solicitar recuperação");
+      // Pega a mensagem de erro do backend ou exibe uma genérica
+      setError(err.response?.data?.message || "Erro ao solicitar recuperação. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -37,8 +40,9 @@ export default function EsqueceuSenha() {
     <div>
       <h1>Recuperar Senha</h1>
 
-      {success && <div>Link de recuperação enviado para o seu email</div>}
-      {error && <div>X {error}</div>}
+      {/* Mesma estrutura de feedback visual do seu Login */}
+      {success && <div style={{ color: 'green' }}>V {success}</div>}
+      {error && <div style={{ color: 'red' }}>X {error}</div>}
 
       <form>
         <div>
@@ -53,14 +57,14 @@ export default function EsqueceuSenha() {
         </div>
 
         <br />
-        <a href="#" onClick={handleSubmit}>
-          {loading ? "Enviando..." : "Enviar link de recuperação"}
-        </a>
+        <button type="submit" onClick={handleSubmit} disabled={loading}>
+          {loading ? "Enviando aguarde..." : "Enviar link de recuperação"}
+        </button>
       </form>
 
       <br />
       <div>
-        <a href="/login">Voltar ao Login</a>
+        <a href="/login">Voltar para o Login</a>
       </div>
     </div>
   );

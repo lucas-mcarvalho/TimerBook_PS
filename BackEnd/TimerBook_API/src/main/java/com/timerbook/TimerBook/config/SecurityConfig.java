@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/register").permitAll()
                         .requestMatchers("/api-docs/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/book/**").hasRole("USER")
+                        .requestMatchers("/forgot/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
