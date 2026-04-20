@@ -22,6 +22,8 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private TokenService tokenService;
 
 
     @Transactional
@@ -82,5 +84,17 @@ public class UserService {
     }
 
 
-
+    public User getMe(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido ou ausente");
+        }
+        String token = authHeader.replace("Bearer ", "");
+        var decoded = tokenService.validateAndDecodeToken(token);
+        if (decoded == null) {
+            throw new RuntimeException("Token inválido");
+        }
+        String email = decoded.getSubject();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
 }

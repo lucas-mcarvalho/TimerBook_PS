@@ -24,15 +24,6 @@ public class ReadingDTO {
         this.finishedAt = reading.getFinishedAt();
 
 
-        if (reading.getBook() != null) {
-            this.bookId = reading.getBook().getId();
-            this.bookName = reading.getBook().getName();
-        }
-
-
-        if (reading.getUser() != null) {
-            this.userId = reading.getUser().getId();
-        }
     }
 
 

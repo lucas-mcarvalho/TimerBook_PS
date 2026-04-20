@@ -6,6 +6,7 @@ import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import api from "../features/axiosApi.js"
 
 export default function Leitor() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Leitor() {
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const PAGE_RANGE = 2;
+  const [pdfUrlObject, setPdfUrlObject] = useState(null);
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -58,19 +60,22 @@ export default function Leitor() {
 
   // Carrega o PDF ao montar o componente
   useEffect(() => {
-    const loadPDF = async () => {
-      try {
-        const response = await fetch(pdfUrl);
-        const blob = await response.blob();
-        setPdfFile(blob);
-      } catch (error) {
-        console.error("Erro ao carregar PDF:", error);
-      }
-    };
-    if (pdfUrl) {
-      loadPDF();
+  const loadPDF = async () => {
+    try {
+      const response = await api.get(`/${book.dataPath}`, {
+        responseType: "blob",
+      });
+      console.log("PDF carregado do backend:", response);
+      setPdfFile(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar PDF:", error);
     }
-  }, [pdfUrl]);
+  };
+
+  if (book?.dataPath) {
+    loadPDF();
+  }
+}, [book]);
 
   // Extrai range de páginas quando a página atual muda
   useEffect(() => {
@@ -117,32 +122,34 @@ export default function Leitor() {
       <div className="flex-1 h-full flex flex-col p-4 md:p-8">
 
         <header className="mb-4">
-          <Link to="/" className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block">
+         <Link
+            to="/"
+            onClick={async (e) => {
+              e.preventDefault(); // impede navegação automática
+              await handleEndSession(); // executa sua lógica
+            }}
+            className="text-blue-400 hover:text-blue-300 mb-2 start-0 inline-block"
+          >
             ← Voltar
-          </Link>
+        </Link>
           <h1 className="text-3xl font-bold">Leitor de PDF</h1>
         </header>
 
         {/* Caixa escura do Livro */}
         <div className="flex-1 bg-[#14233c] rounded-xl border border-white/10 flex flex-col overflow-hidden">
-          <div className="p-3 border-b border-white/10 bg-[#1a2c4e] flex items-center justify-between">
+          <div className="p-3 border-b border-white/10 bg-[#1a2c4e]">
             <h2 className="text-lg font-semibold">Livro</h2>
-            {sessionId && (
-              <button
-                onClick={handleEndSession}
-                disabled={endingSession}
-                className="ml-4 px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-xs disabled:bg-gray-700 disabled:cursor-not-allowed transition"
-              >
-                {endingSession ? "Encerrando..." : "Encerrar sessão de leitura"}
-              </button>
-            )}
           </div>
+          
           <div className="flex-1 overflow-auto p-4 flex justify-center">
-            <PdfViewer
-              file={pdfFile}
-              initialPage={initialPage}
-              onPageChange={setCurrentPage}
-            />
+            {pdfFile ? (
+                <PdfViewer
+                  file={pdfFile}
+                  onPageChange={setCurrentPage}
+                />
+              ) : (
+                <p>Carregando PDF...</p>
+              )}
           </div>
         </div>
 

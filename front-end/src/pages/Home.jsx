@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getBooks } from "../features/books/booksApi.js"; 
+import {getUser} from "../features/user/userApi.js";
 
 import '../styles/Layout.css'; 
 import '../styles/Waves.css'; 
@@ -16,6 +17,7 @@ const Home = () => {
     const savedTheme = localStorage.getItem('timerbook-theme');
     return savedTheme === 'dark';
   });
+  
 
   useEffect(() => {
     localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
@@ -24,6 +26,8 @@ const Home = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
+        const userData = await getUser();
+      
         const booksData = await getBooks();
         setBooks(booksData);
       } catch (err) {

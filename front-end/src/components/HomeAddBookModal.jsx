@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
+import {getUser} from "../features/user/userApi.js";
 
 const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
   const [newName, setNewName] = useState('');
@@ -44,15 +45,21 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
   }, [coverPreviewUrl]);
 
   const pdfViewer = useMemo(() => {
-    if (!pdfPreviewUrl) return null;
-    return (
-      <iframe 
-        src={`${pdfPreviewUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
-        style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', pointerEvents: 'none' }} 
-        title="PDF Preview" 
-      />
-    );
-  }, [pdfPreviewUrl]);
+  if (!pdfPreviewUrl) return null;
+  return (
+    <embed 
+      src={pdfPreviewUrl}
+      type="application/pdf"
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        border: 'none', 
+        borderRadius: '8px', 
+        pointerEvents: 'none' 
+      }} 
+    />
+  );
+}, [pdfPreviewUrl]);  
 
   if (!isOpen) return null;
 
@@ -63,8 +70,13 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
     setIsLoading(true);
 
     try {
+      const response = await getUser();
+      const userId = response.data.id;
+      console.log("ID do usuário obtido:", userId);
+      console.log("Dados do livro a registrar:", { name: newName, description: newDescription, coverFile, pdfFile });
       const bookData = { name: newName, description: newDescription };
       const savedBookFromServer = await registerBook(
+        userId,
         bookData, 
         coverFile || undefined, 
         pdfFile || undefined
