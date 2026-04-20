@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getBooks } from "../features/books/booksApi.js"; 
-import {getUser} from "../features/user/userApi.js";
+import { getUser } from "../features/user/userApi.js";
 
 import '../styles/Layout.css'; 
 import '../styles/Waves.css'; 
@@ -12,30 +12,31 @@ import ProfileIcon from '../assets/Home/ProfileIcon.svg';
 
 const Home = () => {
   const [books, setBooks] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
     return savedTheme === 'dark';
   });
-  
 
   useEffect(() => {
     localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchDados = async () => {
       try {
         const userData = await getUser();
-      
+        setUserInfo(userData.data || userData);
+        
         const booksData = await getBooks();
         setBooks(booksData);
       } catch (err) {
-        console.error("Erro ao carregar livros na Home:", err);
+        console.error("Erro ao carregar dados na Home:", err);
       }
     };
 
-    fetchBooks();
+    fetchDados();
   }, []);
 
   return (
@@ -76,12 +77,29 @@ const Home = () => {
 
         <div className="welcome-content-wrapper">
           <div className="welcome-header">
+            
             <div className="profile-image-container">
-              <img src={ProfileIcon} alt="Foto de Perfil" className="profile-image-default" />
+              <img 
+                src={
+                  (userInfo?.photopath || userInfo?.photo) 
+                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}` 
+                    : ProfileIcon
+                } 
+                alt="Foto de Perfil" 
+                className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                onError={(e) => {
+                  e.target.onerror = null; 
+                  e.target.src = ProfileIcon;
+                  e.target.className = "profile-image-default";
+                }}
+              />
             </div>
             
             <h1 className="welcome-title">Bem-vindo de volta!</h1>
-            <p className="welcome-subtitle">Usuário</p>
+            
+            <p className="welcome-subtitle">
+              {userInfo?.username || "Usuário"}
+            </p>
           </div>
 
           <div className="welcome-actions">
