@@ -55,14 +55,18 @@ public class UserService {
     public User update(Long id, UserDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-
         if (dto.getPhotopath() != null && !dto.getPhotopath().isEmpty()) {
-            fileStorageService.deleteFile(user.getPhotopath()); // deleta a antiga
-            String newPhotoPath = fileStorageService.storeFile(dto.getPhotopath(), "users");
-            user.setPhotopath(newPhotoPath);
+            if (user.getPhotopath() != null) {
+                fileStorageService.deleteFile(user.getPhotopath());
+            }
+            user.setPhotopath(fileStorageService.storeFile(dto.getPhotopath(), "users"));
         }
-
+        else if (Boolean.TRUE.equals(dto.getRemovePhoto())) {
+            if (user.getPhotopath() != null) {
+                fileStorageService.deleteFile(user.getPhotopath());
+            }
+            user.setPhotopath(null);
+        }
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
 

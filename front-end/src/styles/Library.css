@@ -205,3 +205,26 @@
 .btn-delete-card {
     background-color: #ff4757; 
 }
+
+.btn-stats {
+    background-color: #e0e0e0;
+    color: #1a1a1a;
+    border-radius: 12px;
+    height: 45px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    width: 100%; 
+    margin-top: 10px;
+}
+
+.dark-theme .btn-stats {
+    background-color: #2b497f;
+    color: #ffffff;
+}

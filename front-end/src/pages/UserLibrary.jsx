@@ -55,7 +55,7 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onOpenStats(book.id); }}
-          style={{ marginTop: 10, width: '100%', background: '#2d89ef', color: '#fff', padding: '8px 0', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer' }}
+          className="btn-stats"
         >
           Ver estatísticas
         </button>

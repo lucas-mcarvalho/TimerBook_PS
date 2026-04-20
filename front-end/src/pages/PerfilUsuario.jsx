@@ -1,124 +1,131 @@
 import { useState, useEffect } from "react";
+// 👇 NOVO: Importando o useNavigate para fazer o redirecionamento
+import { useNavigate } from "react-router-dom"; 
+import { getUser } from "../features/user/userApi.js"; 
+import { getBooks } from "../features/books/booksApi.js"; 
+import Sidebar from '../components/Sidebar';
+import EditProfileModal from '../components/EditProfileModal';
+import ProfileIcon from '../assets/Home/ProfileIcon.svg'; 
+
+import "../styles/PerfilUsuario.css";
+import '../styles/Layout.css'; 
 
 export default function PerfilUsuario() {
-  const [userInfo, setUserInfo] = useState(null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    username: "",
-    email: "",
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('timerbook-theme');
+    return savedTheme === 'dark';
   });
 
-  const [loading, setLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [books, setBooks] = useState([]);
   const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  
+  // 👇 NOVO: Inicializando o navigate
+  const navigate = useNavigate(); 
 
   useEffect(() => {
-    async function fetchUser() {
+    localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    async function fetchData() {
       try {
-        const userData = await getProfile();
-        setUserInfo(userData);
-        setFormData({ 
-          name: userData.name || "", 
-          username: userData.username || "",
-          email: userData.email || "" 
-        });
+        const userData = await getUser();
+        setUserInfo(userData.data || userData);
+
+        const booksData = await getBooks();
+        setBooks(booksData);
+
       } catch (err) {
-        setError("Erro ao carregar dados do usuário");
+        console.error("Erro ao carregar dados do perfil:", err);
       } finally {
         setFetching(false);
       }
     }
-    fetchUser();
+    fetchData();
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleUpdateSuccess = (updatedData) => {
+    setUserInfo((prev) => ({ ...prev, ...updatedData }));
+    setSuccessMessage("Perfil atualizado com sucesso!");
+    setTimeout(() => setSuccessMessage(""), 4000); 
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (loading) return;
-
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      await updateProfile(formData);
-      setSuccess(true);
-      setUserInfo(formData); 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar perfil");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (fetching) return <div>Carregando perfil...</div>;
+  if (fetching) {
+    return (
+      <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+        <Sidebar menuAtivo="perfil" books={books} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+        <main className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <h2>Carregando perfil...</h2>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1>Meu Perfil</h1>
-
-      {success && <div>Perfil atualizado com sucesso!</div>}
-      {error && <div>X {error}</div>}
-
-      {userInfo && (
-        <div style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ccc" }}>
-          <h2>Informações da Conta</h2>
-          <p><strong>Nome:</strong> {userInfo.name}</p>
-          <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
-          <p><strong>Email:</strong> {userInfo.email}</p>
-        </div>
-      )}
-
-      <form>
-        <div>
-          <label>Nome</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <label>Nome de Usuário</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <br />
-        <a href="#" onClick={handleSubmit}>
-          {loading ? "Salvando..." : "Salvar Alterações"}
-        </a>
-      </form>
+    <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+      <Sidebar menuAtivo="perfil" books={books} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
       
-      <br />
-      <div>
-        <a href="/">Voltar para Home</a>
-      </div>
+      <main className="main-content">
+        <h1>Meu Perfil</h1>
+
+        <div className="profile-container">
+          {successMessage && <div className="status-message status-success">✓ {successMessage}</div>}
+
+          {userInfo && (
+            <div className="info-card">
+              
+              <div className="profile-image-container">
+                <img 
+                  src={
+                    (userInfo?.photopath || userInfo?.photo) 
+                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}?t=${Date.now()}` 
+                    : ProfileIcon
+                  } 
+                  alt="Foto" 
+                  className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = ProfileIcon;
+                    e.target.className = "profile-image-default";
+                  }}
+                />
+              </div>
+
+              <div className="profile-details">
+                <h2>Informações da Conta</h2>
+                <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
+                <p><strong>Email:</strong> {userInfo.email}</p>
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        {/* 👇 MODIFICADO: Adicionado gap para separar os botões e o novo botão de senha */}
+        <div className="bottom-actions" style={{ display: 'flex', gap: '15px' }}>
+          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
+            Editar Perfil
+          </button>
+          
+          <button 
+            className="btn-secondary" 
+            onClick={() => navigate('/esqueceu-senha')}
+          >
+            Redefinir Senha
+          </button>
+        </div>
+        
+      </main>
+
+      <EditProfileModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        userInfo={userInfo}
+        onUpdateSuccess={handleUpdateSuccess}
+      />
     </div>
   );
 }
