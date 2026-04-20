@@ -1,11 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { registerUser } from "../features/auth/user.js";
+
+import TimerBookLogo from "../assets/Home/TimerbookLogo.svg";
+
+import "../styles/Login.css";
+import "../styles/LoginLight.css";
+import "../styles/HomeDark.css";
+
 export default function CadastrarUsuario() {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem("timerbook-theme");
+    return saved === "dark";
+  });
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
-    photo: null
+    confirmPassword: "",
+    photo: null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -21,20 +34,34 @@ export default function CadastrarUsuario() {
     e.preventDefault();
     if (loading) return;
 
-    setLoading(true);
     setError(null);
     setSuccess(false);
 
+    // 🔴 validação de senha
+    if (formData.password !== formData.confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-       
       await registerUser(
         formData.username,
         formData.email,
         formData.password,
         formData.photo
       );
+
       setSuccess(true);
-      setFormData({ username: "", email: "", password: "", photo: null });
+
+      setFormData({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        photo: null,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar usuário");
     } finally {
@@ -43,57 +70,101 @@ export default function CadastrarUsuario() {
   };
 
   return (
-    <div>
-      <h1>Cadastrar Usuário</h1>
+    <div className={`login-container ${isDarkMode ? "dark-theme" : "light-theme"}`}>
 
-      {success && <div>Usuário cadastrado com sucesso</div>}
-      {error && <div>X {error}</div>}
+      <div className="form-block">
+        <div className="login-form-card">
 
-      <form>
-        <div>
-          <label>Username*</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            required
-          />
+          {/* LOGO */}
+          <div className="logo-block">
+            <img src={TimerBookLogo} alt="TimerBook" />
+            <h1>TimerBook</h1>
+          </div>
+
+          <p className="welcome-text">Crie sua conta</p>
+
+          {/* MENSAGENS */}
+          {success && (
+            <div className="status-message status-success">
+              ✓ Conta criada com sucesso!
+            </div>
+          )}
+
+          {error && (
+            <div className="status-message status-error">
+              ✗ {error}
+            </div>
+          )}
+
+          {/* FORM */}
+          <form className="profile-form" onSubmit={handleSubmit}>
+
+            <div className="form-group">
+              <label>Username</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                required
+                placeholder="Seu nome"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginTop: "15px" }}>
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                placeholder="seu@email.com"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginTop: "15px" }}>
+              <label>Senha</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginTop: "15px" }}>
+              <label>Confirmar senha</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+                placeholder="Repita a senha"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className={`btn-concluir ${loading ? "disabled" : ""}`}
+              disabled={loading}
+              style={{ width: "100%", marginTop: "25px" }}
+            >
+              {loading ? "Cadastrando..." : "Cadastrar"}
+            </button>
+
+          </form>
+
+          <div className="form-footer-links">
+            <a href="/login">Já tenho uma conta</a>
+          </div>
+
         </div>
-
-        <div>
-          <label>Email *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div>
-          <label>Senha *</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-      
-
-        <br />
-        <button type="submit" disabled={loading} onClick={handleSubmit}>
-          {loading ? "Cadastrando..." : "Cadastrar"}
-        </button>
-      </form>
-
-      <br />
-      <div>
-        <a href="/login">Já tenho uma conta</a>
       </div>
+
     </div>
   );
 }

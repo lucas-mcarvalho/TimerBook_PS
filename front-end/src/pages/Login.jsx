@@ -17,6 +17,8 @@ export default function Login() {
     return savedTheme === 'dark';
   });
 
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
   useEffect(() => {
     localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
@@ -104,18 +106,50 @@ export default function Login() {
               />
             </div>
 
+            {/* SENHA */}
             <div className="form-group" style={{ marginTop: '20px' }}>
               <label>Senha</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                required
-                placeholder="Sua senha"
-              />
+
+              <div style={{ position: "relative" }}>
+                <input
+                  type={mostrarSenha ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  required
+                  placeholder="Sua senha"
+                  style={{ width: "100%", paddingRight: "40px" }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  {mostrarSenha ? (
+                    // OLHO FECHADO
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
+                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12C1.68 10.82 2.61 9.73 3.74 8.86M9.9 4.24A10.94 10.94 0 0 1 12 5C17 5 21.27 8.89 23 12C22.35 13.11 21.5 14.14 20.5 15.03M1 1L23 23" />
+                    </svg>
+                  ) : (
+                    // OLHO ABERTO
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
+                      <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <button 
