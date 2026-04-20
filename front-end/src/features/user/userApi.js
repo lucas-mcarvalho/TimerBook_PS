@@ -12,13 +12,17 @@ export const getUser = async () => {
     
 }
 
-export const updateProfile = async (userId, userData, photoFile) => {
+export const updateProfile = async (userId, userData, photoFile, removePhotoFlag) => {
     const formData = new FormData();
     formData.append("username", userData.username);
     formData.append("email", userData.email);
 
     if (photoFile) {
         formData.append("photo", photoFile);
+    }
+
+    if (removePhotoFlag) {
+        formData.append("removePhoto", "true");
     }
 
     try {

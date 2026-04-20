@@ -37,3 +37,29 @@
     background: linear-gradient(to bottom, #1e2f4c, #121e31);
 }
 
+/* Restante do seu CSS existente... */
+
+.btn-remove-photo {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: rgba(220, 53, 69, 0.85);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-remove-photo:hover {
+    background-color: rgb(220, 53, 69);
+    transform: scale(1.1);
+}

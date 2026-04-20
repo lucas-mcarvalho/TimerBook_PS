@@ -7,6 +7,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
   const [formData, setFormData] = useState({ username: "", email: "" });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [removePhotoFlag, setRemovePhotoFlag] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -20,6 +21,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
       setPhotoPreview(photoPath ? `http://localhost:8080/${photoPath}` : null);
       
       setPhotoFile(null);
+      setRemovePhotoFlag(false);
       setError(null);
     }
   }, [userInfo, isOpen]);
@@ -41,11 +43,12 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
     setError(null);
 
     try {
-      const response = await updateProfile(userId, formData, photoFile);
+      const response = await updateProfile(userId, formData, photoFile, removePhotoFlag);
       
       onUpdateSuccess({ 
         ...formData, 
-        photo: response.photopath || userInfo.photopath 
+        photopath: (removePhotoFlag && !photoFile) ? null : (response.photopath || userInfo.photopath),
+        photo: (removePhotoFlag && !photoFile) ? null : (response.photopath || userInfo.photopath)
       }); 
       
       onClose(); 
@@ -95,7 +98,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
             <div className="modal-uploads-col profile-upload-col">
               <div className="upload-section">
                 <label>Foto de Perfil</label>
-                <div className="upload-box profile-upload-box" style={{ cursor: 'pointer' }}>
+                <div className="upload-box profile-upload-box" style={{ cursor: 'pointer', position: 'relative' }}>
                   <input 
                     type="file" 
                     className="file-input-hidden" 
@@ -105,19 +108,35 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
                       if (file) {
                         setPhotoFile(file);
                         setPhotoPreview(URL.createObjectURL(file));
+                        setRemovePhotoFlag(false);
                       }
                     }} 
                   />
                   {photoPreview ? (
-                    <img 
-                      src={photoPreview} 
-                      alt="Preview" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        setPhotoPreview(null);
-                      }}
-                    />
+                    <>
+                      <img 
+                        src={photoPreview} 
+                        alt="Preview" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          setPhotoPreview(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn-remove-photo"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPhotoFile(null);
+                          setPhotoPreview(null);
+                          setRemovePhotoFlag(true);
+                        }}
+                      >
+                        &times;
+                      </button>
+                    </>
                   ) : (
                     <span>Upload</span>
                   )}
