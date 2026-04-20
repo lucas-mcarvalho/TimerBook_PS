@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js";
+import api from "../features/axiosApi.js";
 
 const Estatisticas = () => {
   const [stats, setStats] = useState(null);
@@ -17,7 +18,8 @@ const Estatisticas = () => {
           throw new Error("ID da leitura não informado.");
         }
 
-        const data = await getReadingStatsByReadingId(Number(readingId));
+        const reponse = await api.get(`/stats/reading/${readingId}`);
+       const data = reponse.data;
         console.log("Stats recebidos:", data);
         setStats(data);
       } catch (error) {
