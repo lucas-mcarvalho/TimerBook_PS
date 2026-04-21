@@ -1,9 +1,15 @@
-FROM eclipse-temurin:21-jdk AS builder
+FROM maven:3.9.9-eclipse-temurin-21 AS builder
 WORKDIR /app
-COPY . .
-RUN apt-get update && apt-get install -y maven
+
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:21-jdk
-COPY --from=builder /app/target/*.jar library-0.0.1-SNAPSHOT.jar
-ENTRYPOINT ["java","-jar","/library-0.0.1-SNAPSHOT.jar"]
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+ENTRYPOINT ["java","-jar","app.jar"]

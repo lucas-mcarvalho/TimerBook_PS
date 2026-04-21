@@ -5,6 +5,7 @@ import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.models.ReadingSession;
 import com.timerbook.TimerBook.repository.ReadingRepository;
 import com.timerbook.TimerBook.repository.ReadingSessionRepository;
+import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,10 @@ import java.util.stream.Collectors;
 public class ReadingStatsService {
     @Autowired
     private ReadingSessionRepository readingSessionRepository;
+
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ReadingRepository readingRepository;
@@ -79,7 +84,12 @@ public class ReadingStatsService {
         readingSessionRepository.deleteById(sessionId);
     }
 
-    public ReadingStatsDTO getStatsForReading(Long readingId, LocalDateTime start, LocalDateTime end, boolean includeOnGoingSessions) {
+    public ReadingStatsDTO getStatsForReading(Long userId,Long readingId, LocalDateTime start, LocalDateTime end, boolean includeOnGoingSessions) {
+        Optional<Reading> optReading = readingRepository.findById(readingId);
+        if (optReading.isEmpty() || !optReading.get().getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Leitura não encontrada ou você não tem permissão para acessá-la.");
+        }
+
         if (start == null) {
             start = LocalDateTime.of(2010, 1, 1, 0, 0);
         }
@@ -121,10 +131,10 @@ public class ReadingStatsService {
 
     }
 
-    public List<Reading> getReadingsInProgress() {
+    public List<Reading> getReadingsInProgress(Long userId) {
         return readingRepository.findAll()
                 .stream()
-                .filter(r -> r.getFinishedAt() == null)
+                .filter(r -> r.getFinishedAt() == null && r.getUser().getId().equals(userId))
                 .collect(Collectors.toList());
     }
 

@@ -5,9 +5,11 @@ import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.models.ReadingSession;
+import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.BookRepository;
 import com.timerbook.TimerBook.repository.ReadingRepository;
 import com.timerbook.TimerBook.repository.ReadingSessionRepository;
+import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -16,6 +18,7 @@ import java.util.Optional;
 
 @Service
 public class ReadingService {
+
     @Autowired
     private ReadingRepository readingRepository;
 
@@ -23,9 +26,16 @@ public class ReadingService {
     private BookRepository bookRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ReadingSessionRepository readingSessionRepository;
 
-    public Reading initializeReading(InitReadingDTO dto) {
+    public Reading initializeReading(Long userId, InitReadingDTO dto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
         Optional<Book> book = bookRepository.findById(dto.getBookId());
         if (book.isEmpty()) {
             throw new IllegalArgumentException("Livro não encontrado");
@@ -33,7 +43,8 @@ public class ReadingService {
 
         Integer startPage = dto.getStartPage() != null ? dto.getStartPage() : 0;
 
-        Optional<Reading> activeReadingOpt = readingRepository.findByBookIdAndFinishedAtIsNull(dto.getBookId());
+        Optional<Reading> activeReadingOpt = readingRepository
+                .findByBookIdAndUserIdAndFinishedAtIsNull(dto.getBookId(), userId);
 
         Reading reading;
 
@@ -44,6 +55,7 @@ public class ReadingService {
         } else {
             reading = new Reading();
             reading.setBook(book.get());
+            reading.setUser(user);
             reading.setCurrentPage(startPage);
             reading.setStartedAt(LocalDateTime.now());
             reading.setFinishedAt(null);
@@ -61,38 +73,34 @@ public class ReadingService {
 
         return reading;
     }
-    public Reading finishReading(Long readingId, FinishReadingDTO dto) {
-        Optional<Reading> reading = readingRepository.findById(readingId);
-        if (reading.isEmpty()) {
-            throw new IllegalArgumentException("Leitura não encontrada");
+
+    public Reading finishReading(Long userId, Long readingId, FinishReadingDTO dto) {
+        Reading readingEntity = readingRepository.findById(readingId)
+                .orElseThrow(() -> new IllegalArgumentException("Leitura não encontrada"));
+
+        if (!readingEntity.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Você não tem permissão para finalizar esta leitura");
         }
 
-        Reading readingEntity = reading.get();
         if (dto.getFinalPage() != null) {
             readingEntity.setCurrentPage(dto.getFinalPage());
         }
+
         readingEntity.setFinishedAt(LocalDateTime.now());
         return readingRepository.save(readingEntity);
     }
 
     public Reading getReadingById(Long readingId) {
-        Optional<Reading> reading = readingRepository.findById(readingId);
-        if (reading.isEmpty()) {
-            throw new IllegalArgumentException("Leitura não encontrada");
-        }
-        return reading.get();
+        return readingRepository.findById(readingId)
+                .orElseThrow(() -> new IllegalArgumentException("Leitura não encontrada"));
     }
 
-    public List<Reading> getReadingsByBookId(Long bookId) {
+    public List<Reading> getReadingsByBookId(Long bookId, Long userId) {
         if (!bookRepository.existsById(bookId)) {
             throw new IllegalArgumentException("Livro não encontrado");
         }
-        return readingRepository.findByBookId(bookId);
-    }
 
-    public Reading getById(Long id) {
-        return readingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Leitura não encontrada"));
+        return readingRepository.findByBookIdAndUserId(bookId, userId);
     }
 
     public List<Reading> getAll() {

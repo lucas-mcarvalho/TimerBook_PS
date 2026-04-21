@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -15,6 +16,11 @@ public class Book {
     private String description;
     private String coverUrl;
     private String dataPath;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
 
     public Book(){
 
@@ -68,14 +74,22 @@ public class Book {
         this.dataPath = dataPath;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Book book)) return false;
-        return Objects.equals(id, book.id) && Objects.equals(name, book.name) && Objects.equals(description, book.description) && Objects.equals(coverUrl, book.coverUrl) && Objects.equals(dataPath, book.dataPath);
+        return Objects.equals(id, book.id) && Objects.equals(name, book.name) && Objects.equals(description, book.description) && Objects.equals(coverUrl, book.coverUrl) && Objects.equals(dataPath, book.dataPath) && Objects.equals(user, book.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, coverUrl, dataPath);
+        return Objects.hash(id, name, description, coverUrl, dataPath, user);
     }
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getBooks, deleteBook } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
+import {getUser} from "../features/user/userApi.js";
 
 import '../styles/Layout.css';
 import '../styles/Library.css';
@@ -54,7 +55,7 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onOpenStats(book.id); }}
-          style={{ marginTop: 10, width: '100%', background: '#2d89ef', color: '#fff', padding: '8px 0', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer' }}
+          className="btn-stats"
         >
           Ver estatísticas
         </button>
@@ -105,7 +106,12 @@ function UserLibrary() {
 
   const handleRead = async (book) => {
     try {
-      const readingResponse = await startReading(book.id);
+      //Melhorar esse trecho, apenas
+      const response = await getUser();
+      const userId = response.data.id;
+
+
+      const readingResponse = await startReading(userId, book.id);
       const readingId = readingResponse.id;
       const sessions = await getSessionsByReadingId(readingId);
       const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
@@ -123,25 +129,8 @@ function UserLibrary() {
       setError("Erro ao iniciar leitura: " + err.message);
     }
   };
-   const handleOpenStats = async (bookId) => {
-    try {
-      const response = await fetch(`http://localhost:8080/readings/book/${bookId}`);
-      if (!response.ok) {
-        throw new Error("Não foi possível buscar as leituras do livro.");
-      }
-      const readings = await response.json();
-      if (!readings || readings.length === 0) {
-        alert("Esse livro ainda não possui leituras registradas.");
-        return;
-      }
-      // pega a leitura mais recente
-      const latestReading = readings[readings.length - 1];
-      // Usa navigate do escopo UserLibrary
-      navigate(`/estatisticas/${latestReading.id}`);
-    } catch (error) {
-      console.error("Erro ao abrir estatísticas:", error);
-      alert("Erro ao abrir estatísticas.");
-    }
+   const handleOpenStats = async (readingId) => {
+     navigate(`/estatisticas/${readingId}`);
   };
 
   const handleDelete = async (bookId) => {

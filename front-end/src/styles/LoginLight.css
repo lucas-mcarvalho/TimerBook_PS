@@ -1,0 +1,56 @@
+.login-container.light-theme {
+  background-color: #f8fafc;
+}
+
+.login-container.light-theme .form-block {
+  background-color: #f8fafc;
+}
+
+.login-container.light-theme .login-form-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.login-container.light-theme .logo-block h1 {
+  color: #2b5292;
+}
+
+.login-container.light-theme .welcome-text {
+  color: #64748b;
+}
+
+.login-container.light-theme .form-group label {
+  color: #475569;
+}
+
+.login-container.light-theme .form-group input {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e0;
+  color: #1e293b;
+}
+
+.login-container.light-theme .form-group input:focus {
+  border-color: #2ecc71;
+  box-shadow: 0 0 0 2px rgba(43, 82, 146, 0.1);
+}
+
+.login-container.light-theme .animation-block {
+  background-color: #f1f5f9;
+}
+
+.login-container.light-theme .book-cover-back {
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.login-container.light-theme .book-page-right {
+  border: 1px solid #e2e8f0;
+}
+
+.login-container.light-theme .form-footer-links a {
+  opacity: 0.8;
+}
+
+.login-container.light-theme .form-footer-links a:hover {
+  opacity: 1;
+}
