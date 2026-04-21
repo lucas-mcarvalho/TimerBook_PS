@@ -1,122 +1,77 @@
-.sidebar {
-width: 250px;
-background-color: #ffffff;
-border-right: 1px solid #e0e0e0;
-display: flex;
-flex-direction: column;
-padding: 20px 20px 40px 20px;
+.config-popover {
+  position: absolute;
+  bottom: 55px;
+  left: 0;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 100px;
+  z-index: 100;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
-.sidebar-header {
-display: flex;
-align-items: center;
-gap: 10px;
-margin-bottom: 40px;
-padding-bottom: 20px;
-border-bottom: 1px solid #f0f0f0;
+.config-popover::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 15px; 
+  width: 12px;
+  height: 12px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  transform: rotate(45deg);
 }
 
-.logo-icon {
-width: 60px;
-height: 60px;
-object-fit: contain;
-transform: scale(2.5);
-margin-right: -5px;
-margin-left: 0px;
+.popover-item {
+  width: 100%;
+  padding: 10px 15px;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: relative;
+  z-index: 2;
 }
 
-.logo-text {
-font-size: 1.4rem;
-font-weight: 700;
-margin-left: -10px;
-color: #2b5292;
+.logout-btn {
+  color: #ff4757;
 }
 
-.sidebar-nav {
-display: flex;
-flex-direction: column;
-gap: 15px;
-flex: 1;
+.logout-btn:hover {
+  background-color: #ffeef0;
 }
 
-.nav-item {
-display: flex;
-align-items: center;
-gap: 10px;
-text-decoration: none;
-color: #000000;
-font-weight: 600;
-font-size: 1.1rem;
-padding: 10px;
-border-radius: 8px;
-transition: background-color 0.2s, color 0.2s;
-cursor: pointer;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.nav-item:hover {
-background-color: #f5f5f5;
+body.dark-theme .config-popover,
+.dark-theme .config-popover {
+  background-color: #1e2f4c;
+  border-color: #121e31;
 }
 
-.nav-item.active {
-color: #2b5292;
+body.dark-theme .config-popover::after,
+.dark-theme .config-popover::after {
+  background-color: #1e2f4c;
+  border-bottom-color: #121e31;
+  border-right-color: #121e31;
 }
 
-.nav-icon {
-width: 25px !important;
-height: 25px !important;
-object-fit: contain;
-flex-shrink: 0;
+body.dark-theme .logout-btn,
+.dark-theme .logout-btn {
+  color: #ff6b81;
 }
 
-.sidebar-shortcuts {
-display: flex;
-flex-direction: column;
-gap: 12px;
-margin: 5px 0 35px 35px;
-align-items: flex-start;
-text-align: left;
-}
-
-.sidebar-shortcut-item {
-text-decoration: none !important;
-color: #777777;
-font-size: 0.95rem;
-font-weight: 500;
-transition: color 0.2s;
-display: block;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-text-align: left;
-width: 100%;
-}
-
-.sidebar-shortcut-item:hover {
-color: #2b5292;
-}
-
-.empty-books-msg {
-margin: 5px 0 5px 40px;
-font-size: 0.85rem;
-color: #888888;
-line-height: 1.4;
-font-style: italic;
-}
-
-.sidebar-footer {
-display: flex;
-gap: 15px;
-padding-top: 20px;
-}
-
-.action-icon-btn {
-width: 45px;
-height: 45px;
-border-radius: 12px;
-background-color: #e0e0e0;
-border: none;
-display: flex;
-justify-content: center;
-align-items: center;
-cursor: pointer;
+body.dark-theme .logout-btn:hover,
+.dark-theme .logout-btn:hover {
+  background-color: rgba(255, 71, 87, 0.1);
 }

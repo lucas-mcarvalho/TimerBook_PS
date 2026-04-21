@@ -9,6 +9,6 @@ import java.util.Optional;
 
 public interface ReadingRepository extends JpaRepository<Reading, Long> {
     long countByFinishedAtIsNull();
-    List<Reading> findByBookId(Long bookId);
-    Optional<Reading> findByBookIdAndFinishedAtIsNull(Long bookId);
+    List<Reading> findByBookIdAndUserId(Long bookId, Long userId);
+    Optional<Reading> findByBookIdAndUserIdAndFinishedAtIsNull(Long bookId, Long userId);
 }

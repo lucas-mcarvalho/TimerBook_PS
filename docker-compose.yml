@@ -43,10 +43,14 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./uploads:/uploads
+     - ./uploads:/app/uploads
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
-
+    environment:
+      - APP_UPLOAD_DIR=/app/uploads
+      - SPRING_PROFILES_ACTIVE=dev
 volumes:
   postgres_data:
