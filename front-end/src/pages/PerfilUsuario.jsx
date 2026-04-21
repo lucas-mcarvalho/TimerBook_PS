@@ -116,7 +116,7 @@ export default function PerfilUsuario() {
           >
             Redefinir Senha
           </button>
-          <div style={{ display: 'flex', gap: '15px' }}>
+          <div style={{ visibility:"hidden", display: 'flex', gap: '15px' }}>
             <button onClick={() => navigate('/perfil/editar')} className="btn-secondary">
               deletar conta
             </button>
