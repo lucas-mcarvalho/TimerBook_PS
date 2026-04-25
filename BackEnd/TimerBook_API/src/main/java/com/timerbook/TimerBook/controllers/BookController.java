@@ -52,11 +52,6 @@ public class BookController implements BookcontrollerDocs {
         return ResponseEntity.ok(bookService.findAll());
     }
 
-    @Operation(summary = "Buscar livro por ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Livro encontrado"),
-            @ApiResponse(responseCode = "404", description = "Livro não encontrado")
-    })
     @GetMapping("/{id}")
     public ResponseEntity<Book> getById(
             @Parameter(description = "ID do livro", example = "1")
@@ -65,7 +60,6 @@ public class BookController implements BookcontrollerDocs {
         return ResponseEntity.ok(bookService.findById(id));
     }
 
-    @Operation(summary = "Atualizar livro")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Book> update(
             @Parameter(description = "ID do livro", example = "1")

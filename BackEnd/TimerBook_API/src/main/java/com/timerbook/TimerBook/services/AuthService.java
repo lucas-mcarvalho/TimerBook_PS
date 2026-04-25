@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.services;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.timerbook.TimerBook.dto.AchievementDTO;
 import com.timerbook.TimerBook.dto.LoginRequestDTO;
 import com.timerbook.TimerBook.dto.RegisterRequestDTO;
 import com.timerbook.TimerBook.dto.ResponseDTO;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -39,6 +41,9 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AchievementService achievementService;
+
     public ResponseDTO login(LoginRequestDTO body) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(body.email(), body.password())
@@ -53,10 +58,10 @@ public class AuthService {
 
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
-        return new ResponseDTO(user.getUsername(), accessToken, refreshToken);
+        List<AchievementDTO> conquistas = achievementService.checkFirstLogin(user);
+        return new ResponseDTO(user.getUsername(), accessToken, refreshToken,conquistas);
     }
 
-    // 1. ALTERADO: De ResponseDTO para String
     public String register(RegisterRequestDTO body, MultipartFile photo) {
 
         Optional<User> existingUser = userRepository.findByEmail(body.email());
@@ -133,6 +138,6 @@ public class AuthService {
         String newRefreshToken = tokenService.createRefreshToken(user);
         user.setRefreshToken(newRefreshToken);
         userRepository.save(user);
-        return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken);
+        return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken,null);
     }
 }
