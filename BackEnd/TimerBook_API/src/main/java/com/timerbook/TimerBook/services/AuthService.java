@@ -28,7 +28,8 @@ public class AuthService {
 
     @Autowired
     private TokenService tokenService;
-
+    @Autowired
+    private EmailService emailService;
     @Autowired
     private UserRepository userRepository;
 
@@ -51,22 +52,29 @@ public class AuthService {
 
 
         user.setRefreshToken(refreshToken);
+        userRepository.save(user);
         return new ResponseDTO(user.getUsername(), accessToken, refreshToken);
     }
 
-    public ResponseDTO register(RegisterRequestDTO body, MultipartFile photo) {
+    // 1. ALTERADO: De ResponseDTO para String
+    public String register(RegisterRequestDTO body, MultipartFile photo) {
 
         Optional<User> existingUser = userRepository.findByEmail(body.email());
         if (existingUser.isPresent()) {
             throw new RuntimeException("Email já cadastrado!");
         }
 
+        Optional<User> existingUsername = userRepository.findByUsername(body.username());
+        if (existingUsername.isPresent()) {
+            throw new RuntimeException("Este username já está em uso!");
+        }
+
         User newUser = new User();
+        newUser.setEnabled(false);
         newUser.setUsername(body.username());
         newUser.setEmail(body.email());
         newUser.setPassword(passwordEncoder.encode(body.password()));
 
-        // 📸 salvar foto
         if (photo != null && !photo.isEmpty()) {
             String photoPath = fileStorageService.storeFile(photo, "profile");
             newUser.setPhotopath(photoPath);
@@ -80,14 +88,31 @@ public class AuthService {
         newUser.getRoles().add(userRole);
 
         userRepository.save(newUser);
+        String emailToken = tokenService.generateEmailVerificationToken(newUser.getEmail());
+        String link = "http://localhost:5173/verify-email?token=" + emailToken;
 
-        String accessToken = tokenService.generateToken(newUser);
-        String refreshToken = tokenService.createRefreshToken(newUser);
+        emailService.sendVerificationEmail(newUser.getEmail(), link);
+        return "Usuário registrado com sucesso. Verifique seu e-mail para ativar a conta.";
+    }
 
-        newUser.setRefreshToken(refreshToken);
-        userRepository.save(newUser);
 
-        return new ResponseDTO(newUser.getUsername(), accessToken, refreshToken);
+    public String verifyEmailToken(String token) {
+        DecodedJWT decodedJWT = tokenService.validateEmailToken(token);
+        if (decodedJWT == null) {
+            throw new RuntimeException("Link de verificação inválido ou expirado.");
+        }
+        String email = decodedJWT.getSubject();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (user.getEnabled()) {
+            return "Sua conta já está ativada! Você pode fazer o login.";
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return "E-mail verificado com sucesso!";
     }
     public ResponseDTO refreshToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

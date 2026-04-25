@@ -23,7 +23,7 @@ public interface AuthControllerDocs {
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Credenciais inválidas")
     })
-    public ResponseEntity<ResponseDTO> login(
+    public ResponseEntity<?> login(
             @RequestBody LoginRequestDTO body
     );
 
@@ -31,7 +31,7 @@ public interface AuthControllerDocs {
     @Parameter(description = "Nome do usuário", example = "João")
     @Parameter(description = "Senha do usuário", example = "123456")
     @Parameter(description = "Foto de perfil (opcional)")
-    ResponseEntity<ResponseDTO> register(
+    ResponseEntity<String> register(
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,

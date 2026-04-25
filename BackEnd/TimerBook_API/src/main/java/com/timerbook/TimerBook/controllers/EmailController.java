@@ -23,7 +23,7 @@ public class EmailController implements EmailControllerDocs {
     @Override
     public ResponseEntity<String> sendEmail(@RequestBody EmailRequestDTO emailRequest) {
         try {
-            emailService.sendEmail(emailRequest);
+            emailService.send(emailRequest);
             return new ResponseEntity<>("Email sent successfully!", HttpStatus.OK);
         } catch (IllegalStateException e) {
             return new ResponseEntity<>("Failed to send e-mail: " + e.getMessage(), HttpStatus.BAD_REQUEST);

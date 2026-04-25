@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255),
     password VARCHAR(255),
     photopath VARCHAR(500),
-    refresh_token TEXT
-);
+    refresh_token TEXT,
+    active BOOLEAN DEFAULT FALSE
+    );

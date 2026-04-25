@@ -31,6 +31,9 @@ public class UserService {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email já cadastrado");
         }
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Este username já está em uso");
+        }
 
         String photoPath = null;
         if (dto.getPhotopath() != null && !dto.getPhotopath().isEmpty()) {
@@ -55,6 +58,17 @@ public class UserService {
     public User update(Long id, UserDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (!user.getUsername().equals(dto.getUsername())) {
+            if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+                throw new IllegalArgumentException("Este username já está em uso por outro usuário");
+            }
+        }
+        if (!user.getEmail().equals(dto.getEmail())) {
+            if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("Este email já está em uso por outro usuário");
+            }
+        }
         if (dto.getPhotopath() != null && !dto.getPhotopath().isEmpty()) {
             if (user.getPhotopath() != null) {
                 fileStorageService.deleteFile(user.getPhotopath());

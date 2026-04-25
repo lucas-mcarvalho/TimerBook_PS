@@ -8,8 +8,6 @@ import "../styles/Login.css";
 import "../styles/LoginLight.css";
 import "../styles/HomeDark.css";
 
-
-
 export default function CadastrarUsuario() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -34,6 +32,7 @@ export default function CadastrarUsuario() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -42,7 +41,6 @@ export default function CadastrarUsuario() {
     setError(null);
     setSuccess(false);
 
-    // 🔴 validação de senha
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem.");
       return; 
@@ -59,7 +57,7 @@ export default function CadastrarUsuario() {
         formData.photo
       );
 
-      setSuccess(true);
+      setSuccess("Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Você precisa clicar nele antes de fazer login.");
 
       setFormData({
         username: "",
@@ -68,7 +66,6 @@ export default function CadastrarUsuario() {
         confirmPassword: "",
         photo: null,
       });
-      navigate("/");
       
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar usuário");
@@ -91,10 +88,9 @@ export default function CadastrarUsuario() {
 
           <p className="welcome-text">Crie sua conta</p>
 
-          {/* MENSAGENS */}
           {success && (
             <div className="status-message status-success">
-              ✓ Conta criada com sucesso!
+              ✓ Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Você precisa clicar nele antes de fazer login.
             </div>
           )}
 
