@@ -53,6 +53,10 @@ export default function Login() {
     setBookSpeed('0.8s');
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -61,7 +65,8 @@ export default function Login() {
     setSuccess(false);
 
     try {
-      await loginUser(formData.email, formData.password);
+      // Login normal via email/senha
+      const response = await loginUser(formData.email, formData.password);
       setSuccess(true);
       navigate('/home');
     } catch (err) {
@@ -137,12 +142,10 @@ export default function Login() {
                   }}
                 >
                   {mostrarSenha ? (
-                    // OLHO FECHADO
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
                       <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12C1.68 10.82 2.61 9.73 3.74 8.86M9.9 4.24A10.94 10.94 0 0 1 12 5C17 5 21.27 8.89 23 12C22.35 13.11 21.5 14.14 20.5 15.03M1 1L23 23" />
                     </svg>
                   ) : (
-                    // OLHO ABERTO
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
                       <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" />
                       <circle cx="12" cy="12" r="3" />
@@ -152,6 +155,7 @@ export default function Login() {
               </div>
             </div>
 
+            {/* BOTÃO ENTRAR NORMAL */}
             <button 
               type="submit"
               onClick={handleSubmit} 
@@ -162,10 +166,46 @@ export default function Login() {
               {loading ? "Entrando..." : "Entrar"}
             </button>
 
-            <div className="form-footer-links">
+            <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#444' : '#ddd' }}></div>
+              <span style={{ margin: '0 10px', color: isDarkMode ? '#888' : '#666', fontSize: '14px' }}>ou</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#444' : '#ddd' }}></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              style={{
+                width: '100%',
+                padding: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                backgroundColor: isDarkMode ? '#222' : '#fff',
+                color: isDarkMode ? '#fff' : '#333',
+                border: `1px solid ${isDarkMode ? '#444' : '#ddd'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDarkMode ? '#333' : '#f5f5f5'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = isDarkMode ? '#222' : '#fff'}
+            >
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+                alt="Google Logo" 
+                style={{ width: '20px', height: '20px' }} 
+              />
+              Continuar com o Google
+            </button>
+
+            <div className="form-footer-links" style={{ marginTop: '20px' }}>
               <a href="/esqueceu-senha" className="welcome-text">Esqueci minha senha</a>
               <a href="/cadastrar-usuario" style={{ color: '#2ecc71' }}>Criar conta</a>
             </div>
+
           </form>
         </div>
       </div>
