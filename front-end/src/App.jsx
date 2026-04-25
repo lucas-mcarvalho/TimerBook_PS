@@ -10,6 +10,8 @@ import CadastrarUsuario from "./pages/CadastrarUsuario";
 import EsqueceuSenha from "./pages/EsqueceuSenha";
 import PerfilUsuario from "./pages/PerfilUsuario";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
+import VerifyEmail from "./components/VerifyEmail";
 function App() {
   return (
     <BrowserRouter>
@@ -25,6 +27,8 @@ function App() {
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </BrowserRouter>  
   );
