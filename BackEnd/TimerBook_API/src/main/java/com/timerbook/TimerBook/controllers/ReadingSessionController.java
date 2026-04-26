@@ -2,6 +2,7 @@ package com.timerbook.TimerBook.controllers;
 
 import com.timerbook.TimerBook.controllers.docs.ReadingSessionControllerDocs;
 import com.timerbook.TimerBook.dto.FinishReadingSessionDTO;
+import com.timerbook.TimerBook.dto.FinishSessionResponseDTO;
 import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.dto.StartReadingSessionDTO;
 import com.timerbook.TimerBook.models.Reading;
@@ -42,17 +43,16 @@ public class ReadingSessionController implements ReadingSessionControllerDocs {
     }
 
     @PutMapping("/{sessionId}/finish")
-    public ResponseEntity<ReadingSession> finishReadingSession(
+    public ResponseEntity<FinishSessionResponseDTO> finishReadingSession(
             @PathVariable Long sessionId,
             @RequestBody FinishReadingSessionDTO dto) {
         try {
-            ReadingSession session = readingSessionService.finishReadingSession(sessionId, dto.getEndPage());
-            return ResponseEntity.ok(session);
+            FinishSessionResponseDTO response = readingSessionService.finishReadingSession(sessionId, dto.getEndPage());
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<ReadingSession> getSessionById(@PathVariable Long id){

@@ -33,7 +33,13 @@ export default function Leitor() {
     }
     setEndingSession(true);
     try {
-      await endReadingSession(sessionId, currentPage);
+    const response = await endReadingSession(sessionId, currentPage);
+    const novas = response?.data?.novasConquistas || response?.novasConquistas;
+      if (novas && novas.length > 0) {
+        novas.forEach(conquista => {
+          alert(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`);
+        });
+      }
       alert("Sessão de leitura encerrada!");
       navigate("/meus-livros");
     } catch (err) {

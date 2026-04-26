@@ -5,6 +5,7 @@ import com.timerbook.TimerBook.models.Achievement;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.models.UserAchievement;
 import com.timerbook.TimerBook.repository.AchievementRepository;
+import com.timerbook.TimerBook.repository.ReadingRepository;
 import com.timerbook.TimerBook.repository.UserAchievementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ public class AchievementService {
 
     @Autowired
     private AchievementRepository achievementRepo;
+
+    @Autowired
+    private ReadingRepository readingRepository;
 
     @Autowired
     private UserAchievementRepository userAchievementRepo;
@@ -55,5 +59,31 @@ public class AchievementService {
                         ganho.getAchievement().getIconUrl()
                 ))
                 .toList();
+    }
+
+    public List<AchievementDTO> checkFirstSession(User user) {
+        List<AchievementDTO> conquistas = new ArrayList<>();
+        String keyCode = "FIRST_BOOK";
+
+        boolean jaPossui = userAchievementRepo.existsByUserAndAchievement_KeyCode(user, keyCode);
+
+        if (!jaPossui) {
+            Optional<Achievement> conquistaDb = achievementRepo.findByKeyCode(keyCode);
+
+            if (conquistaDb.isPresent()) {
+                Achievement achievement = conquistaDb.get();
+
+                UserAchievement novoGanho = new UserAchievement(user, achievement);
+                userAchievementRepo.save(novoGanho);
+
+                conquistas.add(
+                        new AchievementDTO(achievement.getName(), achievement.getIconUrl())
+                );
+
+                System.out.println("🏆 Conquista de Primeira Sessão desbloqueada para: " + user.getUsername());
+            }
+        }
+
+        return conquistas;
     }
 }

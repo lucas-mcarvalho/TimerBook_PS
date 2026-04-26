@@ -65,9 +65,15 @@ export default function Login() {
     setSuccess(false);
 
     try {
-      // Login normal via email/senha
       const response = await loginUser(formData.email, formData.password);
       setSuccess(true);
+
+      const novas = response?.novasConquistas || response?.data?.novasConquistas;
+      if (novas && novas.length > 0) {
+        novas.forEach(conquista => {
+          alert(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`);
+        });
+      }
       navigate('/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");

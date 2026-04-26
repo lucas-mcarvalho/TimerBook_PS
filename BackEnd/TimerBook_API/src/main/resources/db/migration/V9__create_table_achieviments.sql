@@ -8,5 +8,5 @@ CREATE TABLE achievements (
 INSERT INTO achievements (key_code, name, description, icon_url) VALUES
 
 ('FIRST_LOGIN', 'Primeiro Passo', 'Você iniciou sua jornada no TimerBook!', '🌟'),
-('FIRST_BOOK', 'Devorador', 'Terminou seu primeiro livro!', '📚'),
+('FIRST_BOOK', 'Leitor', 'Terminou seu primeiro livro!', '📚'),
 ('MARATHON', 'Maratonista', 'Fez uma sessão de leitura de mais de 2 horas.', '🏃‍♂️');

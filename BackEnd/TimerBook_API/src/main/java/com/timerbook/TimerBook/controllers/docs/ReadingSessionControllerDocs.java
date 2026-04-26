@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.controllers.docs;
 
 import com.timerbook.TimerBook.dto.FinishReadingSessionDTO;
+import com.timerbook.TimerBook.dto.FinishSessionResponseDTO;
 import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.dto.StartReadingSessionDTO;
 import com.timerbook.TimerBook.models.Reading;
@@ -80,7 +81,7 @@ public interface ReadingSessionControllerDocs {
                     content = @Content(mediaType = "application/json")
             )
     })
-    public ResponseEntity<ReadingSession> finishReadingSession(
+    ResponseEntity<FinishSessionResponseDTO> finishReadingSession(
             @Parameter(name = "sessionId", description = "...", required = true)
             @PathVariable Long sessionId,
             @Parameter(name = "body", description = "Página final da sessão", required = true,
