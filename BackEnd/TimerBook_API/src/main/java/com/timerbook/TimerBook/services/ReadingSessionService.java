@@ -1,5 +1,7 @@
 package com.timerbook.TimerBook.services;
 
+import com.timerbook.TimerBook.dto.AchievementDTO;
+import com.timerbook.TimerBook.dto.FinishSessionResponseDTO;
 import com.timerbook.TimerBook.dto.StartReadingSessionDTO;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.models.ReadingSession;
@@ -18,6 +20,8 @@ public class ReadingSessionService {
 
     @Autowired
     private ReadingRepository readingRepository;
+    @Autowired
+    private AchievementService achievementService;
 
     public ReadingSession startReadingSession(StartReadingSessionDTO dto) {
         Optional<Reading> reading = readingRepository.findById(dto.getReadingId());
@@ -35,7 +39,7 @@ public class ReadingSessionService {
         return readingSessionRepository.save(session);
     }
 
-    public ReadingSession finishReadingSession(Long sessionId, Integer endPage) {
+    public FinishSessionResponseDTO finishReadingSession(Long sessionId, Integer endPage) {
         Optional<ReadingSession> session = readingSessionRepository.findById(sessionId);
         if (session.isEmpty()) {
             throw new IllegalArgumentException("Sessão de leitura não encontrada");
@@ -45,7 +49,11 @@ public class ReadingSessionService {
         existingSession.setEndPage(endPage);
         existingSession.setEndedAt(LocalDateTime.now());
 
-        return readingSessionRepository.save(existingSession);
+        ReadingSession savedSession = readingSessionRepository.save(existingSession);
+
+        List<AchievementDTO> novas = achievementService.checkFirstSession(savedSession.getReading().getUser());
+
+        return new FinishSessionResponseDTO(savedSession, novas);
     }
 
 

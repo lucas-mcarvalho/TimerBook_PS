@@ -4,6 +4,7 @@ import com.timerbook.TimerBook.models.Role;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.RoleRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
+import com.timerbook.TimerBook.services.AchievementService;
 import com.timerbook.TimerBook.services.TokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +37,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Lazy
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AchievementService achievementService;
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -59,6 +62,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             return userRepository.save(newUser);
         });
 
+        achievementService.checkFirstLogin(user);
         String accessToken = tokenService.generateToken(user);
         String refreshToken = tokenService.createRefreshToken(user);
 

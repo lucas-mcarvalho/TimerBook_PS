@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-// 👇 NOVO: Importando o useNavigate para fazer o redirecionamento
 import { useNavigate } from "react-router-dom"; 
 import { getUser } from "../features/user/userApi.js"; 
 import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
+import AchievementsList from '../components/AchievementsList'; 
 import ProfileIcon from '../assets/Home/ProfileIcon.svg'; 
 
 import "../styles/PerfilUsuario.css";
@@ -22,7 +22,6 @@ export default function PerfilUsuario() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   
-  // 👇 NOVO: Inicializando o navigate
   const navigate = useNavigate(); 
 
   useEffect(() => {
@@ -75,36 +74,37 @@ export default function PerfilUsuario() {
           {successMessage && <div className="status-message status-success">✓ {successMessage}</div>}
 
           {userInfo && (
-            <div className="info-card">
-              
-              <div className="profile-image-container">
-                <img 
-                  src={
-                    (userInfo?.photopath || userInfo?.photo) 
-                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}?t=${Date.now()}` 
-                    : ProfileIcon
-                  } 
-                  alt="Foto" 
-                  className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
-                  onError={(e) => {
-                    e.target.onerror = null; 
-                    e.target.src = ProfileIcon;
-                    e.target.className = "profile-image-default";
-                  }}
-                />
+            <>
+              <div className="info-card">
+                <div className="profile-image-container">
+                  <img 
+                    src={
+                      (userInfo?.photopath || userInfo?.photo) 
+                      ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}?t=${Date.now()}` 
+                      : ProfileIcon
+                    } 
+                    alt="Foto" 
+                    className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = ProfileIcon;
+                      e.target.className = "profile-image-default";
+                    }}
+                  />
+                </div>
+
+                <div className="profile-details">
+                  <h2>Informações da Conta</h2>
+                  <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
+                  <p><strong>Email:</strong> {userInfo.email}</p>
+                </div>
               </div>
 
-              <div className="profile-details">
-                <h2>Informações da Conta</h2>
-                <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
-                <p><strong>Email:</strong> {userInfo.email}</p>
-              </div>
-
-            </div>
+              {userInfo.id && <AchievementsList userId={userInfo.id} />}
+            </>
           )}
         </div>
 
-        {/* 👇 MODIFICADO: Adicionado gap para separar os botões e o novo botão de senha */}
         <div className="bottom-actions" style={{ display: 'flex', gap: '15px' }}>
           <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
             Editar Perfil
