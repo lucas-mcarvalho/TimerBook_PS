@@ -13,6 +13,8 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User {
+    public static final int DEFAULT_DAILY_READING_GOAL_MINUTES = 10;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,6 +24,8 @@ public class User {
     private String photopath;
     private String refreshToken;
     private Boolean enabled = false;
+    @Column(name = "daily_reading_goal_minutes", nullable = false)
+    private Integer dailyReadingGoalMinutes = DEFAULT_DAILY_READING_GOAL_MINUTES;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
@@ -114,15 +118,23 @@ public class User {
         this.refreshToken = refreshToken;
     }
 
+    public Integer getDailyReadingGoalMinutes() {
+        return dailyReadingGoalMinutes;
+    }
+
+    public void setDailyReadingGoalMinutes(Integer dailyReadingGoalMinutes) {
+        this.dailyReadingGoalMinutes = dailyReadingGoalMinutes;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(username, user.username) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(photopath, user.photopath) && Objects.equals(refreshToken, user.refreshToken) && Objects.equals(enabled, user.enabled) && Objects.equals(books, user.books) && Objects.equals(roles, user.roles);
+        return Objects.equals(id, user.id) && Objects.equals(username, user.username) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(photopath, user.photopath) && Objects.equals(refreshToken, user.refreshToken) && Objects.equals(enabled, user.enabled) && Objects.equals(dailyReadingGoalMinutes, user.dailyReadingGoalMinutes) && Objects.equals(books, user.books) && Objects.equals(roles, user.roles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, password, photopath, refreshToken, enabled, books, roles);
+        return Objects.hash(id, username, email, password, photopath, refreshToken, enabled, dailyReadingGoalMinutes, books, roles);
     }
 }

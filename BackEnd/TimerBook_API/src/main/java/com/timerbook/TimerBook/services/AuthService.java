@@ -44,6 +44,9 @@ public class AuthService {
     @Autowired
     private AchievementService achievementService;
 
+    @Autowired
+    private UserService userService;
+
     public ResponseDTO login(LoginRequestDTO body) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(body.email(), body.password())
@@ -79,6 +82,7 @@ public class AuthService {
         newUser.setUsername(body.username());
         newUser.setEmail(body.email());
         newUser.setPassword(passwordEncoder.encode(body.password()));
+        newUser.setDailyReadingGoalMinutes(userService.normalizeReadingGoal(body.dailyReadingGoalMinutes()));
 
         if (photo != null && !photo.isEmpty()) {
             String photoPath = fileStorageService.storeFile(photo, "profile");

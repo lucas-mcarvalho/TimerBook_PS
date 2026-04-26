@@ -36,10 +36,11 @@ public class AuthController  implements AuthControllerDocs{
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
+            @RequestParam(value = "dailyReadingGoalMinutes", required = false) Integer dailyReadingGoalMinutes,
             @RequestParam(value = "photo", required = false) MultipartFile photo
     ) {
         try {
-            RegisterRequestDTO dto = new RegisterRequestDTO(username, email, password, null);
+            RegisterRequestDTO dto = new RegisterRequestDTO(username, email, password, null, dailyReadingGoalMinutes);
 
             String message = authService.register(dto, photo);
 

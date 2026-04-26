@@ -35,6 +35,7 @@ public interface AuthControllerDocs {
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
+            @RequestParam(value = "dailyReadingGoalMinutes", required = false) Integer dailyReadingGoalMinutes,
             MultipartFile photo
     );
     @Operation(summary = "Gerar novo access token usando refresh token")

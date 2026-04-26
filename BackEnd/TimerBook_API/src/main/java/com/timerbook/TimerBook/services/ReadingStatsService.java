@@ -1,6 +1,8 @@
 package com.timerbook.TimerBook.services;
 
 import com.timerbook.TimerBook.dto.ReadingStatsDTO;
+import com.timerbook.TimerBook.dto.UserReadingGoalStreakDTO;
+import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.models.ReadingSession;
 import com.timerbook.TimerBook.repository.ReadingRepository;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -136,6 +139,52 @@ public class ReadingStatsService {
                 .stream()
                 .filter(r -> r.getFinishedAt() == null && r.getUser().getId().equals(userId))
                 .collect(Collectors.toList());
+    }
+
+    public UserReadingGoalStreakDTO getUserGoalStreak(Long userId, LocalDateTime start, LocalDateTime end) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (start == null) {
+            start = LocalDateTime.of(2010, 1, 1, 0, 0);
+        }
+        if (end == null) {
+            end = LocalDateTime.now();
+        }
+
+        int goalMinutes = user.getDailyReadingGoalMinutes() == null
+                ? User.DEFAULT_DAILY_READING_GOAL_MINUTES
+                : user.getDailyReadingGoalMinutes();
+
+        long goalSeconds = goalMinutes * 60L;
+        List<Object[]> rows = readingSessionRepository.sumDailyDurationSecondsByUserAndPeriod(userId, start, end);
+
+        Map<LocalDate, Long> dailySecondsByDate = new HashMap<>();
+        for (Object[] row : rows) {
+            Date sqlDate = (Date) row[0];
+            Number totalSeconds = (Number) row[1];
+            dailySecondsByDate.put(sqlDate.toLocalDate(), totalSeconds.longValue());
+        }
+
+        Set<LocalDate> qualifiedDays = dailySecondsByDate.entrySet()
+                .stream()
+                .filter(e -> e.getValue() >= goalSeconds)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        LocalDate endDate = end.toLocalDate();
+        int currentStreak = calculateCurrentStreak(qualifiedDays, endDate);
+        int maxStreak = calculateMaxStreak(qualifiedDays);
+
+        long todaySeconds = dailySecondsByDate.getOrDefault(endDate, 0L);
+
+        UserReadingGoalStreakDTO dto = new UserReadingGoalStreakDTO();
+        dto.setDailyGoalMinutes(goalMinutes);
+        dto.setTodaySeconds(todaySeconds);
+        dto.setTodayGoalReached(todaySeconds >= goalSeconds);
+        dto.setCurrentStreakDays(currentStreak);
+        dto.setMaxStreakDays(maxStreak);
+        return dto;
     }
 
     private int calculateCurrentStreak(Set<LocalDate> daysWithSession, LocalDate endDate) {

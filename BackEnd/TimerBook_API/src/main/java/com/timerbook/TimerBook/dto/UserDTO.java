@@ -15,6 +15,8 @@ public class UserDTO {
     private MultipartFile photopath;
     @Schema(description = "Verifica se tem foto")
     private Boolean  removePhoto;
+    @Schema(description = "Meta diária de leitura em minutos", example = "10")
+    private Integer dailyReadingGoalMinutes;
 
     public String getUsername() {
         return username;
@@ -54,5 +56,13 @@ public class UserDTO {
 
     public void setRemovePhoto(Boolean removePhoto) {
         this.removePhoto = removePhoto;
+    }
+
+    public Integer getDailyReadingGoalMinutes() {
+        return dailyReadingGoalMinutes;
+    }
+
+    public void setDailyReadingGoalMinutes(Integer dailyReadingGoalMinutes) {
+        this.dailyReadingGoalMinutes = dailyReadingGoalMinutes;
     }
 }
