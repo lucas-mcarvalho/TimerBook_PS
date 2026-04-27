@@ -11,8 +11,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 public class UserService {
+
+    private static final Set<Integer> ALLOWED_READING_GOALS = Set.of(10, 20, 30);
 
     @Autowired
     private UserRepository userRepository;
@@ -45,6 +49,7 @@ public class UserService {
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setPhotopath(photoPath);
+        user.setDailyReadingGoalMinutes(normalizeReadingGoal(dto.getDailyReadingGoalMinutes()));
 
         Role userRole = roleRepository.findByAuthority("ROLE_USER");
         if (userRole == null) {
@@ -114,5 +119,25 @@ public class UserService {
         String email = decoded.getSubject();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
+
+    public Integer getMyReadingGoalMinutes(String authHeader) {
+        return getMe(authHeader).getDailyReadingGoalMinutes();
+    }
+
+    public User updateMyReadingGoalMinutes(String authHeader, Integer dailyReadingGoalMinutes) {
+        User user = getMe(authHeader);
+        user.setDailyReadingGoalMinutes(normalizeReadingGoal(dailyReadingGoalMinutes));
+        return userRepository.save(user);
+    }
+
+    public Integer normalizeReadingGoal(Integer goalMinutes) {
+        if (goalMinutes == null) {
+            return User.DEFAULT_DAILY_READING_GOAL_MINUTES;
+        }
+        if (!ALLOWED_READING_GOALS.contains(goalMinutes)) {
+            throw new IllegalArgumentException("Meta de leitura inválida. Valores permitidos: 10, 20 ou 30 minutos.");
+        }
+        return goalMinutes;
     }
 }

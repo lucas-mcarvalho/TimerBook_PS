@@ -2,6 +2,7 @@ package com.timerbook.TimerBook.controllers;
 
 import com.timerbook.TimerBook.controllers.docs.ReadingStatsControllerDocs;
 import com.timerbook.TimerBook.dto.ReadingStatsDTO;
+import com.timerbook.TimerBook.dto.UserReadingGoalStreakDTO;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.repository.UserRepository;
 import com.timerbook.TimerBook.services.ReadingStatsService;
@@ -70,5 +71,17 @@ public class ReadingStatsController implements ReadingStatsControllerDocs {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(403).build();
         }
+    }
+
+    @GetMapping("/user/streak")
+    public ResponseEntity<UserReadingGoalStreakDTO> getUserGoalStreak(
+            @RequestParam(value = "start", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam(value = "end", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
+    ) {
+        Long userId = getLoggedUserId();
+        UserReadingGoalStreakDTO dto = service.getUserGoalStreak(userId, start, end);
+        return ResponseEntity.ok(dto);
     }
 }

@@ -1,13 +1,11 @@
 package com.timerbook.TimerBook.controllers;
 
 import com.timerbook.TimerBook.controllers.docs.UserControllerDocs;
+import com.timerbook.TimerBook.dto.UserReadingGoalRequestDTO;
+import com.timerbook.TimerBook.dto.UserReadingGoalResponseDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.services.UserService;
-import io.swagger.v3.oas.annotations.*;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -73,7 +71,6 @@ public class UserController implements UserControllerDocs {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @Parameter(description = "ID do usuário", example = "1")
             @PathVariable Long id) {
 
         userService.delete(id);
@@ -84,5 +81,24 @@ public class UserController implements UserControllerDocs {
     public ResponseEntity<User> getMe(
             @RequestHeader("Authorization") String authHeader) {
         return ResponseEntity.ok(userService.getMe(authHeader));
+    }
+
+    @GetMapping("/me/reading-goal")
+    public ResponseEntity<UserReadingGoalResponseDTO> getMyReadingGoal(
+            @RequestHeader("Authorization") String authHeader) {
+        Integer goal = userService.getMyReadingGoalMinutes(authHeader);
+        return ResponseEntity.ok(new UserReadingGoalResponseDTO(goal));
+    }
+
+    @PutMapping("/me/reading-goal")
+    public ResponseEntity<UserReadingGoalResponseDTO> updateMyReadingGoal(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UserReadingGoalRequestDTO body) {
+        try {
+            User user = userService.updateMyReadingGoalMinutes(authHeader, body.getDailyReadingGoalMinutes());
+            return ResponseEntity.ok(new UserReadingGoalResponseDTO(user.getDailyReadingGoalMinutes()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

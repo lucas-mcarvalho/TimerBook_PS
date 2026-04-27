@@ -1,15 +1,20 @@
 package com.timerbook.TimerBook.controllers.docs;
 
+import com.timerbook.TimerBook.dto.UserReadingGoalRequestDTO;
+import com.timerbook.TimerBook.dto.UserReadingGoalResponseDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
 import com.timerbook.TimerBook.models.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,5 +68,37 @@ public interface UserControllerDocs {
     public ResponseEntity<Void> delete(
             @Parameter(description = "ID do usuário", example = "1")
             @PathVariable Long id);
+
+    @Operation(summary = "Retorna o usuário autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário autenticado retornado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content)
+    })
+    ResponseEntity<User> getMe(@RequestHeader("Authorization") String authHeader);
+
+    @Operation(summary = "Consulta meta diária de leitura do usuário autenticado")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Meta de leitura retornada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserReadingGoalResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content)
+    })
+    ResponseEntity<UserReadingGoalResponseDTO> getMyReadingGoal(@RequestHeader("Authorization") String authHeader);
+
+    @Operation(summary = "Atualiza meta diária de leitura do usuário autenticado")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Meta atualizada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserReadingGoalResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Meta inválida", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content)
+    })
+    ResponseEntity<UserReadingGoalResponseDTO> updateMyReadingGoal(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UserReadingGoalRequestDTO body);
 
 }

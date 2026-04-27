@@ -54,4 +54,19 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     List<ReadingSession> findByReadingIdOrderByStartedAtAsc(Long readingId);
 
     List<ReadingSession> findByReadingId(Long readingId);
+
+    @Query(value = "SELECT DATE(rs.started_at) AS day, " +
+            "COALESCE(CAST(SUM(EXTRACT(EPOCH FROM (COALESCE(rs.ended_at, CURRENT_TIMESTAMP) - rs.started_at))) AS BIGINT), 0) AS total_seconds " +
+            "FROM reading_session rs " +
+            "INNER JOIN reading r ON r.id = rs.reading_id " +
+            "WHERE r.user_id = :userId " +
+            "AND rs.started_at BETWEEN :start AND :end " +
+            "GROUP BY DATE(rs.started_at) " +
+            "ORDER BY day ASC",
+            nativeQuery = true)
+    List<Object[]> sumDailyDurationSecondsByUserAndPeriod(
+            @Param("userId") Long userId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }
