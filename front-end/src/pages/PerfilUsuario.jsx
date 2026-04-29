@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { getUser } from "../features/user/userApi.js"; 
+import { getUser, deleteUser } from "../features/user/userApi.js"; 
 import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
@@ -20,6 +20,7 @@ export default function PerfilUsuario() {
   const [books, setBooks] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   
   const navigate = useNavigate(); 
@@ -50,6 +51,24 @@ export default function PerfilUsuario() {
     setUserInfo((prev) => ({ ...prev, ...updatedData }));
     setSuccessMessage("Perfil atualizado com sucesso!");
     setTimeout(() => setSuccessMessage(""), 4000); 
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (userInfo?.id) {
+        await deleteUser(userInfo.id);
+        
+        // Limpa tokens e redireciona para a tela de login
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        navigate("/"); 
+      }
+    } catch (err) {
+      console.error("Erro ao excluir conta:", err);
+      alert("Erro ao excluir a conta. Tente novamente mais tarde.");
+    } finally {
+      setIsDeleteModalOpen(false);
+    }
   };
 
   if (fetching) {
@@ -116,11 +135,13 @@ export default function PerfilUsuario() {
           >
             Redefinir Senha
           </button>
-          <div style={{ visibility:"hidden", display: 'flex', gap: '15px' }}>
-            <button onClick={() => navigate('/perfil/editar')} className="btn-secondary">
-              deletar conta
-            </button>
-          </div>
+
+          <button 
+            className="btn-secondary btn-delete-account" 
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            Deletar Conta
+          </button>
         </div>
       </main>
 
@@ -130,6 +151,19 @@ export default function PerfilUsuario() {
         userInfo={userInfo}
         onUpdateSuccess={handleUpdateSuccess}
       />
+
+      {isDeleteModalOpen && (
+        <div className="delete-confirmation-overlay">
+          <div className="delete-confirmation-balloon">
+            <h3>Confirmação de Exclusão</h3>
+            <p>Deseja realmente excluir sua conta definitivamente? Esta ação não pode ser desfeita.</p>
+            <div className="delete-modal-actions">
+              <button className="btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</button>
+              <button className="btn-confirm-delete" onClick={handleDeleteAccount}>Excluir Definitivamente</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -33,3 +33,13 @@ export const updateProfile = async (userId, userData, photoFile, removePhotoFlag
         throw error;
     }
 };
+
+export const deleteUser = async (userId) => {
+    try {
+        const response = await api.delete(`/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao deletar usuário:", error);
+        throw error;
+    }
+};

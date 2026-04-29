@@ -212,3 +212,82 @@
     background-color: #2b497f;
     color: #ffffff;
 }
+
+.btn-delete-account:hover {
+    background-color: #ff4d4d !important;
+    color: white !important;
+}
+
+.dark-theme .btn-delete-account:hover {
+    background-color: #e63946 !important;
+    color: white !important;
+}
+
+.delete-confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-confirmation-balloon {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    max-width: 450px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e2e8f0;
+}
+
+.dark-theme .delete-confirmation-balloon {
+    background-color: #121e31;
+    border-color: #1e2f4c;
+    color: #ffffff;
+}
+
+.delete-confirmation-balloon h3 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    color: #ff4757;
+}
+
+.delete-confirmation-balloon p {
+    margin-bottom: 25px;
+    color: #333333;
+    line-height: 1.5;
+}
+
+.dark-theme .delete-confirmation-balloon p {
+    color: #a0aec0;
+}
+
+.delete-modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-confirm-delete {
+    background-color: #ff4757;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0 30px;
+    height: 45px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.4s ease;
+    white-space: nowrap;
+}
+
+.btn-confirm-delete:hover {
+    background-color: #ff2e44;
+}
