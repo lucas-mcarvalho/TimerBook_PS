@@ -53,11 +53,12 @@ export default function CadastrarLivro() {
       setCoverFile(null);
       setPdfFile(null);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Erro ao cadastrar livro"
-      );
+      const message = err.response?.data;
+      if (typeof message === "string") {
+        setError(message);
+      } else {
+        setError(message?.message || "Erro ao cadastrar livro. Verifique os dados e tente novamente.");
+      }
     } finally {
       setLoading(false);
     }

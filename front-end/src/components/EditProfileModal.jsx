@@ -56,7 +56,21 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
       
       onClose(); 
     } catch (err) {
-      setError("Erro ao salvar: Verifique se o username já existe.");
+      const status = err.response?.status;
+      const message = err.response?.data;
+
+      if (status === 400 && typeof message === 'string') {
+        const lowerMessage = message.toLowerCase();
+        if (lowerMessage.includes("username já está em uso") || lowerMessage.includes("username ja esta em uso")) {
+          setError("Este nome de usuário já existe. Escolha outro.");
+        } else if (lowerMessage.includes("email já cadastrado") || lowerMessage.includes("email ja cadastrado")) {
+          setError("Este e-mail já está em uso.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError("Erro ao salvar: Verifique sua conexão ou tente novamente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }

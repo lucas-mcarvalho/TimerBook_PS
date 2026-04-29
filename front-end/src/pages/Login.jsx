@@ -76,7 +76,24 @@ export default function Login() {
       }
       navigate('/home');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer login");
+      const status = err.response?.status;
+      const message = err.response?.data;
+
+      if (status === 400 && typeof message === 'string') {
+        const lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.includes("usuario nao encontrado")) {
+          setError("Usuário não encontrado. Verifique o e-mail digitado.");
+        } else if (lowerMessage.includes("bad credentials") || lowerMessage.includes("senha incorreta")) {
+          setError("E-mail ou senha incorretos. Tente novamente.");
+        } else if (lowerMessage.includes("user is disabled") || lowerMessage.includes("usuário desabilitado")) {
+          setError("Sua conta ainda não foi ativada. Verifique seu e-mail.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError("Erro ao conectar com o servidor. Tente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }

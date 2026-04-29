@@ -22,6 +22,7 @@ export default function PerfilUsuario() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [error, setError] = useState(null);
   
   const navigate = useNavigate(); 
 
@@ -32,6 +33,7 @@ export default function PerfilUsuario() {
   useEffect(() => {
     async function fetchData() {
       try {
+        setError(null);
         const userData = await getUser();
         setUserInfo(userData.data || userData);
 
@@ -40,6 +42,7 @@ export default function PerfilUsuario() {
 
       } catch (err) {
         console.error("Erro ao carregar dados do perfil:", err);
+        setError("Não foi possível carregar as informações do seu perfil. Tente atualizar a página.");
       } finally {
         setFetching(false);
       }
@@ -91,6 +94,7 @@ export default function PerfilUsuario() {
 
         <div className="profile-container">
           {successMessage && <div className="status-message status-success">✓ {successMessage}</div>}
+          {error && <div className="status-message status-error">✗ {error}</div>}
 
           {userInfo && (
             <>
