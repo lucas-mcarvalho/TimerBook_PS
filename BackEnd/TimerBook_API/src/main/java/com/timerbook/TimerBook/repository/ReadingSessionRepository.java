@@ -55,6 +55,9 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
 
     List<ReadingSession> findByReadingId(Long readingId);
 
+        @Query("SELECT MAX(COALESCE(rs.endedAt, rs.startedAt)) FROM ReadingSession rs WHERE rs.reading.user.id = :userId")
+        LocalDateTime findLastReadingActivityAtByUserId(@Param("userId") Long userId);
+
     @Query(value = "SELECT DATE(rs.started_at) AS day, " +
             "COALESCE(CAST(SUM(EXTRACT(EPOCH FROM (COALESCE(rs.ended_at, CURRENT_TIMESTAMP) - rs.started_at))) AS BIGINT), 0) AS total_seconds " +
             "FROM reading_session rs " +

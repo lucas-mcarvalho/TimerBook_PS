@@ -35,6 +35,15 @@ spring:
 cors:
   originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173
 
+app:
+  reminders:
+    reading:
+      enabled: true
+      cron: "0 0 9 * * *"
+      timezone: America/Sao_Paulo
+      inactivity-hours: 24
+      reminder-interval-minutes: 1440
+
 springdoc:
   api-docs:
     path: /api-docs
