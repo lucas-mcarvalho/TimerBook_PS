@@ -4,6 +4,7 @@ package com.timerbook.TimerBook.models;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,8 @@ public class User {
     private Boolean enabled = false;
     @Column(name = "daily_reading_goal_minutes", nullable = false)
     private Integer dailyReadingGoalMinutes = DEFAULT_DAILY_READING_GOAL_MINUTES;
+    @Column(name = "last_reading_reminder_sent_at")
+    private LocalDateTime lastReadingReminderSentAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
@@ -126,15 +129,23 @@ public class User {
         this.dailyReadingGoalMinutes = dailyReadingGoalMinutes;
     }
 
+    public LocalDateTime getLastReadingReminderSentAt() {
+        return lastReadingReminderSentAt;
+    }
+
+    public void setLastReadingReminderSentAt(LocalDateTime lastReadingReminderSentAt) {
+        this.lastReadingReminderSentAt = lastReadingReminderSentAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) && Objects.equals(username, user.username) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(photopath, user.photopath) && Objects.equals(refreshToken, user.refreshToken) && Objects.equals(enabled, user.enabled) && Objects.equals(dailyReadingGoalMinutes, user.dailyReadingGoalMinutes) && Objects.equals(books, user.books) && Objects.equals(roles, user.roles);
+        return Objects.equals(id, user.id) && Objects.equals(username, user.username) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(photopath, user.photopath) && Objects.equals(refreshToken, user.refreshToken) && Objects.equals(enabled, user.enabled) && Objects.equals(dailyReadingGoalMinutes, user.dailyReadingGoalMinutes) && Objects.equals(lastReadingReminderSentAt, user.lastReadingReminderSentAt) && Objects.equals(books, user.books) && Objects.equals(roles, user.roles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, password, photopath, refreshToken, enabled, dailyReadingGoalMinutes, books, roles);
+        return Objects.hash(id, username, email, password, photopath, refreshToken, enabled, dailyReadingGoalMinutes, lastReadingReminderSentAt, books, roles);
     }
 }
