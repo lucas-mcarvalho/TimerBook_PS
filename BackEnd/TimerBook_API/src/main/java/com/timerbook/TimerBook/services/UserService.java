@@ -94,10 +94,12 @@ public class UserService {
 
     public void delete(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com id: " + id));
 
-        fileStorageService.deleteFile(user.getPhotopath());
-
+        if (user.getPhotopath() != null && !user.getPhotopath().isEmpty()) {
+            fileStorageService.deleteFile(user.getPhotopath());
+        }
+        user.getRoles().clear();
         userRepository.delete(user);
     }
 
