@@ -55,6 +55,8 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
 
     List<ReadingSession> findByReadingId(Long readingId);
 
+    List<ReadingSession> findByReadingUserIdAndStartedAtBetweenOrderByStartedAtAsc(Long userId, LocalDateTime start, LocalDateTime end);
+
         @Query("SELECT MAX(COALESCE(rs.endedAt, rs.startedAt)) FROM ReadingSession rs WHERE rs.reading.user.id = :userId")
         LocalDateTime findLastReadingActivityAtByUserId(@Param("userId") Long userId);
 
