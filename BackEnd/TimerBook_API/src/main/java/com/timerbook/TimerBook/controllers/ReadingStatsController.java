@@ -56,6 +56,19 @@ public class ReadingStatsController implements ReadingStatsControllerDocs {
         }
     }
 
+    @GetMapping("/user/general")
+    public ResponseEntity<ReadingStatsDTO> getUserGeneralStats(
+            @RequestParam(value = "start", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam(value = "end", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            @RequestParam(value = "includeOngoing", required = false, defaultValue = "false") boolean includeOngoing
+    ) {
+        Long userId = getLoggedUserId();
+        ReadingStatsDTO dto = service.getGeneralStatsForUser(userId, start, end, includeOngoing);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping("/reading/{readingId}/streak")
     public ResponseEntity<Integer> getReadingStreak(
             @PathVariable Long readingId,

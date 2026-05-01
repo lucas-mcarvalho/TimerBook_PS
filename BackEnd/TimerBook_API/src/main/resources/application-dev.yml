@@ -12,3 +12,12 @@ spring:
 
   flyway:
     enabled: true
+
+app:
+  reminders:
+    reading:
+      enabled: true
+      cron: "0 0 9 * * *"
+      timezone: America/Sao_Paulo
+      inactivity-hours: 24
+      reminder-interval-minutes: 1440

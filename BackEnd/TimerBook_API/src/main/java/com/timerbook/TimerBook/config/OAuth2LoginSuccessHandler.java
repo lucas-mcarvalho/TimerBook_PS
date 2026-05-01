@@ -52,6 +52,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             newUser.setUsername(name);
             newUser.setPhotopath(picture);
             newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            newUser.setEnabled(true);
 
             Role userRole = roleRepository.findByAuthority("ROLE_USER");
             if (userRole == null) {

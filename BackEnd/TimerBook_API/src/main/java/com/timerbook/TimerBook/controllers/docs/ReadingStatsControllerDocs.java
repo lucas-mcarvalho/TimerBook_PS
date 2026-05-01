@@ -64,6 +64,24 @@ public interface ReadingStatsControllerDocs {
     );
 
     @Operation(
+            summary = "Obtém estatísticas gerais do usuário",
+            description = "Retorna as estatísticas consolidadas de todas as leituras do usuário no período informado."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Estatísticas gerais retornadas com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReadingStatsDTO.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Não autorizado. Token ausente ou inválido.", content = @Content)
+    })
+    public ResponseEntity<ReadingStatsDTO> getUserGeneralStats(
+            @Parameter(name = "start", example = "2026-03-01T00:00:00") @RequestParam(value = "start", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @Parameter(name = "end", example = "2026-03-22T23:59:59") @RequestParam(value = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            @Parameter(name = "includeOngoing", example = "false") @RequestParam(value = "includeOngoing", required = false, defaultValue = "false") boolean includeOngoing
+    );
+
+    @Operation(
             summary = "Obtém a sequência atual de uma leitura",
             description = "Retorna apenas quantos dias seguidos você tem lendo este livro."
     )
