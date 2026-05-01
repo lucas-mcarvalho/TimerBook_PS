@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
+import { useToast } from "../components/Toast.jsx"; 
 import { getUser, deleteUser } from "../features/user/userApi.js"; 
 import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
@@ -11,6 +12,7 @@ import "../styles/PerfilUsuario.css";
 import '../styles/Layout.css'; 
 
 export default function PerfilUsuario() {
+  const { showToast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
     return savedTheme === 'dark';
@@ -68,7 +70,7 @@ export default function PerfilUsuario() {
       }
     } catch (err) {
       console.error("Erro ao excluir conta:", err);
-      alert("Erro ao excluir a conta. Tente novamente mais tarde.");
+      showToast("Erro ao excluir a conta. Tente novamente mais tarde.", "error");
     } finally {
       setIsDeleteModalOpen(false);
     }

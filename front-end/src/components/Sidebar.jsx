@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from './Toast.jsx';
 import { getSessionsByReadingId, startReading } from '../features/books/readSessions.js'; 
-// 👇 Importando a função getUser
 import { getUser } from '../features/user/userApi.js';
 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
@@ -14,6 +14,7 @@ import SunIcon from '../assets/Home/SunIcon.svg';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal }) => {
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 

@@ -69,7 +69,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
           setError(message);
         }
       } else {
-        setError("Erro ao salvar: Verifique sua conexão ou tente novamente mais tarde.");
+        setError("Erro ao salvar: Nome de usuário em uso.");
       }
     } finally {
       setLoading(false);

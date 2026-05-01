@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useToast } from './Toast.jsx';
 import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
 import {getUser} from "../features/user/userApi.js";
 
 const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
+  const { showToast } = useToast();
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState(''); 
   const [coverFile, setCoverFile] = useState(null);
@@ -90,9 +92,9 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
       setNewName(''); setNewDescription(''); setCoverFile(null); setPdfFile(null);
       onClose();
       
-    } catch (error) {
-      console.error("Erro ao salvar:", error);
-      alert("Ops! Falha ao conectar com o servidor.");
+    } catch (err) {
+      console.error("Erro ao cadastrar livro:", err);
+      showToast("Ops! Falha ao conectar com o servidor.", "error");
     } finally {
       setIsLoading(false);
     }
