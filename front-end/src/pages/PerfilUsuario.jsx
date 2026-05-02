@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { getUser } from "../features/user/userApi.js"; 
+import { useToast } from "../components/Toast.jsx"; 
+import { getUser, deleteUser } from "../features/user/userApi.js"; 
 import { getBooks } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
@@ -11,6 +12,7 @@ import "../styles/PerfilUsuario.css";
 import '../styles/Layout.css'; 
 
 export default function PerfilUsuario() {
+  const { showToast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
     return savedTheme === 'dark';
@@ -20,7 +22,9 @@ export default function PerfilUsuario() {
   const [books, setBooks] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [error, setError] = useState(null);
   
   const navigate = useNavigate(); 
 
@@ -31,6 +35,7 @@ export default function PerfilUsuario() {
   useEffect(() => {
     async function fetchData() {
       try {
+        setError(null);
         const userData = await getUser();
         setUserInfo(userData.data || userData);
 
@@ -39,6 +44,7 @@ export default function PerfilUsuario() {
 
       } catch (err) {
         console.error("Erro ao carregar dados do perfil:", err);
+        setError("Não foi possível carregar as informações do seu perfil. Tente atualizar a página.");
       } finally {
         setFetching(false);
       }
@@ -50,6 +56,24 @@ export default function PerfilUsuario() {
     setUserInfo((prev) => ({ ...prev, ...updatedData }));
     setSuccessMessage("Perfil atualizado com sucesso!");
     setTimeout(() => setSuccessMessage(""), 4000); 
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (userInfo?.id) {
+        await deleteUser(userInfo.id);
+        
+        // Limpa tokens e redireciona para a tela de login
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        navigate("/"); 
+      }
+    } catch (err) {
+      console.error("Erro ao excluir conta:", err);
+      showToast("Erro ao excluir a conta. Tente novamente mais tarde.", "error");
+    } finally {
+      setIsDeleteModalOpen(false);
+    }
   };
 
   if (fetching) {
@@ -72,6 +96,7 @@ export default function PerfilUsuario() {
 
         <div className="profile-container">
           {successMessage && <div className="status-message status-success">✓ {successMessage}</div>}
+          {error && <div className="status-message status-error">✗ {error}</div>}
 
           {userInfo && (
             <>
@@ -116,11 +141,13 @@ export default function PerfilUsuario() {
           >
             Redefinir Senha
           </button>
-          <div style={{ visibility:"hidden", display: 'flex', gap: '15px' }}>
-            <button onClick={() => navigate('/perfil/editar')} className="btn-secondary">
-              deletar conta
-            </button>
-          </div>
+
+          <button 
+            className="btn-secondary btn-delete-account" 
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            Deletar Conta
+          </button>
         </div>
       </main>
 
@@ -130,6 +157,19 @@ export default function PerfilUsuario() {
         userInfo={userInfo}
         onUpdateSuccess={handleUpdateSuccess}
       />
+
+      {isDeleteModalOpen && (
+        <div className="delete-confirmation-overlay">
+          <div className="delete-confirmation-balloon">
+            <h3>Confirmação de Exclusão</h3>
+            <p>Deseja realmente excluir sua conta definitivamente? Esta ação não pode ser desfeita.</p>
+            <div className="delete-modal-actions">
+              <button className="btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</button>
+              <button className="btn-confirm-delete" onClick={handleDeleteAccount}>Excluir Definitivamente</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
