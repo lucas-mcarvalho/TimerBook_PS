@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useToast } from "../components/Toast.jsx"; 
 import { getUser, deleteUser } from "../features/user/userApi.js"; 
-import { getBooks } from "../features/books/booksApi.js"; 
+import { getBookByUserId } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
 import AchievementsList from '../components/AchievementsList'; 
@@ -37,9 +37,11 @@ export default function PerfilUsuario() {
       try {
         setError(null);
         const userData = await getUser();
-        setUserInfo(userData.data || userData);
+        const info = userData.data || userData;
+        setUserInfo(info);
 
-        const booksData = await getBooks();
+        const userId = info.id;
+        const booksData = await getBookByUserId(userId);
         setBooks(booksData);
 
       } catch (err) {
