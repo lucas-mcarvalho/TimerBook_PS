@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getBooks } from "../features/books/booksApi.js"; 
+import { getBookByUserId } from "../features/books/booksApi.js"; 
 import { getUser } from "../features/user/userApi.js";
 
 import '../styles/Layout.css'; 
@@ -29,7 +29,7 @@ const Home = () => {
         const userData = await getUser();
         setUserInfo(userData.data || userData);
         
-        const booksData = await getBooks();
+        const booksData = await getBookByUserId(userData.id || userData.data?.id);
         setBooks(booksData);
       } catch (err) {
         console.error("Erro ao carregar dados na Home:", err);

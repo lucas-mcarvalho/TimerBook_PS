@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  console.log("Requisição:", token);
+  //console.log("Requisição:", token);
 
   return config;
 });
