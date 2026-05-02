@@ -33,26 +33,21 @@ export default function AchievementsList({ userId }) {
   const getAchievementDetails = (medal) => {
     const name = medal.nome.toLowerCase();
     
-    if (name.includes('passo') || name.includes('login') || name.includes('boas-vindas')) {
-      return {
-        icon: LoginIcon,
-        image: LoginImage,
-        description: "Obtida ao realizar o seu primeiro acesso à plataforma TimerBook! Seja bem-vindo à sua nova jornada de leitura."
-      };
-    }
-    
+    let visualAssets = {
+      icon: LoginIcon,
+      image: LoginImage
+    };
+
     if (name.includes('leitor') || name.includes('leitura') || name.includes('livro')) {
-      return {
+      visualAssets = {
         icon: ReadingIcon,
-        image: ReadingImage,
-        description: "Obtida ao cadastrar seu primeiro livro e concluir sua primeira sessão de leitura. O primeiro passo de muitos!"
+        image: ReadingImage
       };
     }
 
     return {
-      icon: LoginIcon,
-      image: LoginImage,
-      description: "Conquista desbloqueada por sua dedicação na plataforma."
+      ...visualAssets,
+      description: medal.description || medal.descricao || "Conquista desbloqueada por sua dedicação na plataforma."
     };
   };
 
