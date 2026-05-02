@@ -11,9 +11,9 @@ export async function startReading(userId, bookId, startPage) {
     }
 }
 
-export async function endReading(bookId, userId) {
+export async function endReading(readingId, userId) {
     try {
-        const response = await api.put(`http://localhost:8080/readings/${userId}/${bookId}/finish`);
+        const response = await api.put(`http://localhost:8080/readings/${userId}/${readingId}/finish`);
         alert("Leitura finalizada com sucesso!");
         return response.data;
     } catch (error) {
@@ -68,5 +68,16 @@ export async function getSessionsByReadingId(readingId) {
     } catch (error) {
         console.error("Erro ao buscar sessões por leitura:", error);
         throw new Error("Erro ao buscar sessões por leitura");
+    }
+}   
+
+export async function getReading(bookId, userId) {
+    try {
+        const response = await api.get(`http://localhost:8080/readings/${userId}/${bookId}`);
+        console.log("Leitura obtida:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar leitura:", error);
+        throw new Error("Erro ao buscar leitura");
     }
 }   
