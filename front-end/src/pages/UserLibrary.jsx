@@ -61,6 +61,19 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
         >
           Ver estatísticas
         </button>
+        <button
+          onClick={async (e) => {
+              e.stopPropagation();
+              const response = await getUser();
+              const userId = response.data.id;
+
+              
+              //await endReading(ReadingId, userId);
+          }}
+          className="btn-stats"
+        >
+      Finalizar Leitura
+      </button>
       </div>
     </div>
   );
