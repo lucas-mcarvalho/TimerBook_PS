@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { loginUser } from "../features/auth/user.js";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "../components/Toast.jsx";
+import { useToast } from "../components/ToastContext.js";
 
 import TimerBookLogo from '../assets/Home/TimerbookLogo.svg'; 
 import MoonIcon from '../assets/Home/MoonIcon.svg';
@@ -11,7 +11,7 @@ import "../styles/LoginLight.css";
 import '../styles/HomeDark.css'; 
 
 export default function Login() {
-  const { showToast } = useToast();
+  const { showAchievementToast } = useToast();
   const navigate = useNavigate();
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -73,7 +73,7 @@ export default function Login() {
       const novas = response?.novasConquistas || response?.data?.novasConquistas;
       if (novas && novas.length > 0) {
         novas.forEach(conquista => {
-          showToast(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`, "success");
+          showAchievementToast(conquista);
         });
       }
       navigate('/home');

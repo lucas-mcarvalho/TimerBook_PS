@@ -5,13 +5,13 @@ import { endReadingSession } from "../features/books/readSessions.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "../components/Toast.jsx";
+import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
 import "../styles/Leitor.css";
 
 export default function Leitor() {
-  const { showToast } = useToast();
+  const { showToast, showAchievementToast } = useToast();
   const navigate = useNavigate();
   const { state } = useLocation();
   const book = state?.book;
@@ -45,7 +45,7 @@ export default function Leitor() {
       const novas = response?.data?.novasConquistas || response?.novasConquistas;
       if (novas && novas.length > 0) {
         novas.forEach(conquista => {
-          showToast(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`, "success");
+          showAchievementToast(conquista);
         });
       }
       showToast("Sessão de leitura encerrada!", "success");
@@ -56,15 +56,6 @@ export default function Leitor() {
       setEndingSession(false);
     }
   };
-
-  if (!book) {
-    return (
-      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-        <Link to="/home">← Voltar</Link>
-        <p style={{ marginTop: "1rem" }}>Livro não encontrado.</p>
-      </div>
-    );
-  }
 
   useEffect(() => {
     const loadPDF = async () => {
@@ -126,10 +117,19 @@ export default function Leitor() {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSubmit();
   };
 
-  const useChip = (text) => {
+  const handleChipClick = (text) => {
     setQuestion(text);
     textareaRef.current?.focus();
   };
+
+  if (!book) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+        <Link to="/home">← Voltar</Link>
+        <p style={{ marginTop: "1rem" }}>Livro não encontrado.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="leitor-root">
@@ -186,7 +186,12 @@ export default function Leitor() {
         <div className="leitor-pdf-panel">
           <div className="leitor-pdf-body">
             {pdfFile ? (
-              <PdfViewer file={pdfFile} initialPage={initialPage} onPageChange={setCurrentPage} />
+              <PdfViewer
+                file={pdfFile}
+                initialPage={initialPage}
+                onPageChange={setCurrentPage}
+                storageKey={book.id || book.dataPath || "livro"}
+              />
             ) : (
               <div className="leitor-pdf-loading">
                 <div className="leitor-spinner" />
@@ -270,7 +275,7 @@ export default function Leitor() {
             {messages.length === 0 && (
               <div className="leitor-chips">
                 {SUGGESTIONS.map((s) => (
-                  <button key={s} className="leitor-chip" onClick={() => useChip(s)}>
+                  <button key={s} className="leitor-chip" onClick={() => handleChipClick(s)}>
                     {s}
                   </button>
                 ))}
