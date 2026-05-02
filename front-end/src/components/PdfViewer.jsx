@@ -17,6 +17,8 @@ const DEFAULT_PREFERENCES = {
   rotation: 0,
 };
 
+const VIEW_MODES = new Set(["continuous", "single"]);
+
 function readStorage(key, fallback) {
   try {
     const storedValue = localStorage.getItem(key);
@@ -57,7 +59,9 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [pagesRendered, setPagesRendered] = useState(0);
-  const [viewMode, setViewMode] = useState(savedPreferences.viewMode);
+  const [viewMode, setViewMode] = useState(
+    VIEW_MODES.has(savedPreferences.viewMode) ? savedPreferences.viewMode : DEFAULT_PREFERENCES.viewMode
+  );
   const [zoom, setZoom] = useState(savedPreferences.zoom);
   const [fitWidth, setFitWidth] = useState(savedPreferences.fitWidth);
   const [visualMode, setVisualMode] = useState(savedPreferences.visualMode);
@@ -353,7 +357,12 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   };
 
   const handleViewModeChange = (mode) => {
+    if (!VIEW_MODES.has(mode)) return;
+
+    pageRefs.current = new Array(numPages || 0).fill(null);
+    setPagesRendered(0);
     setViewMode(mode);
+
     if (mode === "continuous") {
       requestAnimationFrame(() => {
         const target = pageRefs.current[pageNumber - 1];
@@ -432,7 +441,8 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const pageWidth = Math.round(baseWidth * zoom);
   const isCurrentPageBookmarked = bookmarks.includes(pageNumber);
   const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
-  const pagesToRender = viewMode === "single" && numPages
+  const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
+  const pagesToRender = safeViewMode === "single" && numPages
     ? [pageNumber]
     : numPages
       ? Array.from({ length: numPages }, (_, i) => i + 1)
@@ -468,17 +478,17 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
         <div className="pdf-toolbar-group" aria-label="Modo de leitura">
           <button
             type="button"
-            className={viewMode === "continuous" ? "active" : ""}
+            className={safeViewMode === "continuous" ? "active" : ""}
             onClick={() => handleViewModeChange("continuous")}
-            aria-pressed={viewMode === "continuous"}
+            aria-pressed={safeViewMode === "continuous"}
           >
             Rolagem
           </button>
           <button
             type="button"
-            className={viewMode === "single" ? "active" : ""}
+            className={safeViewMode === "single" ? "active" : ""}
             onClick={() => handleViewModeChange("single")}
-            aria-pressed={viewMode === "single"}
+            aria-pressed={safeViewMode === "single"}
           >
             Página
           </button>
@@ -597,7 +607,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
 
       <div
         ref={viewportRef}
-        className={`pdf-viewport pdf-viewport-${viewMode}`}
+        className={`pdf-viewport pdf-viewport-${safeViewMode}`}
         tabIndex={0}
         aria-label="Área de leitura do PDF"
       >
