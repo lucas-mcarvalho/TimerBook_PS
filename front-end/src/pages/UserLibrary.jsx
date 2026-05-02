@@ -3,7 +3,7 @@ import { deleteBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
 import { getBookByUserId } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
-import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
+import { endReading, endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
 
 
 import '../styles/Layout.css';
@@ -66,9 +66,10 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
               e.stopPropagation();
               const response = await getUser();
               const userId = response.data.id;
-
+              const bookId = book.id;
               
-              //await endReading(ReadingId, userId);
+              
+              await endReading(bookId, userId);
           }}
           className="btn-stats"
         >

@@ -11,9 +11,9 @@ export async function startReading(userId, bookId, startPage) {
     }
 }
 
-export async function endReading(readingId, userId) {
+export async function endReading(bookId, userId) {
     try {
-        const response = await api.put(`http://localhost:8080/readings/${userId}/${readingId}/finish`);
+        const response = await api.put(`http://localhost:8080/readings/${userId}/${bookId}/finish`);
         alert("Leitura finalizada com sucesso!");
         return response.data;
     } catch (error) {
