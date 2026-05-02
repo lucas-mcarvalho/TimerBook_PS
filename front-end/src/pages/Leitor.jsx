@@ -5,10 +5,12 @@ import { endReadingSession } from "../features/books/readSessions.js";
 import { extractPDFRange } from "../features/books/pdfExtractor.js";
 import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../components/Toast.jsx";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js"
 
 export default function Leitor() {
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const { state } = useLocation();
   const book = state?.book;
@@ -28,7 +30,7 @@ export default function Leitor() {
 
   const handleEndSession = async () => {
     if (!sessionId) {
-      alert("Sessão não encontrada.");
+      showToast("Sessão não encontrada.", "error");
       return;
     }
     setEndingSession(true);
@@ -37,13 +39,13 @@ export default function Leitor() {
     const novas = response?.data?.novasConquistas || response?.novasConquistas;
       if (novas && novas.length > 0) {
         novas.forEach(conquista => {
-          alert(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`);
+          showToast(`🏆 NOVA CONQUISTA!\n\nVocê desbloqueou: ${conquista.icone} ${conquista.nome}`, "success");
         });
       }
-      alert("Sessão de leitura encerrada!");
+      showToast("Sessão de leitura encerrada!", "success");
       navigate("/meus-livros");
     } catch (err) {
-      alert("Erro ao encerrar sessão: " + err.message);
+      showToast("Erro ao encerrar sessão: " + err.message, "error");
     } finally {
       setEndingSession(false);
     }

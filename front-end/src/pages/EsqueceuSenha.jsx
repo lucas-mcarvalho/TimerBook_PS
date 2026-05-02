@@ -45,7 +45,16 @@ export default function EsqueceuSenha() {
       setSuccess(response.message || "E-mail de recuperação enviado com sucesso!");
       setFormData({ email: "" });
     } catch (err) {
-      setError(err.response?.data?.message || "Erro ao solicitar recuperação.");
+      const message = err.response?.data;
+      if (typeof message === "string") {
+        if (message.toLowerCase().includes("usuario nao encontrado")) {
+          setError("E-mail não encontrado em nossa base de dados.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError(message?.message || "Erro ao solicitar recuperação.");
+      }
     } finally {
       setLoading(false);
     }

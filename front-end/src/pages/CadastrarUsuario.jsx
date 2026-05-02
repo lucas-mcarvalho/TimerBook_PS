@@ -68,7 +68,22 @@ export default function CadastrarUsuario() {
       });
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao cadastrar usuário");
+      const status = err.response?.status;
+      const message = err.response?.data;
+
+      if (status === 400 && typeof message === 'string') {
+        const lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.includes("email já cadastrado") || lowerMessage.includes("email ja cadastrado")) {
+          setError("Este e-mail já está sendo usado. Tente outro ou recupere sua senha.");
+        } else if (lowerMessage.includes("username já está em uso") || lowerMessage.includes("username ja esta em uso")) {
+          setError("Este nome de usuário já existe. Escolha um nome diferente.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError("Erro ao conectar com o servidor. Tente novamente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }

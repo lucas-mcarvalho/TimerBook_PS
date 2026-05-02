@@ -4,7 +4,7 @@ import '../styles/HomeAddBookModal.css';
 import '../styles/EditProfileModal.css'; 
 
 export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSuccess }) {
-  const [formData, setFormData] = useState({ username: "", email: "" });
+  const [formData, setFormData] = useState({ username: "" });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [removePhotoFlag, setRemovePhotoFlag] = useState(false);
@@ -14,8 +14,7 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
   useEffect(() => {
     if (userInfo && isOpen) {
       setFormData({
-        username: userInfo.username || "",
-        email: userInfo.email || ""
+        username: userInfo.username || ""
       });
       const photoPath = userInfo.photopath || userInfo.photo;
       setPhotoPreview(photoPath ? `http://localhost:8080/${photoPath}?t=${Date.now()}` : null);
@@ -42,17 +41,36 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
     setError(null);
 
     try {
-      const response = await updateProfile(userId, formData, photoFile, removePhotoFlag);
+      const profileData = {
+        ...formData,
+        email: userInfo.email
+      };
+
+      const response = await updateProfile(userId, profileData, photoFile, removePhotoFlag);
       
       onUpdateSuccess({ 
-        ...formData, 
+        ...profileData, 
         photopath: (removePhotoFlag && !photoFile) ? null : (response.photopath || userInfo.photopath),
         photo: (removePhotoFlag && !photoFile) ? null : (response.photopath || userInfo.photopath)
       }); 
       
       onClose(); 
     } catch (err) {
-      setError("Erro ao salvar: Verifique se o username/email já existem.");
+      const status = err.response?.status;
+      const message = err.response?.data;
+
+      if (status === 400 && typeof message === 'string') {
+        const lowerMessage = message.toLowerCase();
+        if (lowerMessage.includes("username já está em uso") || lowerMessage.includes("username ja esta em uso")) {
+          setError("Este nome de usuário já existe. Escolha outro.");
+        } else if (lowerMessage.includes("email já cadastrado") || lowerMessage.includes("email ja cadastrado")) {
+          setError("Este e-mail já está em uso.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError("Erro ao salvar: Nome de usuário em uso.");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,16 +93,6 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
                   type="text" 
                   value={formData.username} 
                   onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                  required 
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email</label>
-                <input 
-                  type="email" 
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
                   required 
                 />
               </div>
