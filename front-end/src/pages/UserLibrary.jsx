@@ -75,7 +75,9 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
               console.log("id da leitura:", readingId);
               console.log("id do usuário:", userId);
               
-              await endReading(readingId, userId);
+              await endReading(readingId, userId, {
+                  currentPage: 100  
+              });
           }}
           className="btn-stats"
         >
