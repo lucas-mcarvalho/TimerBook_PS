@@ -60,7 +60,6 @@ public class UserController implements UserControllerDocs {
         dto.setEmail(email);
         dto.setPhotopath(photo);
 
-        // 👇 CONVERTE A STRING PARA BOOLEAN E SALVA NO DTO 👇
         if (removePhotoStr != null) {
             dto.setRemovePhoto(Boolean.parseBoolean(removePhotoStr));
         }

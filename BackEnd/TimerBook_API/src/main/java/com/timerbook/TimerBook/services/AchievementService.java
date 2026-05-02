@@ -42,7 +42,7 @@ public class AchievementService {
                 userAchievementRepo.save(novoGanho);
 
                 conquistasDesbloqueadasAgora.add(
-                        new AchievementDTO(achievement.getName(), achievement.getIconUrl())
+                        new AchievementDTO(achievement.getName(), achievement.getIconUrl(),achievement.getDescription())
                 );
             }
         }
@@ -56,7 +56,8 @@ public class AchievementService {
         return ganhos.stream()
                 .map(ganho -> new AchievementDTO(
                         ganho.getAchievement().getName(),
-                        ganho.getAchievement().getIconUrl()
+                        ganho.getAchievement().getIconUrl(),
+                        ganho.getAchievement().getDescription()
                 ))
                 .toList();
     }
@@ -77,7 +78,7 @@ public class AchievementService {
                 userAchievementRepo.save(novoGanho);
 
                 conquistas.add(
-                        new AchievementDTO(achievement.getName(), achievement.getIconUrl())
+                        new AchievementDTO(achievement.getName(), achievement.getIconUrl(),achievement.getDescription())
                 );
 
                 System.out.println("🏆 Conquista de Primeira Sessão desbloqueada para: " + user.getUsername());
