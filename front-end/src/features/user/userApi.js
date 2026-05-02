@@ -33,3 +33,30 @@ export const updateProfile = async (userId, userData, photoFile, removePhotoFlag
         throw error;
     }
 };
+
+export async function updateReadingGoal(goalMinutes) {
+    try {
+        const response = await api.put(
+            "/user/me/reading-goal",
+            {
+                dailyReadingGoalMinutes: goalMinutes
+            }
+        );
+
+        return response.data;
+
+    } catch (error) {
+        console.error("Erro ao atualizar meta de leitura:", error.response?.data || error.message);
+        throw error;
+    }
+}
+
+export async function getReadingGoal() {
+    try {
+        const response = await api.get("/user/me/reading-goal");
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar meta de leitura:", error.response?.data || error.message);
+        throw error;
+    }
+}
