@@ -186,7 +186,12 @@ export default function Leitor() {
         <div className="leitor-pdf-panel">
           <div className="leitor-pdf-body">
             {pdfFile ? (
-              <PdfViewer file={pdfFile} initialPage={initialPage} onPageChange={setCurrentPage} />
+              <PdfViewer
+                file={pdfFile}
+                initialPage={initialPage}
+                onPageChange={setCurrentPage}
+                storageKey={book.id || book.dataPath || "livro"}
+              />
             ) : (
               <div className="leitor-pdf-loading">
                 <div className="leitor-spinner" />
