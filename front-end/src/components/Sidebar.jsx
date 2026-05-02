@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from './Toast.jsx';
+import { useToast } from './ToastContext.js';
 import { getSessionsByReadingId, startReading } from '../features/books/readSessions.js'; 
 import { getUser } from '../features/user/userApi.js';
 
@@ -38,7 +38,7 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
       navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura pelo atalho:", err);
-      alert("Ops! Erro ao tentar abrir o livro: " + err.message);
+      showToast("Ops! Erro ao tentar abrir o livro: " + err.message, "error");
     }
   };
 
