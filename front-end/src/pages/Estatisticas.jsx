@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import api from "../features/axiosApi.js";
-// import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js"; // Comentado se não estiver em uso
+// import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js"; // Comentado caso volte ao fetch api estiver em uso
 
 
 

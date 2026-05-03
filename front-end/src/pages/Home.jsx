@@ -124,7 +124,6 @@ const Home = () => {
             </Link>
           </div>
         </div>
-
       </main>
       <HomeGuide />
     </div>
