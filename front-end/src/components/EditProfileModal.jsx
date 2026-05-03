@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from '../features/user/userApi.js';
+import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileImage.js';
 import '../styles/HomeAddBookModal.css'; 
 import '../styles/EditProfileModal.css'; 
 
@@ -16,8 +17,8 @@ export default function EditProfileModal({ isOpen, onClose, userInfo, onUpdateSu
       setFormData({
         username: userInfo.username || ""
       });
-      const photoPath = userInfo.photopath || userInfo.photo;
-      setPhotoPreview(photoPath ? `http://localhost:8080/${photoPath}?t=${Date.now()}` : null);
+      const photoPath = getProfilePhotoPath(userInfo);
+      setPhotoPreview(resolveProfilePhotoUrl(photoPath, { cacheBust: true }));
       setPhotoFile(null);
       setRemovePhotoFlag(false);
       setError(null);

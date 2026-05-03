@@ -7,6 +7,7 @@ import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
 import AchievementsList from '../components/AchievementsList'; 
 import ProfileIcon from '../assets/Home/ProfileIcon.svg'; 
+import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileImage.js';
 
 import "../styles/PerfilUsuario.css";
 import '../styles/Layout.css'; 
@@ -89,6 +90,9 @@ export default function PerfilUsuario() {
     );
   }
 
+  const profilePhotoPath = getProfilePhotoPath(userInfo);
+  const profilePhotoUrl = resolveProfilePhotoUrl(profilePhotoPath, { cacheBust: true });
+
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
       <Sidebar menuAtivo="perfil" books={books} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
@@ -105,13 +109,9 @@ export default function PerfilUsuario() {
               <div className="info-card">
                 <div className="profile-image-container">
                   <img 
-                    src={
-                      (userInfo?.photopath || userInfo?.photo) 
-                      ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}?t=${Date.now()}` 
-                      : ProfileIcon
-                    } 
+                    src={profilePhotoUrl || ProfileIcon} 
                     alt="Foto" 
-                    className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                    className={profilePhotoUrl ? "" : "profile-image-default"}
                     onError={(e) => {
                       e.target.onerror = null; 
                       e.target.src = ProfileIcon;
