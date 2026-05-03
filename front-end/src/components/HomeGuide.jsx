@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/HomeGuide.css";
 
 const guideSteps = [
@@ -27,6 +28,14 @@ const guideSteps = [
     target: "guide-menu-profile",
   },
   {
+    tag: "META",
+    title: "Meta de leitura",
+    text: "No Perfil, use Alterar Meta de Leitura para mudar seus minutos diários.",
+    target: "guide-menu-profile",
+    actionLabel: "Ir para Perfil",
+    actionTo: "/perfil",
+  },
+  {
     tag: "CONFIGURAÇÕES",
     title: "Configurações",
     text: "Aqui você pode ajustar preferências da sua conta.",
@@ -53,6 +62,7 @@ const guideSteps = [
 ];
 
 const HomeGuide = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightStyle, setHighlightStyle] = useState(null);
@@ -64,22 +74,26 @@ const HomeGuide = () => {
   useEffect(() => {
     if (!isOpen) return;
 
-    const targetId = guideSteps[step].target;
-    const element = document.getElementById(targetId);
+    const frame = requestAnimationFrame(() => {
+      const targetId = guideSteps[step].target;
+      const element = document.getElementById(targetId);
 
-    if (!element) {
-      setHighlightStyle(null);
-      return;
-    }
+      if (!element) {
+        setHighlightStyle(null);
+        return;
+      }
 
-    const rect = element.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
 
-    setHighlightStyle({
-      top: rect.top - 8,
-      left: rect.left - 8,
-      width: rect.width + 16,
-      height: rect.height + 16,
+      setHighlightStyle({
+        top: rect.top - 8,
+        left: rect.left - 8,
+        width: rect.width + 16,
+        height: rect.height + 16,
+      });
     });
+
+    return () => cancelAnimationFrame(frame);
   }, [step, isOpen]);
 
   const nextStep = () => {
@@ -100,6 +114,12 @@ const HomeGuide = () => {
   const closeGuide = () => {
     setIsOpen(false);
     setStep(0);
+  };
+
+  const handleStepAction = () => {
+    if (!currentStep.actionTo) return;
+    closeGuide();
+    navigate(currentStep.actionTo);
   };
 
   return (
@@ -149,6 +169,12 @@ const HomeGuide = () => {
                 </span>
 
                 <div className="guide-actions">
+                  {currentStep.actionTo && (
+                    <button className="guide-step-action" onClick={handleStepAction}>
+                      {currentStep.actionLabel}
+                    </button>
+                  )}
+
                   <button onClick={closeGuide}>Pular</button>
 
                   <button onClick={previousStep} disabled={step === 0}>

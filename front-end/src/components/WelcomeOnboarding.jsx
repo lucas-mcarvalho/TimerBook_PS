@@ -1,19 +1,29 @@
 import React, { useState } from "react";
+import { updateReadingGoal } from "../features/user/userApi.js";
 import "../styles/WelcomeOnboarding.css";
 
 const WelcomeOnboarding = ({ onClose }) => {
   const [readingGoal, setReadingGoal] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const onboardingData = {
-      readingGoalMinutes: readingGoal,
-    };
+    if (!readingGoal || isSaving) return;
 
-    console.log("Meta escolhida:", onboardingData);
+    setIsSaving(true);
+    setError("");
 
-    onClose();
+    try {
+      await updateReadingGoal(readingGoal);
+      onClose();
+    } catch (err) {
+      console.error("Erro ao salvar meta de leitura:", err);
+      setError("Não foi possível salvar sua meta. Tente novamente.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -41,6 +51,7 @@ const WelcomeOnboarding = ({ onClose }) => {
                   readingGoal === minutes ? "selected" : ""
                 }`}
                 onClick={() => setReadingGoal(minutes)}
+                disabled={isSaving}
               >
                 <strong>{minutes}</strong>
                 <span>minutos por dia</span>
@@ -48,8 +59,10 @@ const WelcomeOnboarding = ({ onClose }) => {
             ))}
           </div>
 
-          <button type="submit" disabled={!readingGoal}>
-            Começar
+          {error && <p className="onboarding-error">{error}</p>}
+
+          <button type="submit" disabled={!readingGoal || isSaving}>
+            {isSaving ? "Salvando..." : "Começar"}
           </button>
         </form>
       </div>

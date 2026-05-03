@@ -131,6 +131,12 @@
   color: #111827 !important;
   border: none !important;
 }
+
+.guide-step-action {
+  background: #2457a6 !important;
+  border-color: #3b82f6 !important;
+}
+
 .guide-dark-layer {
   position: fixed;
   inset: 0;

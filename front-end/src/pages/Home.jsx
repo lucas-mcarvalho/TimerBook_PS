@@ -13,12 +13,16 @@ import Sidebar from '../components/Sidebar';
 import ProfileIcon from '../assets/Home/ProfileIcon.svg';
 import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileImage.js';
 
+const getOnboardingStorageKey = (user) => {
+  const identifier = user?.id || user?.email;
+  return identifier ? `timerbook-onboarding-shown-${identifier}` : null;
+};
+
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-  return localStorage.getItem("onboardingShown") !== "true";
-});
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStorageKey, setOnboardingStorageKey] = useState(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
@@ -33,9 +37,14 @@ const Home = () => {
     const fetchDados = async () => {
       try {
         const userData = await getUser();
-        setUserInfo(userData.data || userData);
+        const info = userData.data || userData;
+        setUserInfo(info);
+
+        const storageKey = getOnboardingStorageKey(info);
+        setOnboardingStorageKey(storageKey);
+        setShowOnboarding(storageKey ? localStorage.getItem(storageKey) !== "true" : false);
         
-        const booksData = await getBookByUserId(userData.id || userData.data?.id);
+        const booksData = await getBookByUserId(info.id);
         setBooks(booksData);
       } catch (err) {
         console.error("Erro ao carregar dados na Home:", err);
@@ -54,7 +63,9 @@ const Home = () => {
     {showOnboarding && (
       <WelcomeOnboarding 
   onClose={() => {
-    localStorage.setItem("onboardingShown", "true");
+    if (onboardingStorageKey) {
+      localStorage.setItem(onboardingStorageKey, "true");
+    }
     setShowOnboarding(false);
   }} 
 />
