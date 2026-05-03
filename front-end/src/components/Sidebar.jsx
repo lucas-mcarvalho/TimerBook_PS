@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from './ToastContext.js';
-import { getSessionsByReadingId, startReading } from '../features/books/readSessions.js'; 
+import { startBookReadingSession } from '../features/books/readSessions.js'; 
 import { getUser } from '../features/user/userApi.js';
 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
@@ -22,20 +22,9 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
     try {
       const userResponse = await getUser();
       const userId = userResponse.data?.id || userResponse.id;
+      const { sessionId, initialPage } = await startBookReadingSession(userId, book);
 
-      const readingResponse = await startReading(userId, book.id);
-      const readingId = readingResponse.id;
-      const sessions = await getSessionsByReadingId(readingId);
-      const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
-      const lastSession = sortedSessions[1];
-      const currentSession = sortedSessions[0];
-      
-      let startPage = 1;
-      if (lastSession) {
-        startPage = lastSession.endPage;
-      }
-      
-      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
+      navigate("/leitor", { state: { book, sessionId, initialPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura pelo atalho:", err);
       showToast("Ops! Erro ao tentar abrir o livro: " + err.message, "error");

@@ -35,7 +35,9 @@ const Estatisticas = () => {
         if (!readingId) {
           throw new Error("ID da leitura não informado.");
         }
-        const response = await api.get(`/stats/reading/${readingId}`);
+        const response = await api.get(`/stats/reading/${readingId}`, {
+          params: { includeOngoing: true },
+        });
         const data = response.data;
         console.log("Stats recebidos:", data);
         setErro(null);

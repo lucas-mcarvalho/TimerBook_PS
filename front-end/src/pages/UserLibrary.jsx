@@ -3,7 +3,7 @@ import { deleteBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
 import { getBookByUserId } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
-import { endReading, endReadingSession, getReadingSessions, getSessionsByReadingId, startReading, getReading } from "../features/books/readSessions.js";
+import { endReading, getReadingInProgressByBookId, startBookReadingSession } from "../features/books/readSessions.js";
 
 
 import '../styles/Layout.css';
@@ -66,17 +66,21 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
               e.stopPropagation();
               const response = await getUser();
               const userId = response.data.id;
-              const bookId = book.id;
+              const reading = await getReadingInProgressByBookId(book.id);
 
+              if (!reading?.id) {
+                alert("Esse livro ainda não possui leitura em andamento.");
+                return;
+              }
 
-              const readingResponse = await getReading(bookId, userId);
-              const readingId = readingResponse[0].id;
+              const finalPage = Number(window.prompt("Página final da leitura:", reading.currentPage || 1));
+              if (!Number.isFinite(finalPage) || finalPage < 1) return;
 
-              console.log("id da leitura:", readingId);
+              console.log("id da leitura:", reading.id);
               console.log("id do usuário:", userId);
               
-              await endReading(readingId, userId, {
-                  currentPage: 100  
+              await endReading(reading.id, userId, {
+                  finalPage
               });
           }}
           className="btn-stats"
@@ -132,24 +136,11 @@ function UserLibrary() {
 
   const handleRead = async (book) => {
     try {
-      //Melhorar esse trecho, apenas
       const response = await getUser();
       const userId = response.data.id;
+      const { sessionId, initialPage } = await startBookReadingSession(userId, book);
 
-
-      const readingResponse = await startReading(userId, book.id);
-      const readingId = readingResponse.id;
-      const sessions = await getSessionsByReadingId(readingId);
-      const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
-      const lastSession = sortedSessions[1];
-      const currentSession = sortedSessions[0];
-      
-      let startPage = 1;
-      if (lastSession) {
-        startPage = lastSession.endPage;
-      }
-      
-      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
+      navigate("/leitor", { state: { book, sessionId, initialPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
       setError("Erro ao iniciar leitura: " + err.message);
@@ -157,51 +148,14 @@ function UserLibrary() {
   };
    const handleOpenStats = async (bookId) => {
   try {
-    const sessions = await getReadingSessions();
+    const reading = await getReadingInProgressByBookId(bookId);
 
-    console.log("Sessões recebidas:", sessions);
-    console.log("bookId clicado:", bookId);
-    console.log("Primeira sessão:", sessions[0]);
-    
-
-    const bookSessions = sessions.filter((session) => {
-  console.log("Sessão analisada:", session);
-
-  const sessionBookId =
-    session.book?.id ||
-    session.bookId ||
-    session.book_id ||
-    session.reading?.book?.id ||
-    session.reading?.bookId ||
-    session.reading?.book_id;
-
-  console.log("sessionBookId:", sessionBookId, "bookId:", bookId);
-
-  return Number(sessionBookId) === Number(bookId);
-});
-
-    if (bookSessions.length === 0) {
-      alert("Esse livro ainda não possui sessão de leitura iniciada.");
+    if (!reading?.id) {
+      alert("Esse livro ainda não possui leitura iniciada. Abra o livro para começar uma sessão.");
       return;
     }
 
-    const sortedSessions = [...bookSessions].sort(
-      (a, b) => new Date(b.startedAt) - new Date(a.startedAt)
-    );
-
-    const latestSession = sortedSessions[0];
-
-    const readingId =
-      latestSession.readingId ||
-      latestSession.reading_id ||
-      latestSession.reading?.id;
-
-    if (!readingId) {
-      alert("Não foi possível encontrar o ID da leitura.");
-      return;
-    }
-
-    navigate(`/estatisticas/${readingId}`);
+    navigate(`/estatisticas/${reading.id}`);
   } catch (err) {
     console.error("Erro ao abrir estatísticas:", err);
     alert("Não foi possível abrir as estatísticas desse livro.");
