@@ -3,7 +3,6 @@ package com.timerbook.TimerBook.controllers.docs;
 import com.timerbook.TimerBook.dto.EmailOnlyDTO;
 import com.timerbook.TimerBook.dto.PasswordResponseDTO;
 import com.timerbook.TimerBook.dto.ResetPasswordDTO;
-import com.timerbook.TimerBook.dto.ResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

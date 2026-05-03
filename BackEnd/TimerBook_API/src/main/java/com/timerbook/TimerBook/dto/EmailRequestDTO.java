@@ -1,8 +1,20 @@
 package com.timerbook.TimerBook.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+@Schema(description = "Dados para envio de e-mail")
 public class EmailRequestDTO {
+    @Schema(description = "Destino do e-mail", example = "user@email.com")
+    @Email
+    @NotBlank
     private String to;
+    @Schema(description = "Assunto do e-mail", example = "Confirmação")
+    @NotBlank
     private String subject;
+    @Schema(description = "Mensagem do e-mail")
+    @NotBlank
     private String message;
 
     public EmailRequestDTO() {}
