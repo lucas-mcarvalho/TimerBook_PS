@@ -7,7 +7,7 @@ import api from "../features/axiosApi.js";
 const Estatisticas = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState("");
+  const [erro, setErro] = useState("Erro ao carregar estatísticas.");
 
   const navigate = useNavigate();
   const { readingId } = useParams();

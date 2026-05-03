@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getBooks } from "../features/books/booksApi.js"; 
 import { getUser } from "../features/user/userApi.js";
+import WelcomeOnboarding from '../components/WelcomeOnboarding.jsx';
 
 import '../styles/Layout.css'; 
 import '../styles/Waves.css'; 
@@ -13,6 +14,7 @@ import ProfileIcon from '../assets/Home/ProfileIcon.svg';
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
@@ -40,14 +42,18 @@ const Home = () => {
   }, []);
 
   return (
-    <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
-      
-      <Sidebar 
-        menuAtivo="inicio" 
-        books={books} 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
-      />
+  <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+
+    {showOnboarding && (
+      <WelcomeOnboarding onClose={() => setShowOnboarding(false)} />
+    )}
+
+    <Sidebar 
+      menuAtivo="inicio" 
+      books={books} 
+      isDarkMode={isDarkMode} 
+      setIsDarkMode={setIsDarkMode} 
+    />
 
       <main className="main-content welcome-container">
         
