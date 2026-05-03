@@ -223,6 +223,137 @@
     color: white !important;
 }
 
+.reading-goal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.reading-goal-modal {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e2e8f0;
+}
+
+.dark-theme .reading-goal-modal {
+    background-color: #121e31;
+    border-color: #1e2f4c;
+    color: #ffffff;
+}
+
+.reading-goal-modal h3 {
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+    color: #1a1a1a;
+}
+
+.dark-theme .reading-goal-modal h3 {
+    color: #ffffff;
+}
+
+.reading-goal-modal p {
+    margin-bottom: 22px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.dark-theme .reading-goal-modal p {
+    color: #a0aec0;
+}
+
+.reading-goal-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.reading-goal-option {
+    min-height: 92px;
+    border: 2px solid #d8def0;
+    border-radius: 14px;
+    background: #f8faff;
+    color: #1f2937;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.reading-goal-option:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: #4f46e5;
+}
+
+.reading-goal-option strong {
+    font-size: 1.6rem;
+}
+
+.reading-goal-option span {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.reading-goal-option.selected {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #ffffff;
+}
+
+.dark-theme .reading-goal-option {
+    background: #0b1221;
+    border-color: #1e2f4c;
+    color: #ffffff;
+}
+
+.dark-theme .reading-goal-option.selected {
+    background: #5b4bff;
+    border-color: #7c6cff;
+}
+
+.reading-goal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-save-goal {
+    background-color: #2b5292;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0 30px;
+    min-width: 130px;
+    height: 45px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-save-goal:hover:not(:disabled) {
+    background-color: #1f4178;
+}
+
+.btn-save-goal:disabled,
+.reading-goal-option:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .delete-confirmation-overlay {
     position: fixed;
     top: 0;

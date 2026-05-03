@@ -197,6 +197,14 @@
   color: white;
 }
 
+.onboarding-error {
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 4px 0 0;
+  text-align: center;
+}
+
 .onboarding-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
