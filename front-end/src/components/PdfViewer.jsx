@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import {
+  AreaHighlight,
+  DrawingHighlight,
+  FreetextHighlight,
+  MonitoredHighlightContainer,
+  PdfHighlighter,
+  PdfLoader,
+  ShapeHighlight,
+  TextHighlight,
+  useHighlightContainerContext,
+  usePdfHighlighterContext,
+} from "react-pdf-highlighter-plus";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import "react-pdf-highlighter-plus/style/style.css";
 import "../styles/PdfViewer.css";
-import "../styles/TextLayer.css";
-import "../styles/AnnotationLayer.css";
-
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 const DEFAULT_PREFERENCES = {
   viewMode: "continuous",
@@ -15,9 +24,14 @@ const DEFAULT_PREFERENCES = {
   textSize: 18,
   lineHeight: 1.7,
   rotation: 0,
+  annotationMode: "select",
 };
 
 const VIEW_MODES = new Set(["continuous", "single"]);
+const ANNOTATION_MODES = new Set(["select", "area", "note", "draw", "shape"]);
+const HIGHLIGHT_COLORS = ["rgba(255, 226, 143, 0.85)", "#ffcdd2", "#c8e6c9", "#bbdefb", "#e1bee7"];
+const NOTE_BACKGROUNDS = ["#ffffc8", "#ffcdd2", "#c8e6c9", "#bbdefb", "#e1bee7"];
+const NOTE_TEXT_COLORS = ["#333333", "#d32f2f", "#1976d2", "#388e3c", "#7b1fa2"];
 
 function readStorage(key, fallback) {
   try {
@@ -50,15 +64,197 @@ function highlightText(text, query) {
   ));
 }
 
+function createAnnotationId() {
+  if (crypto?.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function PdfAnnotationContainer({ editHighlight, removeHighlight }) {
+  const {
+    highlight,
+    viewportToScaled,
+    screenshot,
+    isScrolledTo,
+    highlightBindings,
+  } = useHighlightContainerContext();
+  const { toggleEditInProgress } = usePdfHighlighterContext();
+
+  const updatePosition = (rect, extraContent = {}) => {
+    editHighlight(highlight.id, {
+      position: {
+        boundingRect: viewportToScaled(rect),
+        rects: highlight.position.rects?.map(viewportToScaled) || [],
+      },
+      ...extraContent,
+    });
+  };
+
+  const commonProps = {
+    highlight,
+    isScrolledTo,
+    bounds: highlightBindings.textLayer,
+    onDelete: () => removeHighlight(highlight.id),
+  };
+
+  let renderedHighlight = null;
+
+  if (highlight.type === "area") {
+    renderedHighlight = (
+      <AreaHighlight
+        {...commonProps}
+        onChange={(rect) => updatePosition(rect, { content: { image: screenshot(rect) } })}
+        onEditStart={() => toggleEditInProgress(true)}
+        highlightColor={highlight.highlightColor || HIGHLIGHT_COLORS[0]}
+        onStyleChange={(style) => editHighlight(highlight.id, style)}
+        copyText={highlight.content?.text}
+        colorPresets={HIGHLIGHT_COLORS}
+      />
+    );
+  } else if (highlight.type === "freetext") {
+    renderedHighlight = (
+      <FreetextHighlight
+        {...commonProps}
+        compact
+        onChange={(rect) => updatePosition(rect)}
+        onTextChange={(text) => editHighlight(highlight.id, { content: { ...highlight.content, text } })}
+        onStyleChange={(style) => editHighlight(highlight.id, style)}
+        onEditStart={() => toggleEditInProgress(true)}
+        onEditEnd={() => toggleEditInProgress(false)}
+        color={highlight.color || "#333333"}
+        backgroundColor={highlight.backgroundColor || "#ffffc8"}
+        fontSize={highlight.fontSize || "14px"}
+        backgroundColorPresets={NOTE_BACKGROUNDS}
+        textColorPresets={NOTE_TEXT_COLORS}
+      />
+    );
+  } else if (highlight.type === "drawing") {
+    renderedHighlight = (
+      <DrawingHighlight
+        {...commonProps}
+        onChange={(rect) => updatePosition(rect)}
+        onStyleChange={(image, strokes) => editHighlight(highlight.id, { content: { ...highlight.content, image, strokes } })}
+        onEditStart={() => toggleEditInProgress(true)}
+        onEditEnd={() => toggleEditInProgress(false)}
+      />
+    );
+  } else if (highlight.type === "shape") {
+    renderedHighlight = (
+      <ShapeHighlight
+        {...commonProps}
+        onChange={(rect) => updatePosition(rect)}
+        onStyleChange={(style) => editHighlight(highlight.id, { content: { ...highlight.content, shape: { ...highlight.content?.shape, ...style } } })}
+        onEditStart={() => toggleEditInProgress(true)}
+        onEditEnd={() => toggleEditInProgress(false)}
+        shapeType={highlight.content?.shape?.shapeType || "rectangle"}
+        strokeColor={highlight.content?.shape?.strokeColor || "#1976d2"}
+        strokeWidth={highlight.content?.shape?.strokeWidth || 2}
+        startPoint={highlight.content?.shape?.startPoint}
+        endPoint={highlight.content?.shape?.endPoint}
+        colorPresets={["#1976d2", "#d32f2f", "#388e3c", "#7b1fa2", "#111827"]}
+      />
+    );
+  } else {
+    renderedHighlight = (
+      <TextHighlight
+        highlight={highlight}
+        isScrolledTo={isScrolledTo}
+        highlightColor={highlight.highlightColor || HIGHLIGHT_COLORS[0]}
+        highlightStyle={highlight.highlightStyle || "highlight"}
+        onStyleChange={(style) => editHighlight(highlight.id, style)}
+        onDelete={() => removeHighlight(highlight.id)}
+        copyText={highlight.content?.text}
+        colorPresets={HIGHLIGHT_COLORS}
+      />
+    );
+  }
+
+  return (
+    <MonitoredHighlightContainer
+      highlightTip={{
+        position: highlight.position,
+        content: (
+          <div className="pdf-annotation-tip">
+            <strong>{highlight.type === "freetext" ? "Nota" : "Anotação"}</strong>
+            {highlight.content?.text && <span>{highlight.content.text}</span>}
+          </div>
+        ),
+      }}
+    >
+      {renderedHighlight}
+    </MonitoredHighlightContainer>
+  );
+}
+
+function PdfHighlighterContent({
+  annotationMode,
+  annotations,
+  drawingStrokeWidth,
+  editHighlight,
+  handleDrawingComplete,
+  handleFreetextClick,
+  handleSelection,
+  handleShapeComplete,
+  loadedPdfDocument,
+  pdfScaleValue,
+  removeHighlight,
+  safeViewMode,
+  setAnnotationMode,
+  setNumPages,
+  setPdfDocument,
+  shapeType,
+  visualMode,
+  highlighterUtilsRef,
+}) {
+  useEffect(() => {
+    setPdfDocument(loadedPdfDocument);
+    setNumPages(loadedPdfDocument.numPages);
+  }, [loadedPdfDocument, setNumPages, setPdfDocument]);
+
+  return (
+    <PdfHighlighter
+      pdfDocument={loadedPdfDocument}
+      highlights={annotations}
+      pdfScaleValue={pdfScaleValue}
+      utilsRef={(utils) => {
+        highlighterUtilsRef.current = utils;
+      }}
+      onSelection={handleSelection}
+      enableAreaSelection={(event) => annotationMode === "area" || event.altKey}
+      areaSelectionMode={annotationMode === "area"}
+      enableFreetextCreation={() => annotationMode === "note"}
+      onFreetextClick={handleFreetextClick}
+      enableDrawingMode={annotationMode === "draw"}
+      onDrawingComplete={handleDrawingComplete}
+      onDrawingCancel={() => setAnnotationMode("select")}
+      enableShapeMode={shapeType}
+      onShapeComplete={handleShapeComplete}
+      onShapeCancel={() => setAnnotationMode("select")}
+      drawingStrokeColor="#1976d2"
+      drawingStrokeWidth={drawingStrokeWidth}
+      shapeStrokeColor="#1976d2"
+      shapeStrokeWidth={2}
+      textSelectionColor="rgba(255, 226, 143, 0.35)"
+      theme={{
+        mode: visualMode === "invert" ? "dark" : "light",
+        containerBackgroundColor: "transparent",
+      }}
+      style={{ height: safeViewMode === "single" ? "100%" : "100%" }}
+    >
+      <PdfAnnotationContainer editHighlight={editHighlight} removeHighlight={removeHighlight} />
+    </PdfHighlighter>
+  );
+}
+
 function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default" }) {
   const preferencesKey = `timerbook-pdf-preferences-${storageKey}`;
   const bookmarksKey = `timerbook-pdf-bookmarks-${storageKey}`;
+  const annotationsKey = `timerbook-pdf-annotations-${storageKey}`;
   const savedPreferences = useMemo(() => readStorage(preferencesKey, DEFAULT_PREFERENCES), [preferencesKey]);
   const savedBookmarks = useMemo(() => readStorage(bookmarksKey, []), [bookmarksKey]);
+  const savedAnnotations = useMemo(() => readStorage(annotationsKey, []), [annotationsKey]);
 
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(initialPage);
-  const [pagesRendered, setPagesRendered] = useState(0);
   const [viewMode, setViewMode] = useState(
     VIEW_MODES.has(savedPreferences.viewMode) ? savedPreferences.viewMode : DEFAULT_PREFERENCES.viewMode
   );
@@ -69,8 +265,12 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const [textSize, setTextSize] = useState(savedPreferences.textSize);
   const [lineHeight, setLineHeight] = useState(savedPreferences.lineHeight);
   const [rotation, setRotation] = useState(savedPreferences.rotation);
+  const [annotationMode, setAnnotationMode] = useState(
+    ANNOTATION_MODES.has(savedPreferences.annotationMode) ? savedPreferences.annotationMode : DEFAULT_PREFERENCES.annotationMode
+  );
   const [bookmarks, setBookmarks] = useState(savedBookmarks);
-  const [containerWidth, setContainerWidth] = useState(700);
+  const [annotations, setAnnotations] = useState(savedAnnotations);
+  const [pdfData, setPdfData] = useState(null);
   const [pdfDocument, setPdfDocument] = useState(null);
   const [pageText, setPageText] = useState("");
   const [textLoading, setTextLoading] = useState(false);
@@ -78,19 +278,19 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const [searchResults, setSearchResults] = useState([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
-  const containerRef = useRef(null);
   const viewportRef = useRef(null);
-  const pageRefs = useRef([]);
-  const observerRef = useRef(null);
   const searchInputRef = useRef(null);
   const pageTextCacheRef = useRef(new Map());
-  const isScrollingToPage = useRef(false);
-  const hasScrolledToInitial = useRef(false);
+  const highlighterUtilsRef = useRef(null);
+  const isCurrentPageBookmarked = bookmarks.includes(pageNumber);
+  const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
+  const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
+  const pdfScaleValue = fitWidth ? "page-width" : Number(zoom.toFixed(2));
+  const shapeType = annotationMode === "shape" ? "rectangle" : null;
 
   const onPageChangeRef = useRef(onPageChange);
   useEffect(() => { onPageChangeRef.current = onPageChange; }, [onPageChange]);
 
-  // Notify parent whenever pageNumber changes
   useEffect(() => {
     onPageChangeRef.current?.(pageNumber);
   }, [pageNumber]);
@@ -105,63 +305,85 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
       textSize,
       lineHeight,
       rotation,
+      annotationMode,
     };
     localStorage.setItem(preferencesKey, JSON.stringify(preferences));
-  }, [fitWidth, lineHeight, preferencesKey, rotation, textMode, textSize, viewMode, visualMode, zoom]);
+  }, [annotationMode, fitWidth, lineHeight, preferencesKey, rotation, textMode, textSize, viewMode, visualMode, zoom]);
 
   useEffect(() => {
     localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
   }, [bookmarks, bookmarksKey]);
 
-  // Reset scroll flag when file changes
   useEffect(() => {
-    hasScrolledToInitial.current = false;
-    const frame = requestAnimationFrame(() => {
-      setPageNumber(initialPage);
-      setPagesRendered(0);
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [file, initialPage]);
+    localStorage.setItem(annotationsKey, JSON.stringify(annotations));
+  }, [annotations, annotationsKey]);
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadDocument = async () => {
-      if (!file) return;
+    const loadData = async () => {
+      if (!file) {
+        setPdfData(null);
+        setPdfDocument(null);
+        return;
+      }
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const loadedPdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
         if (!cancelled) {
           pageTextCacheRef.current = new Map();
-          setPdfDocument(loadedPdf);
+          setPdfData(new Uint8Array(arrayBuffer));
+          setPageNumber(initialPage);
         }
       } catch (error) {
-        if (!cancelled) {
-          console.error("Erro ao preparar texto do PDF:", error);
-          setPdfDocument(null);
-        }
+        console.error("Erro ao preparar PDF:", error);
+        if (!cancelled) setPdfData(null);
       }
     };
 
-    loadDocument();
+    loadData();
     return () => {
       cancelled = true;
     };
-  }, [file]);
+  }, [file, initialPage]);
 
   useEffect(() => {
-    const target = viewportRef.current;
-    if (!target) return;
+    const eventBus = highlighterUtilsRef.current?.getEventBus?.();
+    if (!eventBus) return undefined;
 
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
-    });
+    const handlePageChanging = (event) => {
+      if (event?.pageNumber) setPageNumber(event.pageNumber);
+    };
 
-    resizeObserver.observe(target);
-    return () => resizeObserver.disconnect();
-  }, []);
+    eventBus.on("pagechanging", handlePageChanging);
+    return () => eventBus.off("pagechanging", handlePageChanging);
+  }, [pdfDocument]);
+
+  useEffect(() => {
+    const viewer = highlighterUtilsRef.current?.getViewer?.();
+    if (!viewer) return;
+
+    if (typeof viewer.pagesRotation === "number") {
+      viewer.pagesRotation = rotation;
+      viewer.update?.();
+    }
+  }, [rotation, pdfDocument]);
+
+  useEffect(() => {
+    const updateVisiblePages = () => {
+      const pages = viewportRef.current?.querySelectorAll(".pdfViewer .page");
+      pages?.forEach((page) => {
+        const pageElement = page;
+        pageElement.style.display = safeViewMode === "single" && pageElement.dataset.pageNumber !== String(pageNumber)
+          ? "none"
+          : "";
+      });
+    };
+
+    updateVisiblePages();
+    const timeout = setTimeout(updateVisiblePages, 150);
+    return () => clearTimeout(timeout);
+  }, [annotations, pageNumber, pdfDocument, pdfScaleValue, safeViewMode]);
 
   const extractPageText = useCallback(async (targetPage) => {
     if (!pdfDocument) return "";
@@ -203,104 +425,12 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     };
   }, [extractPageText, pageNumber, pdfDocument, textMode]);
 
-  // Scroll to initialPage once enough pages have rendered.
-  // We wait until the target page itself has rendered (pagesRendered >= initialPage)
-  // AND has a non-zero offsetHeight, meaning its canvas is painted.
-  useEffect(() => {
-    if (viewMode !== "continuous") return;
-    if (initialPage <= 1 || hasScrolledToInitial.current) return;
-    if (pagesRendered < initialPage) return;
-
-    const target = pageRefs.current[initialPage - 1];
-    if (!target) return;
-
-    // Use a ResizeObserver on the target page to detect when it gains real height
-    // (canvas painted) and then scroll. Disconnect immediately after first scroll.
-    const ro = new ResizeObserver(() => {
-      if (target.offsetHeight > 0) {
-        ro.disconnect();
-        hasScrolledToInitial.current = true;
-        isScrollingToPage.current = true;
-
-        // scrollIntoView positions relative to the scrollable ancestor
-        target.scrollIntoView({ behavior: "instant", block: "start" });
-
-        // Keep the flag on long enough to suppress the IntersectionObserver
-        setTimeout(() => { isScrollingToPage.current = false; }, 600);
-      }
-    });
-
-    ro.observe(target);
-    return () => ro.disconnect();
-  }, [pagesRendered, initialPage, viewMode]);
-
-  // IntersectionObserver: track which page is most visible
-  useEffect(() => {
-    if (!numPages || viewMode !== "continuous") return;
-
-    observerRef.current?.disconnect();
-    const visibilityMap = {};
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (isScrollingToPage.current) return;
-
-        entries.forEach((entry) => {
-          const index = Number(entry.target.dataset.pageIndex);
-          visibilityMap[index] = entry.intersectionRatio;
-        });
-
-        const mostVisible = Object.entries(visibilityMap).reduce(
-          (best, [idx, ratio]) => (ratio > best.ratio ? { idx: Number(idx), ratio } : best),
-          { idx: 0, ratio: -1 }
-        );
-
-        if (mostVisible.ratio > 0) {
-          const newPage = mostVisible.idx + 1;
-          setPageNumber((prev) => (prev !== newPage ? newPage : prev));
-        }
-      },
-      {
-        root: viewportRef.current,
-        threshold: Array.from({ length: 21 }, (_, i) => i * 0.05),
-      }
-    );
-
-    pageRefs.current.forEach((el) => {
-      if (el) observerRef.current.observe(el);
-    });
-
-    return () => observerRef.current?.disconnect();
-  }, [numPages, viewMode]);
-
-  const onDocumentLoadSuccess = useCallback(({ numPages }) => {
-    setNumPages(numPages);
-    pageRefs.current = new Array(numPages).fill(null);
-  }, []);
-
-  // Called by each Page when it finishes rendering its canvas
-  const handlePageRenderSuccess = useCallback((pageIndex) => {
-    setPagesRendered((prev) => Math.max(prev, pageIndex + 1));
-  }, []);
-
-  const scrollToPage = useCallback((targetPage) => {
-    if (viewMode !== "continuous") return;
-    const target = pageRefs.current[targetPage - 1];
-    if (!target) return;
-
-    isScrollingToPage.current = true;
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => {
-      isScrollingToPage.current = false;
-    }, 500);
-  }, [viewMode]);
-
   const goToPage = useCallback((targetPage) => {
     if (!numPages) return;
     const nextPage = Math.min(numPages, Math.max(1, targetPage));
     setPageNumber(nextPage);
-    scrollToPage(nextPage);
-  }, [numPages, scrollToPage]);
+    highlighterUtilsRef.current?.goToPage?.(nextPage);
+  }, [numPages]);
 
   const goToSearchResult = useCallback((resultIndex) => {
     if (!searchResults.length) return;
@@ -308,11 +438,13 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     const nextIndex = (resultIndex + searchResults.length) % searchResults.length;
     setActiveSearchIndex(nextIndex);
     goToPage(searchResults[nextIndex].page);
-  }, [goToPage, searchResults]);
+    highlighterUtilsRef.current?.search?.(searchQuery, { highlightAll: true });
+  }, [goToPage, searchQuery, searchResults]);
 
   const handleSearch = async () => {
     const query = searchQuery.trim();
     if (!query || !pdfDocument) {
+      highlighterUtilsRef.current?.clearSearch?.();
       setSearchResults([]);
       setActiveSearchIndex(-1);
       return;
@@ -338,6 +470,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
         }
       }
 
+      highlighterUtilsRef.current?.search?.(query, { highlightAll: true });
       setSearchResults(results);
       setActiveSearchIndex(results.length ? 0 : -1);
       if (results.length) goToPage(results[0].page);
@@ -358,17 +491,8 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
 
   const handleViewModeChange = (mode) => {
     if (!VIEW_MODES.has(mode)) return;
-
-    pageRefs.current = new Array(numPages || 0).fill(null);
-    setPagesRendered(0);
     setViewMode(mode);
-
-    if (mode === "continuous") {
-      requestAnimationFrame(() => {
-        const target = pageRefs.current[pageNumber - 1];
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
+    if (mode === "single") goToPage(pageNumber);
   };
 
   const handlePageInputChange = (event) => {
@@ -377,8 +501,69 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     goToPage(nextPage);
   };
 
+  const addHighlight = useCallback((highlight) => {
+    setAnnotations((currentAnnotations) => [{ ...highlight, id: createAnnotationId() }, ...currentAnnotations]);
+  }, []);
+
+  const editHighlight = useCallback((id, edit) => {
+    setAnnotations((currentAnnotations) => (
+      currentAnnotations.map((highlight) => (
+        highlight.id === id
+          ? {
+              ...highlight,
+              ...edit,
+              content: edit.content ? { ...highlight.content, ...edit.content } : highlight.content,
+            }
+          : highlight
+      ))
+    ));
+  }, []);
+
+  const removeHighlight = useCallback((id) => {
+    setAnnotations((currentAnnotations) => currentAnnotations.filter((highlight) => highlight.id !== id));
+  }, []);
+
+  const handleSelection = useCallback((selection) => {
+    const ghostHighlight = selection.makeGhostHighlight();
+    addHighlight({
+      ...ghostHighlight,
+      type: ghostHighlight.type || (ghostHighlight.content?.image ? "area" : "text"),
+      highlightColor: HIGHLIGHT_COLORS[0],
+    });
+  }, [addHighlight]);
+
+  const handleFreetextClick = useCallback((position) => {
+    addHighlight({
+      type: "freetext",
+      position,
+      content: { text: "Nova nota" },
+      color: "#333333",
+      backgroundColor: "#ffffc8",
+      fontSize: "14px",
+    });
+    setAnnotationMode("select");
+  }, [addHighlight]);
+
+  const handleDrawingComplete = useCallback((image, position, strokes) => {
+    addHighlight({
+      type: "drawing",
+      position,
+      content: { image, strokes },
+    });
+    setAnnotationMode("select");
+  }, [addHighlight]);
+
+  const handleShapeComplete = useCallback((position, shape) => {
+    addHighlight({
+      type: "shape",
+      position,
+      content: { shape },
+    });
+    setAnnotationMode("select");
+  }, [addHighlight]);
+
   const handleKeyDown = (event) => {
-    if (event.target.tagName === "INPUT") return;
+    if (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA") return;
 
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") {
       event.preventDefault();
@@ -436,17 +621,6 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
       goToPage(numPages);
     }
   };
-
-  const baseWidth = fitWidth ? Math.min(900, Math.max(320, containerWidth - 48)) : 650;
-  const pageWidth = Math.round(baseWidth * zoom);
-  const isCurrentPageBookmarked = bookmarks.includes(pageNumber);
-  const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
-  const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
-  const pagesToRender = safeViewMode === "single" && numPages
-    ? [pageNumber]
-    : numPages
-      ? Array.from({ length: numPages }, (_, i) => i + 1)
-      : [];
 
   return (
     <div
@@ -583,9 +757,27 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
             Marcar
           </button>
         </div>
+
+        <div className="pdf-toolbar-group" aria-label="Anotações">
+          <button type="button" className={annotationMode === "select" ? "active" : ""} onClick={() => setAnnotationMode("select")}>
+            Seleção
+          </button>
+          <button type="button" className={annotationMode === "area" ? "active" : ""} onClick={() => setAnnotationMode("area")}>
+            Área
+          </button>
+          <button type="button" className={annotationMode === "note" ? "active" : ""} onClick={() => setAnnotationMode("note")}>
+            Nota
+          </button>
+          <button type="button" className={annotationMode === "draw" ? "active" : ""} onClick={() => setAnnotationMode("draw")}>
+            Desenho
+          </button>
+          <button type="button" className={annotationMode === "shape" ? "active" : ""} onClick={() => setAnnotationMode("shape")}>
+            Forma
+          </button>
+        </div>
       </div>
 
-      {(bookmarks.length > 0 || activeResult) && (
+      {(bookmarks.length > 0 || activeResult || annotations.length > 0 || annotationMode !== "select") && (
         <div className="pdf-secondary-bar">
           {bookmarks.length > 0 && (
             <div className="pdf-bookmarks" aria-label="Marcadores">
@@ -596,6 +788,22 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
                 </button>
               ))}
             </div>
+          )}
+          {annotations.length > 0 && (
+            <div className="pdf-bookmarks" aria-label="Anotações">
+              <span>Anotações</span>
+              <button type="button" onClick={() => setAnnotations([])}>
+                Limpar {annotations.length}
+              </button>
+            </div>
+          )}
+          {annotationMode !== "select" && (
+            <span className="pdf-annotation-hint">
+              {annotationMode === "area" && "Arraste no PDF para marcar uma área."}
+              {annotationMode === "note" && "Clique no PDF para criar uma nota."}
+              {annotationMode === "draw" && "Desenhe sobre a página."}
+              {annotationMode === "shape" && "Arraste para criar uma forma."}
+            </span>
           )}
           {activeResult && (
             <button type="button" className="pdf-search-excerpt" onClick={() => goToPage(activeResult.page)}>
@@ -628,37 +836,41 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
             </article>
           </section>
         ) : (
-          <div ref={containerRef} className="pdf-pages">
-          <Document
-            file={file}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={(err) => console.error("ERRO AO CARREGAR PDF:", err)}
-            onSourceError={(err) => console.error("ERRO NA SOURCE:", err)}
-            loading={<p className="pdf-message">Carregando PDF...</p>}
-            error={<p className="pdf-message pdf-message-error">Erro ao carregar PDF</p>}
-          >
-            {pagesToRender.map((renderedPage) => {
-              const pageIndex = renderedPage - 1;
-              return (
-                <div
-                  key={renderedPage}
-                  className="pdf-page-shell"
-                  data-page-index={pageIndex}
-                  ref={(el) => (pageRefs.current[pageIndex] = el)}
-                  aria-label={`Página ${renderedPage}`}
-                >
-                  <Page
-                    pageNumber={renderedPage}
-                    width={pageWidth}
-                    rotate={rotation}
-                    renderTextLayer
-                    renderAnnotationLayer
-                    onRenderSuccess={() => handlePageRenderSuccess(pageIndex)}
+          <div className="pdf-pages pdf-highlighter-pages">
+            {pdfData ? (
+              <PdfLoader
+                document={pdfData}
+                workerSrc={pdfWorkerUrl}
+                beforeLoad={() => <p className="pdf-message">Carregando PDF...</p>}
+                errorMessage={() => <p className="pdf-message pdf-message-error">Erro ao carregar PDF</p>}
+                onError={(error) => console.error("ERRO AO CARREGAR PDF:", error)}
+              >
+                {(loadedPdfDocument) => (
+                  <PdfHighlighterContent
+                    annotationMode={annotationMode}
+                    annotations={annotations}
+                    drawingStrokeWidth={3}
+                    editHighlight={editHighlight}
+                    handleDrawingComplete={handleDrawingComplete}
+                    handleFreetextClick={handleFreetextClick}
+                    handleSelection={handleSelection}
+                    handleShapeComplete={handleShapeComplete}
+                    highlighterUtilsRef={highlighterUtilsRef}
+                    loadedPdfDocument={loadedPdfDocument}
+                    pdfScaleValue={pdfScaleValue}
+                    removeHighlight={removeHighlight}
+                    safeViewMode={safeViewMode}
+                    setAnnotationMode={setAnnotationMode}
+                    setNumPages={setNumPages}
+                    setPdfDocument={setPdfDocument}
+                    shapeType={shapeType}
+                    visualMode={visualMode}
                   />
-                </div>
-              );
-            })}
-          </Document>
+                )}
+              </PdfLoader>
+            ) : (
+              <p className="pdf-message">Carregando PDF...</p>
+            )}
           </div>
         )}
       </div>
