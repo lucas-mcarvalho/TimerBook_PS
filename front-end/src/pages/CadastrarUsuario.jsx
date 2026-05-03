@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { registerUser } from "../features/auth/user.js";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import TimerBookLogo from "../assets/Home/TimerbookLogo.svg";
 
@@ -23,15 +23,31 @@ export default function CadastrarUsuario() {
     photo: null,
   });
 
+  // Novo estado para mostrar a pré-visualização da imagem
+  const [photoPreview, setPhotoPreview] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  // Manipulador para os inputs de texto padrão
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Novo manipulador exclusivo para o input de arquivo (foto)
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, photo: file }));
+      // Cria uma URL local temporária para o preview da imagem
+      setPhotoPreview(URL.createObjectURL(file));
+    } else {
+      setFormData((prev) => ({ ...prev, photo: null }));
+      setPhotoPreview(null);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,7 +65,7 @@ export default function CadastrarUsuario() {
     setLoading(true);
 
     try {
-      
+      // Repassando os dados, incluindo a foto, para a sua função de API
       await registerUser(
         formData.username,
         formData.email,
@@ -59,6 +75,7 @@ export default function CadastrarUsuario() {
 
       setSuccess("Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Você precisa clicar nele antes de fazer login.");
 
+      // Limpa os formulários e o preview
       setFormData({
         username: "",
         email: "",
@@ -66,6 +83,7 @@ export default function CadastrarUsuario() {
         confirmPassword: "",
         photo: null,
       });
+      setPhotoPreview(null);
       
     } catch (err) {
       const status = err.response?.status;
@@ -104,19 +122,45 @@ export default function CadastrarUsuario() {
           <p className="welcome-text">Crie sua conta</p>
 
           {success && (
-            <div className="status-message status-success">
-              ✓ Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Você precisa clicar nele antes de fazer login.
+            <div className="status-message status-success" style={{ padding: '10px', marginBottom: '15px' }}>
+              ✓ {success}
             </div>
           )}
 
           {error && (
-            <div className="status-message status-error">
+            <div className="status-message status-error" style={{ padding: '10px', marginBottom: '15px' }}>
               ✗ {error}
             </div>
           )}
 
           {/* FORM */}
           <form className="profile-form" onSubmit={handleSubmit}>
+
+            {/* SEÇÃO DA FOTO DE PERFIL */}
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: "15px" }}>
+              {photoPreview ? (
+                <img 
+                  src={photoPreview} 
+                  alt="Preview" 
+                  style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", marginBottom: "10px", border: "2px solid #ccc" }} 
+                />
+              ) : (
+                <div style={{ width: "100px", height: "100px", borderRadius: "50%", backgroundColor: isDarkMode ? "#333" : "#f0f0f0", display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: "10px", border: "2px dashed #ccc" }}>
+                  <span style={{ fontSize: "12px", color: "#888" }}>Sem foto</span>
+                </div>
+              )}
+              
+              <label htmlFor="foto-upload" style={{ cursor: "pointer", color: "var(--primary-color)", textDecoration: "underline", fontSize: "14px" }}>
+                Escolher Foto de Perfil
+              </label>
+              <input
+                id="foto-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: "none" }} // Esconde o input feio nativo do navegador
+              />
+            </div>
 
             <div className="form-group">
               <label>Username</label>
@@ -173,7 +217,6 @@ export default function CadastrarUsuario() {
               style={{ width: "100%", marginTop: "25px" }}
             >
               {loading ? "Cadastrando..." : "Cadastrar"}
-
             </button>
 
           </form>
