@@ -3,7 +3,7 @@ import api from "../axiosApi";
 export const getUser = async () => {
     try{
         const userData = await api.get("/user/me");
-        console.log("Dados do usuário obtidos:", userData);
+        
         return userData;
     }catch(error){
         console.error("Erro ao obter dados do usuário:", error);
@@ -30,6 +30,16 @@ export const updateProfile = async (userId, userData, photoFile, removePhotoFlag
         return response.data;
     } catch (error) {
         console.error("Erro ao atualizar perfil:", error);
+        throw error;
+    }
+};
+
+export const deleteUser = async (userId) => {
+    try {
+        const response = await api.delete(`/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao deletar usuário:", error);
         throw error;
     }
 };

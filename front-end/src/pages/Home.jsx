@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getBooks } from "../features/books/booksApi.js"; 
+import { getBookByUserId } from "../features/books/booksApi.js"; 
 import { getUser } from "../features/user/userApi.js";
 import WelcomeOnboarding from '../components/WelcomeOnboarding.jsx';
 
@@ -10,6 +10,7 @@ import '../styles/Home.css';
 import '../styles/HomeDark.css'; 
 import Sidebar from '../components/Sidebar';
 import ProfileIcon from '../assets/Home/ProfileIcon.svg';
+import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileImage.js';
 
 const Home = () => {
   const [books, setBooks] = useState([]);
@@ -31,7 +32,7 @@ const Home = () => {
         const userData = await getUser();
         setUserInfo(userData.data || userData);
         
-        const booksData = await getBooks();
+        const booksData = await getBookByUserId(userData.id || userData.data?.id);
         setBooks(booksData);
       } catch (err) {
         console.error("Erro ao carregar dados na Home:", err);
@@ -40,6 +41,9 @@ const Home = () => {
 
     fetchDados();
   }, []);
+
+  const profilePhotoPath = getProfilePhotoPath(userInfo);
+  const profilePhotoUrl = resolveProfilePhotoUrl(profilePhotoPath);
 
   return (
   <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
@@ -86,13 +90,9 @@ const Home = () => {
             
             <div className="profile-image-container">
               <img 
-                src={
-                  (userInfo?.photopath || userInfo?.photo) 
-                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}` 
-                    : ProfileIcon
-                } 
+                src={profilePhotoUrl || ProfileIcon} 
                 alt="Foto de Perfil" 
-                className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                className={profilePhotoUrl ? "" : "profile-image-default"}
                 onError={(e) => {
                   e.target.onerror = null; 
                   e.target.src = ProfileIcon;

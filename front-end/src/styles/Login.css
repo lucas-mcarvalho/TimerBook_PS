@@ -264,6 +264,27 @@
   background-color: #2ecc71 !important;
 }
 
+.btn-google {
+  width: 100%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: #0b1221;
+  color: #fff;
+  border: 1px solid #1e2f4c;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease !important;
+}
+
+.btn-google:hover {
+  background-color: #1e2f4c;
+  transition: background-color 0.2s ease !important;
+}
+
 .login-container.light-theme .action-icon-btn,
 .login-container.light-theme .action-icon-btn:hover {
   background-color: #e0e0e0 !important;

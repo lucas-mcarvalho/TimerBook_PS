@@ -11,6 +11,7 @@ import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.sql.Date;
@@ -132,6 +133,63 @@ public class ReadingStatsService {
         dto.setMaxStreakDays(maxStreak);
         return dto;
 
+    }
+
+    public ReadingStatsDTO getGeneralStatsForUser(Long userId, LocalDateTime start, LocalDateTime end, boolean includeOnGoingSessions) {
+        if (start == null) {
+            start = LocalDateTime.of(2010, 1, 1, 0, 0);
+        }
+        if (end == null) {
+            end = LocalDateTime.now();
+        }
+
+        List<ReadingSession> sessions = readingSessionRepository
+                .findByReadingUserIdAndStartedAtBetweenOrderByStartedAtAsc(userId, start, end);
+
+        int pagesRead = sessions.stream()
+                .filter(rs -> rs.getEndedAt() != null)
+                .filter(rs -> rs.getStartPage() != null && rs.getEndPage() != null)
+                .filter(rs -> rs.getEndPage() >= rs.getStartPage())
+                .mapToInt(rs -> rs.getEndPage() - rs.getStartPage())
+                .sum();
+
+        long totalSeconds = sessions.stream()
+                .mapToLong(rs -> {
+                    if (rs.getStartedAt() == null) {
+                        return 0L;
+                    }
+                    LocalDateTime endedAt = rs.getEndedAt();
+                    if (endedAt == null) {
+                        if (!includeOnGoingSessions) {
+                            return 0L;
+                        }
+                        endedAt = LocalDateTime.now();
+                    }
+                    long seconds = Duration.between(rs.getStartedAt(), endedAt).getSeconds();
+                    return Math.max(seconds, 0L);
+                })
+                .sum();
+
+        long sessionsCount = sessions.size();
+        double avg = (sessionsCount == 0) ? 0.0 : ((double) totalSeconds / (double) sessionsCount);
+
+        Set<LocalDate> daysWithSession = sessions.stream()
+                .filter(rs -> rs.getStartedAt() != null)
+                .map(rs -> rs.getStartedAt().toLocalDate())
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        int currentStreak = calculateCurrentStreak(daysWithSession, end.toLocalDate());
+        int maxStreak = calculateMaxStreak(daysWithSession);
+
+        ReadingStatsDTO dto = new ReadingStatsDTO();
+        dto.setReadingId(null);
+        dto.setPagesRead(pagesRead);
+        dto.setTotalSeconds(totalSeconds);
+        dto.setSessionsCount(sessionsCount);
+        dto.setAverageSecondsPerSession(avg);
+        dto.setCurrentStreakDays(currentStreak);
+        dto.setMaxStreakDays(maxStreak);
+        return dto;
     }
 
     public List<Reading> getReadingsInProgress(Long userId) {

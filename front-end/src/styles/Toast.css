@@ -1,0 +1,262 @@
+:root {
+  --toast-bg: rgba(43, 82, 146, 0.1);
+  --toast-border: rgba(43, 82, 146, 0.3);
+  --toast-color: #2b5292;
+}
+
+.dark-theme {
+  --toast-bg: rgba(43, 82, 146, 0.15);
+  --toast-border: rgba(43, 82, 146, 0.4);
+  --toast-color: #ffffff;
+}
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 450px;
+  padding: 12px 20px;
+  background-color: var(--toast-bg);
+  border: 1px solid var(--toast-border);
+  border-radius: 8px;
+  color: var(--toast-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.toast-item.exiting {
+  animation: slideUp 0.4s ease forwards, fadeOut 0.3s ease forwards;
+}
+
+.toast-item:hover {
+  transform: scale(1.02);
+}
+
+.toast-icon {
+  font-size: 1.1rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+  text-align: center;
+}
+
+.toast-success .toast-icon { color: #2ecc71; }
+.toast-error .toast-icon { color: #ff4757; }
+.toast-info .toast-icon { color: #2b5292; }
+
+.achievement-toast-container {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.achievement-toast {
+  position: relative;
+  pointer-events: auto;
+  width: min(380px, calc(100vw - 32px));
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  padding: 14px 16px 14px 14px;
+  border: 1px solid rgba(96, 165, 250, 0.52);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(8, 13, 23, 0.98)),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.34), transparent);
+  color: #f8fafc;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42), 0 0 30px rgba(37, 99, 235, 0.2);
+  cursor: pointer;
+  text-align: left;
+  animation: achievementSlideIn 0.56s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.achievement-toast.exiting {
+  animation: achievementSlideOut 0.34s ease both;
+}
+
+.achievement-toast:hover {
+  border-color: rgba(147, 197, 253, 0.82);
+  transform: translateY(-1px);
+}
+
+.achievement-toast-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.16) 38%, transparent 64%);
+  transform: translateX(-115%);
+  animation: achievementSheen 1.3s ease 0.2s both;
+  pointer-events: none;
+}
+
+.achievement-toast-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(147, 197, 253, 0.42);
+  border-radius: 8px;
+  background: radial-gradient(circle at 35% 25%, rgba(250, 204, 21, 0.32), rgba(37, 99, 235, 0.2) 46%, rgba(15, 23, 42, 0.95));
+  color: #fde68a;
+  font-size: 1.45rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.06);
+}
+
+.achievement-toast-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.achievement-toast-kicker {
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.achievement-toast-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.achievement-toast-description {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.achievement-toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #60a5fa, #facc15);
+  transform-origin: left;
+  animation: achievementProgress var(--toast-duration, 6200ms) linear both;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes achievementSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(120%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes achievementSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px) scale(0.98);
+  }
+}
+
+@keyframes achievementSheen {
+  to {
+    transform: translateX(115%);
+  }
+}
+
+@keyframes achievementProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .achievement-toast-container {
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .achievement-toast {
+    width: 100%;
+  }
+}

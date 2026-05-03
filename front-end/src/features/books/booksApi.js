@@ -50,7 +50,7 @@ export async function deleteBook(id) {
   }
 
   export async function getBookByUserId(id) {
-    try {
+    try { 
       const response = await api.get(`/book/user/${id}`);
       return response.data;
     } catch (error) {

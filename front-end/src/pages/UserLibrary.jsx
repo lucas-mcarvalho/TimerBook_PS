@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getBooks, deleteBook } from "../features/books/booksApi.js";
+import { deleteBook } from "../features/books/booksApi.js";
+import { getUser } from "../features/user/userApi.js";
+import { getBookByUserId } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
-import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
-import {getUser} from "../features/user/userApi.js";
+import { endReading, endReadingSession, getReadingSessions, getSessionsByReadingId, startReading, getReading } from "../features/books/readSessions.js";
+
 
 import '../styles/Layout.css';
 import '../styles/Library.css';
@@ -59,6 +61,28 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
         >
           Ver estatísticas
         </button>
+        <button
+          onClick={async (e) => {
+              e.stopPropagation();
+              const response = await getUser();
+              const userId = response.data.id;
+              const bookId = book.id;
+
+
+              const readingResponse = await getReading(bookId, userId);
+              const readingId = readingResponse[0].id;
+
+              console.log("id da leitura:", readingId);
+              console.log("id do usuário:", userId);
+              
+              await endReading(readingId, userId, {
+                  currentPage: 100  
+              });
+          }}
+          className="btn-stats"
+        >
+      Finalizar Leitura
+      </button>
       </div>
     </div>
   );
@@ -90,7 +114,9 @@ function UserLibrary() {
     try {
       setLoading(true);
       setError(null);
-      const booksData = await getBooks();
+      const response = await getUser();
+      const userId = response.data.id;
+      const booksData = await getBookByUserId(userId);
       setBooks(booksData);
     } catch (err) {
       console.error("Erro ao carregar livros:", err);

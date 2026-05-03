@@ -11,13 +11,20 @@ export async function startReading(userId, bookId, startPage) {
     }
 }
 
-export async function endReading(readingId) {
+export async function endReading(readingId, userId, data) {
     try {
-        const response = await api.put(`http://localhost:8080/readings/${readingId}/finish`);
+        const response = await api.put(
+            `http://localhost:8080/readings/${userId}/${readingId}/finish`,
+            data 
+        );
+
+        alert("Leitura finalizada com sucesso!");
+        console.log("Resposta do servidor ao finalizar leitura:", response.data);
         return response.data;
+
     } catch (error) {
-        console.error("Erro ao finalizar leitura:", error);
-        throw new Error("Erro ao finalizar leitura");
+        console.error("Erro ao finalizar leitura:", error.response?.data || error.message);
+        throw error;
     }
 }
 
@@ -67,5 +74,16 @@ export async function getSessionsByReadingId(readingId) {
     } catch (error) {
         console.error("Erro ao buscar sessões por leitura:", error);
         throw new Error("Erro ao buscar sessões por leitura");
+    }
+}   
+
+export async function getReading(bookId, userId) {
+    try {
+        const response = await api.get(`http://localhost:8080/readings/${userId}/${bookId}`);
+        console.log("Leitura obtida:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar leitura:", error);
+        throw new Error("Erro ao buscar leitura");
     }
 }   

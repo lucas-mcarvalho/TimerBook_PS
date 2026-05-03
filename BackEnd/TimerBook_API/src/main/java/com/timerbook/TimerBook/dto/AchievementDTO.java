@@ -4,10 +4,12 @@ public class AchievementDTO {
 
     private String nome;
     private String icone;
+    private String description;
 
     public AchievementDTO() {}
 
-    public AchievementDTO(String nome, String icone) {
+    public AchievementDTO(String nome, String icone, String description) {
+        this.description = description;
         this.nome = nome;
         this.icone = icone;
     }
@@ -26,5 +28,13 @@ public class AchievementDTO {
 
     public void setIcone(String icone) {
         this.icone = icone;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
