@@ -4,11 +4,28 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import api from "../features/axiosApi.js";
 // import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js"; // Comentado se não estiver em uso
 
+
+
 const Estatisticas = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState("Erro ao carregar estatísticas.");
+  const [erro, setErro] = useState(null);
 
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("timerbook-theme") === "dark";
+  });
+
+  //  escuta mudança do tema
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem("timerbook-theme") === "dark";
+      setIsDarkMode(currentTheme);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const styles = getStyles(isDarkMode);
   const navigate = useNavigate();
   const { readingId } = useParams();
 
@@ -18,10 +35,10 @@ const Estatisticas = () => {
         if (!readingId) {
           throw new Error("ID da leitura não informado.");
         }
-
         const response = await api.get(`/stats/reading/${readingId}`);
         const data = response.data;
         console.log("Stats recebidos:", data);
+        setErro(null);
         setStats(data);
       } catch (error) {
         console.error("Erro ao buscar stats:", error);
@@ -159,94 +176,115 @@ const Estatisticas = () => {
 };
 
 // Objeto de estilos para limpar o JSX e facilitar a manutenção
-const styles = {
+const getStyles = (isDarkMode) => ({
   pageContainer: {
-    backgroundColor: "#F3F4F6", // Fundo cinza bem claro para destacar os cards brancos
+    backgroundColor: isDarkMode ? "#0F172A" : "#F3F4F6",
     minHeight: "100vh",
     padding: "40px 20px",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    fontFamily:
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    color: isDarkMode ? "#E5E7EB" : "#111827",
   },
+
   contentWrapper: {
     maxWidth: "1000px",
     margin: "0 auto",
   },
+
   centerMsg: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
     fontSize: "1.2rem",
-    color: "#4B5563",
-    backgroundColor: "#F3F4F6",
+    color: isDarkMode ? "#E5E7EB" : "#4B5563",
+    backgroundColor: isDarkMode ? "#0F172A" : "#F3F4F6",
   },
+
   backButton: {
     marginBottom: "24px",
     padding: "10px 16px",
     cursor: "pointer",
     borderRadius: "8px",
-    border: "1px solid #D1D5DB",
-    background: "#FFFFFF",
-    color: "#374151",
+    border: isDarkMode ? "1px solid #334155" : "1px solid #D1D5DB",
+    background: isDarkMode ? "#1E293B" : "#FFFFFF",
+    color: isDarkMode ? "#E5E7EB" : "#374151",
     fontWeight: "600",
     fontSize: "14px",
     transition: "all 0.2s",
-    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+    boxShadow: isDarkMode
+      ? "0 4px 10px rgba(0, 0, 0, 0.35)"
+      : "0 1px 2px rgba(0, 0, 0, 0.05)",
   },
+
   title: {
-    color: "#111827",
+    color: isDarkMode ? "#F9FAFB" : "#111827",
     fontSize: "28px",
     fontWeight: "bold",
     marginBottom: "30px",
   },
+
   gridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "20px",
     marginBottom: "40px",
   },
+
   statCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDarkMode ? "#1E293B" : "#FFFFFF",
     padding: "24px",
     borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    border: isDarkMode ? "1px solid #334155" : "none",
+    boxShadow: isDarkMode
+      ? "0 10px 25px rgba(0, 0, 0, 0.35)"
+      : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-start",
   },
+
   statIcon: {
     fontSize: "24px",
     marginBottom: "12px",
   },
+
   statLabel: {
     fontSize: "14px",
-    color: "#6B7280",
+    color: isDarkMode ? "#94A3B8" : "#6B7280",
     fontWeight: "500",
     marginBottom: "4px",
   },
+
   statValue: {
     fontSize: "24px",
-    color: "#111827",
+    color: isDarkMode ? "#F9FAFB" : "#111827",
     fontWeight: "bold",
   },
+
   chartCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDarkMode ? "#1E293B" : "#FFFFFF",
     padding: "30px",
     borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    border: isDarkMode ? "1px solid #334155" : "none",
+    boxShadow: isDarkMode
+      ? "0 10px 25px rgba(0, 0, 0, 0.35)"
+      : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     marginBottom: "30px",
   },
+
   chartTitle: {
-    color: "#374151",
+    color: isDarkMode ? "#F9FAFB" : "#374151",
     fontSize: "18px",
     fontWeight: "600",
     marginBottom: "20px",
-    borderBottom: "1px solid #F3F4F6",
+    borderBottom: isDarkMode ? "1px solid #334155" : "1px solid #F3F4F6",
     paddingBottom: "15px",
   },
+
   chartWrapper: {
     width: "100%",
-    height: "350px", // Altura fixa para o gráfico
-  }
-};
-
+    height: "350px",
+  },
+});
 export default Estatisticas;

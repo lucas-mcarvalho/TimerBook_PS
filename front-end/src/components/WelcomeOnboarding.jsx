@@ -2,20 +2,16 @@ import React, { useState } from "react";
 import "../styles/WelcomeOnboarding.css";
 
 const WelcomeOnboarding = ({ onClose }) => {
-  const [dailyPages, setDailyPages] = useState("");
-  const [monthlyBooks, setMonthlyBooks] = useState("");
-  const [dailyMinutes, setDailyMinutes] = useState("");
+  const [readingGoal, setReadingGoal] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const onboardingData = {
-      dailyPages,
-      monthlyBooks,
-      dailyMinutes,
+      readingGoalMinutes: readingGoal,
     };
 
-    console.log("Dados do onboarding:", onboardingData);
+    console.log("Meta escolhida:", onboardingData);
 
     onClose();
   };
@@ -33,39 +29,28 @@ const WelcomeOnboarding = ({ onClose }) => {
 
         <h1>Bem-vindo ao TimerBook!</h1>
 
-        <p>
-          Antes de começar, queremos conhecer seus objetivos de leitura.
-        </p>
+        <p>Escolha sua meta diária de leitura para começar.</p>
 
         <form onSubmit={handleSubmit} className="onboarding-form">
-          <label>Quantas páginas você quer ler por dia?</label>
-          <input
-            type="number"
-            value={dailyPages}
-            onChange={(e) => setDailyPages(e.target.value)}
-            placeholder="Ex: 20"
-            required
-          />
+          <div className="goal-options">
+            {[10, 20, 30].map((minutes) => (
+              <button
+                key={minutes}
+                type="button"
+                className={`goal-option ${
+                  readingGoal === minutes ? "selected" : ""
+                }`}
+                onClick={() => setReadingGoal(minutes)}
+              >
+                <strong>{minutes}</strong>
+                <span>minutos por dia</span>
+              </button>
+            ))}
+          </div>
 
-          <label>Quantos livros você quer ler por mês?</label>
-          <input
-            type="number"
-            value={monthlyBooks}
-            onChange={(e) => setMonthlyBooks(e.target.value)}
-            placeholder="Ex: 2"
-            required
-          />
-
-          <label>Quantos minutos você quer ler por dia?</label>
-          <input
-            type="number"
-            value={dailyMinutes}
-            onChange={(e) => setDailyMinutes(e.target.value)}
-            placeholder="Ex: 30"
-            required
-          />
-
-          <button type="submit">Começar</button>
+          <button type="submit" disabled={!readingGoal}>
+            Começar
+          </button>
         </form>
       </div>
     </div>

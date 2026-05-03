@@ -77,13 +77,13 @@ export async function getSessionsByReadingId(readingId) {
     }
 }   
 
-export async function getReading(bookId, userId) {
-    try {
-        const response = await api.get(`http://localhost:8080/readings/${userId}/${bookId}`);
-        console.log("Leitura obtida:", response.data);
-        return response.data;
-    } catch (error) {
-        console.error("Erro ao buscar leitura:", error);
-        throw new Error("Erro ao buscar leitura");
-    }
-}   
+export async function getReading(bookId) {
+  try {
+    const response = await api.get(`/readings/book/${bookId}`);
+    console.log("Leituras obtidas:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar leitura:", error);
+    throw error;
+  }
+}

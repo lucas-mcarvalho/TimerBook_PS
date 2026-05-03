@@ -56,11 +56,19 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
       </div>
       
       <nav className="sidebar-nav">
-        <Link to="/home" className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}>
-          <img src={homeIcon} alt="Início" className="nav-icon" /> Início
-        </Link>
-        
-        <Link to="/meus-livros" className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}>
+        <Link 
+        id="guide-menu-home"
+        to="/home" 
+        className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}
+>
+  <img src={homeIcon} alt="Início" className="nav-icon" /> Início
+</Link>
+
+        <Link 
+          id="guide-menu-library"
+          to="/meus-livros" 
+          className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}
+        >
           <img src={BookIcon} alt="Livros" className="nav-icon" /> Biblioteca
         </Link>
 
@@ -82,25 +90,34 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           </div>
         )}
 
-        <Link to="/perfil" className={`nav-item ${menuAtivo === 'perfil' ? 'active' : ''}`}>
-          <img src={ProfileIcon} alt="Perfil" className="nav-icon" /> Perfil
+        <Link 
+        id="guide-menu-profile"
+        to="/perfil" 
+        className={`nav-item ${menuAtivo === 'perfil' ? 'active' : ''}`}
+      >
+        <img src={ProfileIcon} alt="Perfil" className="nav-icon" /> Perfil
         </Link>
       </nav>
       
       <div className="sidebar-footer">
         {onOpenModal && (
-          <button className="btn-add-book sidebar-btn-add" onClick={onOpenModal}>
-            Adicionar
-          </button>
+          <button 
+          id="guide-menu-add"
+          className="btn-add-book sidebar-btn-add" 
+          onClick={onOpenModal}
+        >
+          Adicionar
+        </button>
         )}
         
         <div style={{ position: 'relative' }}>
           <button 
-            className="action-icon-btn" 
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-          >
-            <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
-          </button>
+          id="guide-menu-settings"
+          className="action-icon-btn" 
+          onClick={() => setIsConfigOpen(!isConfigOpen)}
+        >
+          <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
+        </button>
 
           {isConfigOpen && (
             <div className="config-popover">
@@ -111,9 +128,13 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           )}
         </div>
         
-        <button className="action-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
-          <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
-        </button>
+        <button 
+        id="guide-menu-darkmode"
+        className="action-icon-btn" 
+        onClick={() => setIsDarkMode(!isDarkMode)}
+      >
+        <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
+      </button>
       </div>
     </aside>
   );

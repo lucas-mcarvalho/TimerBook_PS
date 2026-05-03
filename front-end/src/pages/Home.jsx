@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getBookByUserId } from "../features/books/booksApi.js"; 
 import { getUser } from "../features/user/userApi.js";
 import WelcomeOnboarding from '../components/WelcomeOnboarding.jsx';
+import HomeGuide from "../components/HomeGuide";
 
 import '../styles/Layout.css'; 
 import '../styles/Waves.css'; 
@@ -15,7 +16,9 @@ import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileIma
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+  return localStorage.getItem("onboardingShown") !== "true";
+});
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
@@ -49,15 +52,22 @@ const Home = () => {
   <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
 
     {showOnboarding && (
-      <WelcomeOnboarding onClose={() => setShowOnboarding(false)} />
+      <WelcomeOnboarding 
+  onClose={() => {
+    localStorage.setItem("onboardingShown", "true");
+    setShowOnboarding(false);
+  }} 
+/>
     )}
 
-    <Sidebar 
-      menuAtivo="inicio" 
-      books={books} 
-      isDarkMode={isDarkMode} 
-      setIsDarkMode={setIsDarkMode} 
-    />
+    <div id="guide-sidebar">
+  <Sidebar 
+    menuAtivo="inicio" 
+    books={books} 
+    isDarkMode={isDarkMode} 
+    setIsDarkMode={setIsDarkMode} 
+  />
+</div>
 
       <main className="main-content welcome-container">
         
@@ -88,7 +98,7 @@ const Home = () => {
         <div className="welcome-content-wrapper">
           <div className="welcome-header">
             
-            <div className="profile-image-container">
+            <div className="profile-image-container" id="guide-profile">
               <img 
                 src={profilePhotoUrl || ProfileIcon} 
                 alt="Foto de Perfil" 
@@ -108,7 +118,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="welcome-actions">
+          <div className="welcome-actions" id="guide-library-button">
             <Link to="/meus-livros" className="btn-go-library">
               Acessar Minha Biblioteca
             </Link>
@@ -116,7 +126,7 @@ const Home = () => {
         </div>
 
       </main>
-      
+      <HomeGuide />
     </div>
   );
 };

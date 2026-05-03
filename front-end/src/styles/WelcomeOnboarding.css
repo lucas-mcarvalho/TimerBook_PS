@@ -72,61 +72,132 @@
 .book-animation {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .book {
   position: relative;
-  width: 90px;
-  height: 70px;
-  perspective: 600px;
+  width: 120px;
+  height: 82px;
+  perspective: 900px;
+}
+
+.book::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 82px;
+  left: 0;
+  top: 0;
+  background: linear-gradient(135deg, #4f46e5, #312e81);
+  border-radius: 10px 4px 4px 10px;
+  box-shadow: inset -6px 0 12px rgba(0, 0, 0, 0.25);
+}
+
+.book::after {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 82px;
+  right: 0;
+  top: 0;
+  background: linear-gradient(135deg, #7c3aed, #4338ca);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: inset 6px 0 12px rgba(0, 0, 0, 0.25);
 }
 
 .page {
   position: absolute;
-  width: 45px;
-  height: 70px;
-  background: #f5f0df;
-  border: 1px solid #d6cba8;
-  transform-origin: left;
-  left: 45px;
-  border-radius: 4px;
+  width: 56px;
+  height: 76px;
+  left: 60px;
+  top: 3px;
+  background: linear-gradient(90deg, #fff7d6, #f1df9f);
+  border: 1px solid #d6bd72;
+  border-radius: 4px 10px 10px 4px;
+  transform-origin: left center;
+  z-index: 3;
+  box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.18);
 }
 
 .page1 {
-  animation: flipPage 1.5s infinite;
+  animation: smoothFlip 2.2s infinite ease-in-out;
 }
 
 .page2 {
-  animation: flipPage 1.5s infinite 0.3s;
+  animation: smoothFlip 2.2s infinite ease-in-out 0.35s;
 }
 
 .page3 {
-  animation: flipPage 1.5s infinite 0.6s;
+  animation: smoothFlip 2.2s infinite ease-in-out 0.7s;
 }
 
-@keyframes flipPage {
+@keyframes smoothFlip {
   0% {
     transform: rotateY(0deg);
+    opacity: 1;
   }
 
-  50% {
-    transform: rotateY(-160deg);
+  45% {
+    transform: rotateY(-150deg);
+    opacity: 0.95;
+  }
+
+  70% {
+    transform: rotateY(-180deg);
+    opacity: 0.4;
   }
 
   100% {
-    transform: rotateY(0deg);
+    transform: rotateY(-180deg);
+    opacity: 0;
   }
 }
+.goal-options {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin: 20px 0;
+}
 
-@keyframes appearCard {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
+.goal-option {
+  flex: 1;
+  padding: 18px 12px;
+  border: 2px solid #ddd;
+  border-radius: 16px;
+  background: #f8f8ff;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
 
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.goal-option strong {
+  display: block;
+  font-size: 28px;
+  color: #4f46e5;
+}
+
+.goal-option span {
+  font-size: 14px;
+}
+
+.goal-option:hover {
+  transform: translateY(-3px);
+  border-color: #7c3aed;
+}
+
+.goal-option.selected {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border-color: #4f46e5;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+}
+
+.goal-option.selected strong {
+  color: white;
+}
+
+.onboarding-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
