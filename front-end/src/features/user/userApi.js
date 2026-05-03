@@ -12,6 +12,19 @@ export const getUser = async () => {
     
 }
 
+export const updateReadingGoal = async (dailyReadingGoalMinutes) => {
+    try {
+        const response = await api.put("/user/me/reading-goal", {
+            dailyReadingGoalMinutes,
+        });
+
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao atualizar meta de leitura:", error);
+        throw error;
+    }
+};
+
 export const updateProfile = async (userId, userData, photoFile, removePhotoFlag) => {
     const formData = new FormData();
     formData.append("username", userData.username);

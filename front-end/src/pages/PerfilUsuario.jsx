@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useToast } from "../components/ToastContext.js"; 
-import { getUser, deleteUser } from "../features/user/userApi.js"; 
+import { getUser, deleteUser, updateReadingGoal } from "../features/user/userApi.js"; 
 import { getBookByUserId } from "../features/books/booksApi.js"; 
 import Sidebar from '../components/Sidebar';
 import EditProfileModal from '../components/EditProfileModal';
@@ -24,6 +24,9 @@ export default function PerfilUsuario() {
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [selectedReadingGoal, setSelectedReadingGoal] = useState(10);
+  const [savingReadingGoal, setSavingReadingGoal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState(null);
   
@@ -40,6 +43,7 @@ export default function PerfilUsuario() {
         const userData = await getUser();
         const info = userData.data || userData;
         setUserInfo(info);
+        setSelectedReadingGoal(info.dailyReadingGoalMinutes || 10);
 
         const userId = info.id;
         const booksData = await getBookByUserId(userId);
@@ -59,6 +63,32 @@ export default function PerfilUsuario() {
     setUserInfo((prev) => ({ ...prev, ...updatedData }));
     setSuccessMessage("Perfil atualizado com sucesso!");
     setTimeout(() => setSuccessMessage(""), 4000); 
+  };
+
+  const handleOpenGoalModal = () => {
+    setSelectedReadingGoal(userInfo?.dailyReadingGoalMinutes || 10);
+    setIsGoalModalOpen(true);
+  };
+
+  const handleUpdateReadingGoal = async () => {
+    if (!selectedReadingGoal || savingReadingGoal) return;
+
+    setSavingReadingGoal(true);
+    try {
+      const response = await updateReadingGoal(selectedReadingGoal);
+      const dailyReadingGoalMinutes = response?.dailyReadingGoalMinutes || selectedReadingGoal;
+
+      setUserInfo((prev) => ({ ...prev, dailyReadingGoalMinutes }));
+      setSelectedReadingGoal(dailyReadingGoalMinutes);
+      setIsGoalModalOpen(false);
+      setSuccessMessage("Meta de leitura atualizada com sucesso!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err) {
+      console.error("Erro ao atualizar meta de leitura:", err);
+      showToast("Erro ao atualizar a meta de leitura. Tente novamente.", "error");
+    } finally {
+      setSavingReadingGoal(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -124,6 +154,7 @@ export default function PerfilUsuario() {
                   <h2>Informações da Conta</h2>
                   <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
                   <p><strong>Email:</strong> {userInfo.email}</p>
+                  <p><strong>Meta diária:</strong> {userInfo.dailyReadingGoalMinutes || 10} minutos</p>
                 </div>
               </div>
 
@@ -132,9 +163,17 @@ export default function PerfilUsuario() {
           )}
         </div>
 
-        <div className="bottom-actions" style={{ display: 'flex', gap: '15px' }}>
+        <div className="bottom-actions" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
           <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
             Editar Perfil
+          </button>
+
+          <button
+            id="guide-reading-goal-button"
+            className="btn-secondary"
+            onClick={handleOpenGoalModal}
+          >
+            Alterar Meta de Leitura
           </button>
           
           <button 
@@ -159,6 +198,47 @@ export default function PerfilUsuario() {
         userInfo={userInfo}
         onUpdateSuccess={handleUpdateSuccess}
       />
+
+      {isGoalModalOpen && (
+        <div className="reading-goal-overlay">
+          <div className="reading-goal-modal">
+            <h3>Meta diária de leitura</h3>
+            <p>Escolha quantos minutos você quer ler por dia.</p>
+
+            <div className="reading-goal-options">
+              {[10, 20, 30].map((minutes) => (
+                <button
+                  key={minutes}
+                  type="button"
+                  className={`reading-goal-option ${selectedReadingGoal === minutes ? "selected" : ""}`}
+                  onClick={() => setSelectedReadingGoal(minutes)}
+                  disabled={savingReadingGoal}
+                >
+                  <strong>{minutes}</strong>
+                  <span>min/dia</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="reading-goal-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => setIsGoalModalOpen(false)}
+                disabled={savingReadingGoal}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-save-goal"
+                onClick={handleUpdateReadingGoal}
+                disabled={savingReadingGoal}
+              >
+                {savingReadingGoal ? "Salvando..." : "Salvar Meta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isDeleteModalOpen && (
         <div className="delete-confirmation-overlay">
