@@ -14,9 +14,6 @@ const Estatisticas = () => {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("timerbook-theme") === "dark";
-  });
 
   //  escuta mudança do tema
   useEffect(() => {
@@ -68,8 +65,6 @@ const Estatisticas = () => {
     return `${hours}h ${minutes}min`;
   };
 
-  // 2. Carrega os estilos baseados no tema atual
-  const styles = getStyles(isDarkMode);
 
   if (loading) return <div style={styles.centerMsg}>Carregando estatísticas...</div>;
   if (erro) return <div style={styles.centerMsg}>{erro}</div>;
