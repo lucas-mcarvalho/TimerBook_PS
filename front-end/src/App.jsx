@@ -10,23 +10,32 @@ import CadastrarUsuario from "./pages/CadastrarUsuario";
 import EsqueceuSenha from "./pages/EsqueceuSenha";
 import PerfilUsuario from "./pages/PerfilUsuario";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import OAuth2RedirectHandler from "./components/OAuth2RedirectHandler";
+import VerifyEmail from "./components/VerifyEmail";
+import { ToastProvider } from "./components/Toast";
+import "./styles/Toast.css";
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/leitor" element={<Leitor />} />
-        <Route path="/cadastrar-livro" element={<Cadastrar_Livro />} />
-        <Route path="/meus-livros" element={<UserLibrary />} />
-        <Route path="/minhas-estatisticas" element={<ReadingStatsPage />} />
-        <Route path="/estatisticas/:readingId" element={<Estatisticas />} />
-        <Route path="/" element={<Login />} />
-        <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
-        <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
-        <Route path="/perfil" element={<PerfilUsuario />} />
-        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-      </Routes>
-    </BrowserRouter>  
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/home" element={<Home />} />
+          <Route path="/leitor" element={<Leitor />} />
+          <Route path="/cadastrar-livro" element={<Cadastrar_Livro />} />
+          <Route path="/meus-livros" element={<UserLibrary />} />
+          <Route path="/minhas-estatisticas" element={<ReadingStatsPage />} />
+          <Route path="/estatisticas/:readingId" element={<Estatisticas />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
+          <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
+          <Route path="/perfil" element={<PerfilUsuario />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

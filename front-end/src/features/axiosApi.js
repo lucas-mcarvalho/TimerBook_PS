@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  console.log("Requisição:", token);
+  //console.log("Requisição:", token);
 
   return config;
 });
@@ -74,8 +74,9 @@ api.interceptors.response.use(
         // logout
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
 
-        window.location.href = "/login";
+        window.location.href = "/";
 
         return Promise.reject(refreshError);
       }

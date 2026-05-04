@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { loginUser } from "../features/auth/user.js";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../components/ToastContext.js";
 
 import TimerBookLogo from '../assets/Home/TimerbookLogo.svg'; 
 import MoonIcon from '../assets/Home/MoonIcon.svg';
@@ -10,6 +11,7 @@ import "../styles/LoginLight.css";
 import '../styles/HomeDark.css'; 
 
 export default function Login() {
+  const { showAchievementToast } = useToast();
   const navigate = useNavigate();
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -53,6 +55,10 @@ export default function Login() {
     setBookSpeed('0.8s');
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -61,11 +67,35 @@ export default function Login() {
     setSuccess(false);
 
     try {
-      await loginUser(formData.email, formData.password);
+      const response = await loginUser(formData.email, formData.password);
       setSuccess(true);
+
+      const novas = response?.novasConquistas || response?.data?.novasConquistas;
+      if (novas && novas.length > 0) {
+        novas.forEach(conquista => {
+          showAchievementToast(conquista);
+        });
+      }
       navigate('/home');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer login");
+      const status = err.response?.status;
+      const message = err.response?.data;
+
+      if (status === 400 && typeof message === 'string') {
+        const lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.includes("usuario nao encontrado")) {
+          setError("Usuário não encontrado. Verifique o e-mail digitado.");
+        } else if (lowerMessage.includes("bad credentials") || lowerMessage.includes("senha incorreta")) {
+          setError("E-mail ou senha incorretos. Tente novamente.");
+        } else if (lowerMessage.includes("user is disabled") || lowerMessage.includes("usuário desabilitado")) {
+          setError("Sua conta ainda não foi ativada. Verifique seu e-mail.");
+        } else {
+          setError(message);
+        }
+      } else {
+        setError("Erro ao conectar com o servidor. Tente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }
@@ -137,13 +167,11 @@ export default function Login() {
                   }}
                 >
                   {mostrarSenha ? (
-                    // OLHO FECHADO
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2" style={{ transition: 'stroke 0.4s ease' }}>
                       <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12C1.68 10.82 2.61 9.73 3.74 8.86M9.9 4.24A10.94 10.94 0 0 1 12 5C17 5 21.27 8.89 23 12C22.35 13.11 21.5 14.14 20.5 15.03M1 1L23 23" />
                     </svg>
                   ) : (
-                    // OLHO ABERTO
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "#fff" : "#333"} strokeWidth="2" style={{ transition: 'stroke 0.4s ease' }}>
                       <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
@@ -152,6 +180,7 @@ export default function Login() {
               </div>
             </div>
 
+            {/* BOTÃO ENTRAR NORMAL */}
             <button 
               type="submit"
               onClick={handleSubmit} 
@@ -162,10 +191,30 @@ export default function Login() {
               {loading ? "Entrando..." : "Entrar"}
             </button>
 
-            <div className="form-footer-links">
+            <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#444' : '#ddd', transition: 'background-color 0.4s ease' }}></div>
+              <span style={{ margin: '0 10px', color: isDarkMode ? '#888' : '#666', fontSize: '14px', transition: 'color 0.4s ease' }}>ou</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#444' : '#ddd', transition: 'background-color 0.4s ease' }}></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="btn-google"
+            >
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+                alt="Google Logo" 
+                style={{ width: '20px', height: '20px' }} 
+              />
+              Continuar com o Google
+            </button>
+
+            <div className="form-footer-links" style={{ marginTop: '20px' }}>
               <a href="/esqueceu-senha" className="welcome-text">Esqueci minha senha</a>
               <a href="/cadastrar-usuario" style={{ color: '#2ecc71' }}>Criar conta</a>
             </div>
+
           </form>
         </div>
       </div>

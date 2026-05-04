@@ -13,3 +13,8 @@ spring:
 
   flyway:
     enabled: false
+
+app:
+  reminders:
+    reading:
+      enabled: false

@@ -70,4 +70,34 @@ public class TokenService {
             throw new RuntimeException("Erro ao gerar refresh token", e);
         }
     }
+
+
+    public String generateEmailVerificationToken(String email) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+
+            return JWT.create()
+                    .withIssuer("timerbook-email-verification")
+                    .withSubject(email)
+                    .withExpiresAt(LocalDateTime.now().plusHours(24).toInstant(ZoneOffset.UTC))
+                    .sign(algorithm);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao gerar token de verificação de email", e);
+        }
+    }
+
+    public DecodedJWT validateEmailToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+
+            return JWT.require(algorithm)
+                    .withIssuer("timerbook-email-verification")
+                    .build()
+                    .verify(token);
+        } catch (JWTVerificationException e) {
+            return null;
+        }
+    }
+
 }

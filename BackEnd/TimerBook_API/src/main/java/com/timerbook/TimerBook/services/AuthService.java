@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.services;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.timerbook.TimerBook.dto.AchievementDTO;
 import com.timerbook.TimerBook.dto.LoginRequestDTO;
 import com.timerbook.TimerBook.dto.RegisterRequestDTO;
 import com.timerbook.TimerBook.dto.ResponseDTO;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,7 +30,8 @@ public class AuthService {
 
     @Autowired
     private TokenService tokenService;
-
+    @Autowired
+    private EmailService emailService;
     @Autowired
     private UserRepository userRepository;
 
@@ -37,6 +40,12 @@ public class AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AchievementService achievementService;
+
+    @Autowired
+    private UserService userService;
 
     public ResponseDTO login(LoginRequestDTO body) {
         authenticationManager.authenticate(
@@ -51,22 +60,30 @@ public class AuthService {
 
 
         user.setRefreshToken(refreshToken);
-        return new ResponseDTO(user.getUsername(), accessToken, refreshToken);
+        userRepository.save(user);
+        List<AchievementDTO> conquistas = achievementService.checkFirstLogin(user);
+        return new ResponseDTO(user.getUsername(), accessToken, refreshToken,conquistas);
     }
 
-    public ResponseDTO register(RegisterRequestDTO body, MultipartFile photo) {
+    public String register(RegisterRequestDTO body, MultipartFile photo) {
 
         Optional<User> existingUser = userRepository.findByEmail(body.email());
         if (existingUser.isPresent()) {
             throw new RuntimeException("Email já cadastrado!");
         }
 
+        Optional<User> existingUsername = userRepository.findByUsername(body.username());
+        if (existingUsername.isPresent()) {
+            throw new RuntimeException("Este username já está em uso!");
+        }
+
         User newUser = new User();
+        newUser.setEnabled(false);
         newUser.setUsername(body.username());
         newUser.setEmail(body.email());
         newUser.setPassword(passwordEncoder.encode(body.password()));
+        newUser.setDailyReadingGoalMinutes(userService.normalizeReadingGoal(body.dailyReadingGoalMinutes()));
 
-        // 📸 salvar foto
         if (photo != null && !photo.isEmpty()) {
             String photoPath = fileStorageService.storeFile(photo, "profile");
             newUser.setPhotopath(photoPath);
@@ -80,14 +97,31 @@ public class AuthService {
         newUser.getRoles().add(userRole);
 
         userRepository.save(newUser);
+        String emailToken = tokenService.generateEmailVerificationToken(newUser.getEmail());
+        String link = "http://localhost:5173/verify-email?token=" + emailToken;
 
-        String accessToken = tokenService.generateToken(newUser);
-        String refreshToken = tokenService.createRefreshToken(newUser);
+        emailService.sendVerificationEmail(newUser.getEmail(), link);
+        return "Usuário registrado com sucesso. Verifique seu e-mail para ativar a conta.";
+    }
 
-        newUser.setRefreshToken(refreshToken);
-        userRepository.save(newUser);
 
-        return new ResponseDTO(newUser.getUsername(), accessToken, refreshToken);
+    public String verifyEmailToken(String token) {
+        DecodedJWT decodedJWT = tokenService.validateEmailToken(token);
+        if (decodedJWT == null) {
+            throw new RuntimeException("Link de verificação inválido ou expirado.");
+        }
+        String email = decodedJWT.getSubject();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (user.getEnabled()) {
+            return "Sua conta já está ativada! Você pode fazer o login.";
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return "E-mail verificado com sucesso!";
     }
     public ResponseDTO refreshToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -108,6 +142,6 @@ public class AuthService {
         String newRefreshToken = tokenService.createRefreshToken(user);
         user.setRefreshToken(newRefreshToken);
         userRepository.save(user);
-        return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken);
+        return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken,null);
     }
 }

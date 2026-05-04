@@ -2,15 +2,37 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import api from "../features/axiosApi.js";
-// import { getReadingStatsByReadingId } from "../features/statistics/reading_stats.js"; // Comentado se não estiver em uso
 
 const Estatisticas = () => {
+  // 1. Estado para controlar o Dark Mode
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('timerbook-theme');
+    return savedTheme === 'dark';
+  });
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState("");
+  const [erro, setErro] = useState(null);
 
+
+  //  escuta mudança do tema
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem("timerbook-theme") === "dark";
+      setIsDarkMode(currentTheme);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const styles = getStyles(isDarkMode);
   const navigate = useNavigate();
   const { readingId } = useParams();
+
+  // Opcional: Atualiza o localStorage se o tema mudar (caso adicione um botão de trocar tema aqui no futuro)
+  useEffect(() => {
+    localStorage.setItem('timerbook-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   useEffect(() => {
     async function fetchStats() {
@@ -18,10 +40,12 @@ const Estatisticas = () => {
         if (!readingId) {
           throw new Error("ID da leitura não informado.");
         }
-
-        const response = await api.get(`/stats/reading/${readingId}`);
+        const response = await api.get(`/stats/reading/${readingId}`, {
+          params: { includeOngoing: true },
+        });
         const data = response.data;
         console.log("Stats recebidos:", data);
+        setErro(null);
         setStats(data);
       } catch (error) {
         console.error("Erro ao buscar stats:", error);
@@ -36,12 +60,11 @@ const Estatisticas = () => {
 
   const formatTime = (seconds) => {
     if (!seconds) return "0h 0min";
-
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-
     return `${hours}h ${minutes}min`;
   };
+
 
   if (loading) return <div style={styles.centerMsg}>Carregando estatísticas...</div>;
   if (erro) return <div style={styles.centerMsg}>{erro}</div>;
@@ -59,7 +82,12 @@ const Estatisticas = () => {
     { nome: "Média/sessão", valor: Number(stats.averageSecondsPerSession ?? 0) },
   ];
 
-  const chartColor = "#4F46E5"; // Cor azul/índigo agradável
+  const chartColor = "#4F46E5"; // Azul/índigo
+  
+  // Cores dinâmicas para os gráficos
+  const textColor = isDarkMode ? "#E5E7EB" : "#6B7280";
+  const gridColor = isDarkMode ? "#374151" : "#E5E7EB";
+  const tooltipCursor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(79, 70, 229, 0.1)';
 
   return (
     <div style={styles.pageContainer}>
@@ -111,12 +139,18 @@ const Estatisticas = () => {
           <div style={styles.chartWrapper}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: textColor }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: textColor }} />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(79, 70, 229, 0.1)' }} 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                  cursor={{ fill: tooltipCursor }} 
+                  contentStyle={{ 
+                    backgroundColor: styles.statCard.backgroundColor, 
+                    color: styles.title.color,
+                    borderRadius: '8px', 
+                    border: isDarkMode ? '1px solid #444' : 'none', 
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+                  }}
                 />
                 <Bar 
                   dataKey="valor" 
@@ -135,16 +169,22 @@ const Estatisticas = () => {
           <div style={styles.chartWrapper}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={timeChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                <XAxis dataKey="nome" axisLine={false} tickLine={false} tick={{ fill: textColor }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: textColor }} />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(79, 70, 229, 0.1)' }}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                  cursor={{ fill: tooltipCursor }}
+                  contentStyle={{ 
+                    backgroundColor: styles.statCard.backgroundColor, 
+                    color: styles.title.color,
+                    borderRadius: '8px', 
+                    border: isDarkMode ? '1px solid #444' : 'none', 
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+                  }}
                 />
                 <Bar 
                   dataKey="valor" 
-                  fill="#10B981" /* Verde para diferenciar o segundo gráfico */
+                  fill="#10B981" 
                   barSize={45} 
                   radius={[8, 8, 0, 0]} 
                 />
@@ -158,95 +198,113 @@ const Estatisticas = () => {
   );
 };
 
-// Objeto de estilos para limpar o JSX e facilitar a manutenção
-const styles = {
+// 3. Função que retorna os estilos atualizados de acordo com o tema
+const getStyles = (isDarkMode) => ({
   pageContainer: {
-    backgroundColor: "#F3F4F6", // Fundo cinza bem claro para destacar os cards brancos
+    backgroundColor: isDarkMode ? "#121212" : "#F3F4F6", 
     minHeight: "100vh",
     padding: "40px 20px",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    fontFamily:
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    color: isDarkMode ? "#E5E7EB" : "#111827",
   },
+
   contentWrapper: {
     maxWidth: "1000px",
     margin: "0 auto",
   },
+
   centerMsg: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
     fontSize: "1.2rem",
-    color: "#4B5563",
-    backgroundColor: "#F3F4F6",
+    color: isDarkMode ? "#9CA3AF" : "#4B5563",
+    backgroundColor: isDarkMode ? "#121212" : "#F3F4F6",
   },
+
   backButton: {
     marginBottom: "24px",
     padding: "10px 16px",
     cursor: "pointer",
     borderRadius: "8px",
-    border: "1px solid #D1D5DB",
-    background: "#FFFFFF",
-    color: "#374151",
+    border: isDarkMode ? "1px solid #374151" : "1px solid #D1D5DB",
+    background: isDarkMode ? "#1F2937" : "#FFFFFF",
+    color: isDarkMode ? "#F3F4F6" : "#374151",
     fontWeight: "600",
     fontSize: "14px",
     transition: "all 0.2s",
-    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+    boxShadow: isDarkMode
+      ? "0 4px 10px rgba(0, 0, 0, 0.35)"
+      : "0 1px 2px rgba(0, 0, 0, 0.05)",
   },
+
   title: {
-    color: "#111827",
+    color: isDarkMode ? "#F9FAFB" : "#111827",
     fontSize: "28px",
     fontWeight: "bold",
     marginBottom: "30px",
   },
+
   gridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "20px",
     marginBottom: "40px",
   },
+
   statCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDarkMode ? "#2C2C2C" : "#FFFFFF",
     padding: "24px",
     borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow: isDarkMode ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    border: isDarkMode ? "1px solid #444" : "none",
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-start",
   },
+
   statIcon: {
     fontSize: "24px",
     marginBottom: "12px",
   },
+
   statLabel: {
     fontSize: "14px",
-    color: "#6B7280",
+    color: isDarkMode ? "#9CA3AF" : "#6B7280",
     fontWeight: "500",
     marginBottom: "4px",
   },
+
   statValue: {
     fontSize: "24px",
-    color: "#111827",
+    color: isDarkMode ? "#F9FAFB" : "#111827",
     fontWeight: "bold",
   },
+
   chartCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDarkMode ? "#2C2C2C" : "#FFFFFF",
     padding: "30px",
     borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    boxShadow: isDarkMode ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    border: isDarkMode ? "1px solid #444" : "none",
     marginBottom: "30px",
   },
+
   chartTitle: {
-    color: "#374151",
+    color: isDarkMode ? "#E5E7EB" : "#374151",
     fontSize: "18px",
     fontWeight: "600",
     marginBottom: "20px",
-    borderBottom: "1px solid #F3F4F6",
+    borderBottom: isDarkMode ? "1px solid #444" : "1px solid #F3F4F6",
     paddingBottom: "15px",
   },
+
   chartWrapper: {
     width: "100%",
-    height: "350px", // Altura fixa para o gráfico
+    height: "350px", 
   }
-};
+});
 
 export default Estatisticas;
