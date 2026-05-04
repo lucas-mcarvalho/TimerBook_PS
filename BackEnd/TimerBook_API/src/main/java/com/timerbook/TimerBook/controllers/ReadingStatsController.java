@@ -47,13 +47,9 @@ public class ReadingStatsController implements ReadingStatsControllerDocs {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             @RequestParam(value = "includeOngoing", required = false, defaultValue = "false") boolean includeOngoing
     ) {
-        try {
-            Long userId = getLoggedUserId();
-            ReadingStatsDTO dto = service.getStatsForReading(userId, readingId, start, end, includeOngoing);
-            return ResponseEntity.ok(dto);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(403).build();
-        }
+        Long userId = getLoggedUserId();
+        ReadingStatsDTO dto = service.getStatsForReading(userId, readingId, start, end, includeOngoing);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/user/general")
@@ -77,13 +73,9 @@ public class ReadingStatsController implements ReadingStatsControllerDocs {
             @RequestParam(value = "end", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end
     ) {
-        try {
-            Long userId = getLoggedUserId();
-            ReadingStatsDTO dto = service.getStatsForReading(userId, readingId, start, end, false);
-            return ResponseEntity.ok(dto.getCurrentStreakDays());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(403).build();
-        }
+        Long userId = getLoggedUserId();
+        ReadingStatsDTO dto = service.getStatsForReading(userId, readingId, start, end, false);
+        return ResponseEntity.ok(dto.getCurrentStreakDays());
     }
 
     @GetMapping("/user/streak")

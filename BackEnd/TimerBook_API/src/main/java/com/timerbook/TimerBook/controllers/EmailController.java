@@ -3,6 +3,7 @@ package com.timerbook.TimerBook.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,12 +22,8 @@ public class EmailController implements EmailControllerDocs {
 
     @PostMapping("/send")
     @Override
-    public ResponseEntity<String> sendEmail(@RequestBody EmailRequestDTO emailRequest) {
-        try {
-            emailService.send(emailRequest);
-            return new ResponseEntity<>("Email sent successfully!", HttpStatus.OK);
-        } catch (IllegalStateException e) {
-            return new ResponseEntity<>("Failed to send e-mail: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<String> sendEmail(@Valid @RequestBody EmailRequestDTO emailRequest) {
+        emailService.send(emailRequest);
+        return new ResponseEntity<>("Email sent successfully!", HttpStatus.OK);
     }
 }

@@ -5,11 +5,9 @@ import com.timerbook.TimerBook.controllers.docs.BookcontrollerDocs;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.services.BookService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +21,8 @@ import java.util.List;
 @Tag(name = "Book", description = "Api de livros")
 public class BookController implements BookcontrollerDocs {
 
-    private final BookService bookService;
-
-    public BookController(BookService bookService) {
-        this.bookService = bookService;
-    }
+    @Autowired
+    private BookService bookService;
 
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -91,7 +86,7 @@ public class BookController implements BookcontrollerDocs {
 
 
     @GetMapping("/user/{userId}")
-    public List<Book> getBooksByUser(@PathVariable Long userId) {
-        return bookService.findByUserId(userId);
+    public ResponseEntity<List<Book>> getBooksByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(bookService.findByUserId(userId));
     }
 }

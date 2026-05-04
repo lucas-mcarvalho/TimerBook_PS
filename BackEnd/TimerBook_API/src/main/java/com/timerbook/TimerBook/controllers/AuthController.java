@@ -6,6 +6,7 @@ import com.timerbook.TimerBook.dto.RegisterRequestDTO;
 import com.timerbook.TimerBook.dto.ResponseDTO;
 import com.timerbook.TimerBook.services.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class AuthController  implements AuthControllerDocs{
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO body) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO body) {
         try {
             ResponseDTO response = authService.login(body);
             return ResponseEntity.ok(response);
@@ -29,7 +30,6 @@ public class AuthController  implements AuthControllerDocs{
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> register(
@@ -49,6 +49,7 @@ public class AuthController  implements AuthControllerDocs{
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @GetMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
         try {

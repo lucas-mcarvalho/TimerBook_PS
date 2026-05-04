@@ -60,4 +60,13 @@ public interface BookcontrollerDocs {
     ResponseEntity<Void> delete(
             @Parameter(description = "ID do livro", example = "1")
             @PathVariable Long id);
+
+    @Operation(summary = "Listar livros de um usuário")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
+    ResponseEntity<List<Book>> getBooksByUser(
+            @Parameter(description = "ID do usuário", example = "1")
+            @PathVariable Long userId);
 }

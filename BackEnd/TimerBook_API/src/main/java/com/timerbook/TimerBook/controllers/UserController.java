@@ -6,6 +6,7 @@ import com.timerbook.TimerBook.dto.UserReadingGoalResponseDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class UserController implements UserControllerDocs {
 
 
     @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> createFromJson(@RequestBody UserDTO dto) {
+    public ResponseEntity<User> createFromJson(@Valid @RequestBody UserDTO dto) {
         User user = userService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
@@ -92,7 +93,7 @@ public class UserController implements UserControllerDocs {
     @PutMapping("/me/reading-goal")
     public ResponseEntity<UserReadingGoalResponseDTO> updateMyReadingGoal(
             @RequestHeader("Authorization") String authHeader,
-            @RequestBody UserReadingGoalRequestDTO body) {
+            @Valid @RequestBody UserReadingGoalRequestDTO body) {
         try {
             User user = userService.updateMyReadingGoalMinutes(authHeader, body.getDailyReadingGoalMinutes());
             return ResponseEntity.ok(new UserReadingGoalResponseDTO(user.getDailyReadingGoalMinutes()));

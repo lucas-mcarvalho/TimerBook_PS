@@ -50,4 +50,14 @@ public interface AuthControllerDocs {
             @RequestHeader("Authorization") String refreshToken
 
     );
+
+    @Operation(summary = "Verificar e-mail do usuário")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "E-mail verificado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+    })
+    ResponseEntity<String> verifyEmail(
+            @Parameter(description = "Token enviado por e-mail")
+            @RequestParam("token") String token
+    );
 }
