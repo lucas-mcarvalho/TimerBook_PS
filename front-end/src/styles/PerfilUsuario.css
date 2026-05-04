@@ -454,7 +454,7 @@
 .medals-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 25px;
 }
 
 .achievement-card-square {
@@ -608,3 +608,354 @@
 .dark-theme .achievement-modal-body p {
     color: #94a3b8;
 }
+
+
+
+
+/* Estilos para as estatísticas */
+/* ─── Profile page layout ────────────────────────────────── */
+.perfil-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.perfil-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── Stats panel ────────────────────────────────────────── */
+.stats-panel {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+  position: sticky;
+  top: 24px;
+}
+
+.dark-theme .stats-panel {
+  background-color: #121e31;
+  border-color: #1e2f4c;
+}
+
+.stats-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  margin: 0 0 6px;
+}
+
+.dark-theme .stats-panel-title {
+  color: #64748b;
+}
+
+/* ─── Individual stat card ───────────────────────────────── */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background-color 0.4s ease;
+}
+
+.dark-theme .stat-card {
+  background-color: #0b1221;
+}
+
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Icon color variants */
+.stat-icon--teal  { background-color: #E1F5EE; color: #0F6E56; }
+.stat-icon--blue  { background-color: #E6F1FB; color: #185FA5; }
+.stat-icon--amber { background-color: #FAEEDA; color: #854F0B; }
+.stat-icon--purple{ background-color: #EEEDFE; color: #534AB7; }
+.stat-icon--coral { background-color: #FAECE7; color: #993C1D; }
+.stat-icon--green { background-color: #EAF3DE; color: #3B6D11; }
+
+.stat-label {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0 0 2px;
+  line-height: 1;
+}
+
+.dark-theme .stat-label {
+  color: #64748b;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1;
+  margin: 0;
+}
+
+.dark-theme .stat-value {
+  color: #ffffff;
+}
+
+.stat-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 3px;
+}
+
+.dark-theme .stat-unit {
+  color: #64748b;
+}
+
+.stat-streak-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+/* ─── Streak dots ────────────────────────────────────────── */
+.streak-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.streak-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  transition: background-color 0.3s ease;
+}
+
+.dark-theme .streak-dot {
+  background-color: #1e2f4c;
+}
+
+.streak-dot.active {
+  background-color: #1D9E75;
+}
+
+/* ─── Divider ────────────────────────────────────────────── */
+.stats-divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 2px 0;
+}
+
+.dark-theme .stats-divider {
+  border-color: #1e2f4c;
+}
+
+/* ─── Responsive: stack on small screens ─────────────────── */
+@media (max-width: 900px) {
+  .perfil-layout {
+    flex-direction: column;
+  }
+
+  .stats-panel {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: static;
+  }
+
+  .stats-panel-title {
+    width: 100%;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 130px;
+  }
+
+  .stats-divider {
+    display: none;
+  }
+}
+
+/* ─── Right column wrapper ───────────────────────────────── */
+.perfil-right {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+}
+
+.perfil-right .stats-panel {
+  position: static;
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.perfil-right .donut-card {
+  width: 500px;
+  flex-shrink: 0;
+}
+
+/* ─── Donut card ─────────────────────────────────────────── */
+.donut-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.dark-theme .donut-card {
+  background-color: #121e31;
+  border-color: #1e2f4c;
+}
+
+.donut-chart-wrap {
+  margin: 8px 0 4px;
+}
+
+/* ─── Legend ─────────────────────────────────────────────── */
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.donut-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.donut-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donut-legend-name {
+  flex: 1;
+  color: #64748b;
+}
+
+.dark-theme .donut-legend-name {
+  color: #94a3b8;
+}
+
+.donut-legend-val {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 12px;
+}
+
+.dark-theme .donut-legend-val {
+  color: #f1f5f9;
+}
+
+/* ─── Meta row ───────────────────────────────────────────── */
+.donut-meta-row {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+  gap: 4px;
+}
+
+.dark-theme .donut-meta-row {
+  border-color: #1e2f4c;
+}
+
+.donut-meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.donut-meta-label {
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.dark-theme .donut-meta-label {
+  color: #64748b;
+}
+
+.donut-meta-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.dark-theme .donut-meta-value {
+  color: #ffffff;
+}
+
+/* ─── Tooltip ────────────────────────────────────────────── */
+.donut-tooltip {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.dark-theme .donut-tooltip {
+  background: #121e31;
+  border-color: #1e2f4c;
+}
+
+.donut-tooltip-label {
+  color: #64748b;
+  margin: 0 0 2px;
+}
+
+.donut-tooltip-value {
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .perfil-right {
+    width: 100%;
+    position: static;
+    flex-direction: column;
+  }
+
+  .perfil-right .stats-panel,
+  .perfil-right .donut-card {
+    width: 100%;
+  }
+}
+
