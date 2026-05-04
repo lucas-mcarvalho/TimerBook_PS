@@ -41,7 +41,7 @@ public class PasswordRecoveryService {
         emailRequest.setTo(email);
         emailRequest.setSubject("Recuperação de Senha - TimerBook");
         emailRequest.setMessage("Olá! Você solicitou a recuperação de senha. \n\nclique no link e redefina a senha: "+linkRecuperacao);
-        emailService.sendEmail(emailRequest);
+        emailService.send(emailRequest);
     }
 
 

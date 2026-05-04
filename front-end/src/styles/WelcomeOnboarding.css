@@ -1,0 +1,211 @@
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.onboarding-card {
+  width: 520px;
+  max-width: 90%;
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: appearCard 0.4s ease;
+}
+
+.onboarding-card h1 {
+  margin-top: 20px;
+  font-size: 32px;
+  color: #222;
+}
+
+.onboarding-card p {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.onboarding-form label {
+  font-weight: 600;
+  color: #333;
+}
+
+.onboarding-form input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+.onboarding-form input:focus {
+  border-color: #5b4bff;
+}
+
+.onboarding-form button {
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #5b4bff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.onboarding-form button:hover {
+  background: #4838e8;
+}
+
+/* Animação do livro */
+.book-animation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.book {
+  position: relative;
+  width: 120px;
+  height: 82px;
+  perspective: 900px;
+}
+
+.book::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 82px;
+  left: 0;
+  top: 0;
+  background: linear-gradient(135deg, #4f46e5, #312e81);
+  border-radius: 10px 4px 4px 10px;
+  box-shadow: inset -6px 0 12px rgba(0, 0, 0, 0.25);
+}
+
+.book::after {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 82px;
+  right: 0;
+  top: 0;
+  background: linear-gradient(135deg, #7c3aed, #4338ca);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: inset 6px 0 12px rgba(0, 0, 0, 0.25);
+}
+
+.page {
+  position: absolute;
+  width: 56px;
+  height: 76px;
+  left: 60px;
+  top: 3px;
+  background: linear-gradient(90deg, #fff7d6, #f1df9f);
+  border: 1px solid #d6bd72;
+  border-radius: 4px 10px 10px 4px;
+  transform-origin: left center;
+  z-index: 3;
+  box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.page1 {
+  animation: smoothFlip 2.2s infinite ease-in-out;
+}
+
+.page2 {
+  animation: smoothFlip 2.2s infinite ease-in-out 0.35s;
+}
+
+.page3 {
+  animation: smoothFlip 2.2s infinite ease-in-out 0.7s;
+}
+
+@keyframes smoothFlip {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+
+  45% {
+    transform: rotateY(-150deg);
+    opacity: 0.95;
+  }
+
+  70% {
+    transform: rotateY(-180deg);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: rotateY(-180deg);
+    opacity: 0;
+  }
+}
+.goal-options {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.goal-option {
+  flex: 1;
+  padding: 18px 12px;
+  border: 2px solid #ddd;
+  border-radius: 16px;
+  background: #f8f8ff;
+  color: #333;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.goal-option strong {
+  display: block;
+  font-size: 28px;
+  color: #4f46e5;
+}
+
+.goal-option span {
+  font-size: 14px;
+}
+
+.goal-option:hover {
+  transform: translateY(-3px);
+  border-color: #7c3aed;
+}
+
+.goal-option.selected {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border-color: #4f46e5;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+}
+
+.goal-option.selected strong {
+  color: white;
+}
+
+.onboarding-error {
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 4px 0 0;
+  text-align: center;
+}
+
+.onboarding-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

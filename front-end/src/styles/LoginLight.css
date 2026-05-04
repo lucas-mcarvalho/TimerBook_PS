@@ -54,3 +54,13 @@
 .login-container.light-theme .form-footer-links a:hover {
   opacity: 1;
 }
+
+.login-container.light-theme .btn-google {
+  background-color: #ffffff;
+  color: #1e293b;
+  border-color: #cbd5e0;
+}
+
+.login-container.light-theme .btn-google:hover {
+  background-color: #f8fafc;
+}

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getBooks, deleteBook } from "../features/books/booksApi.js";
+import { deleteBook } from "../features/books/booksApi.js";
+import { getUser } from "../features/user/userApi.js";
+import { getBookByUserId } from "../features/books/booksApi.js";
 import { useNavigate } from "react-router-dom";
-import { endReadingSession, getSessionsByReadingId, startReading } from "../features/books/readSessions.js";
-import {getUser} from "../features/user/userApi.js";
+import { endReading, getReadingInProgressByBookId, startBookReadingSession } from "../features/books/readSessions.js";
+
 
 import '../styles/Layout.css';
 import '../styles/Library.css';
@@ -59,6 +61,32 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
         >
           Ver estatísticas
         </button>
+        <button
+          onClick={async (e) => {
+              e.stopPropagation();
+              const response = await getUser();
+              const userId = response.data.id;
+              const reading = await getReadingInProgressByBookId(book.id);
+
+              if (!reading?.id) {
+                alert("Esse livro ainda não possui leitura em andamento.");
+                return;
+              }
+
+              const finalPage = Number(window.prompt("Página final da leitura:", reading.currentPage || 1));
+              if (!Number.isFinite(finalPage) || finalPage < 1) return;
+
+              console.log("id da leitura:", reading.id);
+              console.log("id do usuário:", userId);
+              
+              await endReading(reading.id, userId, {
+                  finalPage
+              });
+          }}
+          className="btn-stats"
+        >
+      Finalizar Leitura
+      </button>
       </div>
     </div>
   );
@@ -90,7 +118,9 @@ function UserLibrary() {
     try {
       setLoading(true);
       setError(null);
-      const booksData = await getBooks();
+      const response = await getUser();
+      const userId = response.data.id;
+      const booksData = await getBookByUserId(userId);
       setBooks(booksData);
     } catch (err) {
       console.error("Erro ao carregar livros:", err);
@@ -106,24 +136,11 @@ function UserLibrary() {
 
   const handleRead = async (book) => {
     try {
-      //Melhorar esse trecho, apenas
       const response = await getUser();
       const userId = response.data.id;
+      const { sessionId, initialPage } = await startBookReadingSession(userId, book);
 
-
-      const readingResponse = await startReading(userId, book.id);
-      const readingId = readingResponse.id;
-      const sessions = await getSessionsByReadingId(readingId);
-      const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
-      const lastSession = sortedSessions[1];
-      const currentSession = sortedSessions[0];
-      
-      let startPage = 1;
-      if (lastSession) {
-        startPage = lastSession.endPage;
-      }
-      
-      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
+      navigate("/leitor", { state: { book, sessionId, initialPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura:", err);
       setError("Erro ao iniciar leitura: " + err.message);

@@ -1,10 +1,18 @@
 package com.timerbook.TimerBook.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 
 public class StartReadingSessionDTO {
+    @Schema(description = "ID da leitura associada à sessão", example = "1")
+    @NotNull
     private Long readingId;
+    @Schema(description = "Página inicial da sessão", example = "0")
+    @PositiveOrZero
     private Integer startPage;
+    @Schema(description = "Data/hora de início da sessão")
     private LocalDateTime startedAt;
 
     public StartReadingSessionDTO() {}

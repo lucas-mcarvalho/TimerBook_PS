@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getSessionsByReadingId, startReading } from '../features/books/readSessions.js'; 
-// 👇 Importando a função getUser
+import { useToast } from './ToastContext.js';
+import { startBookReadingSession } from '../features/books/readSessions.js'; 
 import { getUser } from '../features/user/userApi.js';
 
 import logoImg from '../assets/Home/TimerbookLogo.svg';
@@ -14,6 +14,7 @@ import SunIcon from '../assets/Home/SunIcon.svg';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal }) => {
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
@@ -21,23 +22,12 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
     try {
       const userResponse = await getUser();
       const userId = userResponse.data?.id || userResponse.id;
+      const { sessionId, initialPage } = await startBookReadingSession(userId, book);
 
-      const readingResponse = await startReading(userId, book.id);
-      const readingId = readingResponse.id;
-      const sessions = await getSessionsByReadingId(readingId);
-      const sortedSessions = [...sessions].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
-      const lastSession = sortedSessions[1];
-      const currentSession = sortedSessions[0];
-      
-      let startPage = 1;
-      if (lastSession) {
-        startPage = lastSession.endPage;
-      }
-      
-      navigate("/leitor", { state: { book, sessionId: currentSession?.id, initialPage: startPage } });
+      navigate("/leitor", { state: { book, sessionId, initialPage } });
     } catch (err) {
       console.error("Erro ao iniciar leitura pelo atalho:", err);
-      alert("Ops! Erro ao tentar abrir o livro: " + err.message);
+      showToast("Ops! Erro ao tentar abrir o livro: " + err.message, "error");
     }
   };
 
@@ -55,11 +45,19 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
       </div>
       
       <nav className="sidebar-nav">
-        <Link to="/home" className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}>
-          <img src={homeIcon} alt="Início" className="nav-icon" /> Início
-        </Link>
-        
-        <Link to="/meus-livros" className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}>
+        <Link 
+        id="guide-menu-home"
+        to="/home" 
+        className={`nav-item ${menuAtivo === 'inicio' ? 'active' : ''}`}
+>
+  <img src={homeIcon} alt="Início" className="nav-icon" /> Início
+</Link>
+
+        <Link 
+          id="guide-menu-library"
+          to="/meus-livros" 
+          className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}
+        >
           <img src={BookIcon} alt="Livros" className="nav-icon" /> Biblioteca
         </Link>
 
@@ -81,25 +79,34 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           </div>
         )}
 
-        <Link to="/perfil" className={`nav-item ${menuAtivo === 'perfil' ? 'active' : ''}`}>
-          <img src={ProfileIcon} alt="Perfil" className="nav-icon" /> Perfil
+        <Link 
+        id="guide-menu-profile"
+        to="/perfil" 
+        className={`nav-item ${menuAtivo === 'perfil' ? 'active' : ''}`}
+      >
+        <img src={ProfileIcon} alt="Perfil" className="nav-icon" /> Perfil
         </Link>
       </nav>
       
       <div className="sidebar-footer">
         {onOpenModal && (
-          <button className="btn-add-book sidebar-btn-add" onClick={onOpenModal}>
-            Adicionar
-          </button>
+          <button 
+          id="guide-menu-add"
+          className="btn-add-book sidebar-btn-add" 
+          onClick={onOpenModal}
+        >
+          Adicionar
+        </button>
         )}
         
         <div style={{ position: 'relative' }}>
           <button 
-            className="action-icon-btn" 
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-          >
-            <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
-          </button>
+          id="guide-menu-settings"
+          className="action-icon-btn" 
+          onClick={() => setIsConfigOpen(!isConfigOpen)}
+        >
+          <img src={ConfigIcon} alt="Configurações" className="nav-icon" />
+        </button>
 
           {isConfigOpen && (
             <div className="config-popover">
@@ -110,9 +117,13 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           )}
         </div>
         
-        <button className="action-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)}>
-          <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
-        </button>
+        <button 
+        id="guide-menu-darkmode"
+        className="action-icon-btn" 
+        onClick={() => setIsDarkMode(!isDarkMode)}
+      >
+        <img src={isDarkMode ? SunIcon : MoonIcon} alt="Aparência" className="nav-icon" />
+      </button>
       </div>
     </aside>
   );

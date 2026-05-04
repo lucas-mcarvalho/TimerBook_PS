@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getBooks } from "../features/books/booksApi.js"; 
+import { getBookByUserId } from "../features/books/booksApi.js"; 
 import { getUser } from "../features/user/userApi.js";
+import WelcomeOnboarding from '../components/WelcomeOnboarding.jsx';
+import HomeGuide from "../components/HomeGuide";
 
 import '../styles/Layout.css'; 
 import '../styles/Waves.css'; 
@@ -9,10 +11,18 @@ import '../styles/Home.css';
 import '../styles/HomeDark.css'; 
 import Sidebar from '../components/Sidebar';
 import ProfileIcon from '../assets/Home/ProfileIcon.svg';
+import { getProfilePhotoPath, resolveProfilePhotoUrl } from '../utils/profileImage.js';
+
+const getOnboardingStorageKey = (user) => {
+  const identifier = user?.id || user?.email;
+  return identifier ? `timerbook-onboarding-shown-${identifier}` : null;
+};
 
 const Home = () => {
   const [books, setBooks] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStorageKey, setOnboardingStorageKey] = useState(null);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('timerbook-theme');
@@ -27,9 +37,14 @@ const Home = () => {
     const fetchDados = async () => {
       try {
         const userData = await getUser();
-        setUserInfo(userData.data || userData);
+        const info = userData.data || userData;
+        setUserInfo(info);
+
+        const storageKey = getOnboardingStorageKey(info);
+        setOnboardingStorageKey(storageKey);
+        setShowOnboarding(storageKey ? localStorage.getItem(storageKey) !== "true" : false);
         
-        const booksData = await getBooks();
+        const booksData = await getBookByUserId(info.id);
         setBooks(booksData);
       } catch (err) {
         console.error("Erro ao carregar dados na Home:", err);
@@ -39,15 +54,31 @@ const Home = () => {
     fetchDados();
   }, []);
 
+  const profilePhotoPath = getProfilePhotoPath(userInfo);
+  const profilePhotoUrl = resolveProfilePhotoUrl(profilePhotoPath);
+
   return (
-    <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
-      
-      <Sidebar 
-        menuAtivo="inicio" 
-        books={books} 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
-      />
+  <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
+
+    {showOnboarding && (
+      <WelcomeOnboarding 
+  onClose={() => {
+    if (onboardingStorageKey) {
+      localStorage.setItem(onboardingStorageKey, "true");
+    }
+    setShowOnboarding(false);
+  }} 
+/>
+    )}
+
+    <div id="guide-sidebar">
+  <Sidebar 
+    menuAtivo="inicio" 
+    books={books} 
+    isDarkMode={isDarkMode} 
+    setIsDarkMode={setIsDarkMode} 
+  />
+</div>
 
       <main className="main-content welcome-container">
         
@@ -78,15 +109,11 @@ const Home = () => {
         <div className="welcome-content-wrapper">
           <div className="welcome-header">
             
-            <div className="profile-image-container">
+            <div className="profile-image-container" id="guide-profile">
               <img 
-                src={
-                  (userInfo?.photopath || userInfo?.photo) 
-                    ? `http://localhost:8080/${userInfo.photopath || userInfo.photo}` 
-                    : ProfileIcon
-                } 
+                src={profilePhotoUrl || ProfileIcon} 
                 alt="Foto de Perfil" 
-                className={(userInfo?.photopath || userInfo?.photo) ? "" : "profile-image-default"}
+                className={profilePhotoUrl ? "" : "profile-image-default"}
                 onError={(e) => {
                   e.target.onerror = null; 
                   e.target.src = ProfileIcon;
@@ -102,15 +129,14 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="welcome-actions">
+          <div className="welcome-actions" id="guide-library-button">
             <Link to="/meus-livros" className="btn-go-library">
               Acessar Minha Biblioteca
             </Link>
           </div>
         </div>
-
       </main>
-      
+      <HomeGuide />
     </div>
   );
 };

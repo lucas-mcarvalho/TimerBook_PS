@@ -3,7 +3,7 @@ import api from "../axiosApi";
 export const getUser = async () => {
     try{
         const userData = await api.get("/user/me");
-        console.log("Dados do usuário obtidos:", userData);
+        
         return userData;
     }catch(error){
         console.error("Erro ao obter dados do usuário:", error);
@@ -11,6 +11,19 @@ export const getUser = async () => {
     }
     
 }
+
+export const updateReadingGoal = async (dailyReadingGoalMinutes) => {
+    try {
+        const response = await api.put("/user/me/reading-goal", {
+            dailyReadingGoalMinutes,
+        });
+
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao atualizar meta de leitura:", error);
+        throw error;
+    }
+};
 
 export const updateProfile = async (userId, userData, photoFile, removePhotoFlag) => {
     const formData = new FormData();
@@ -30,6 +43,16 @@ export const updateProfile = async (userId, userData, photoFile, removePhotoFlag
         return response.data;
     } catch (error) {
         console.error("Erro ao atualizar perfil:", error);
+        throw error;
+    }
+};
+
+export const deleteUser = async (userId) => {
+    try {
+        const response = await api.delete(`/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao deletar usuário:", error);
         throw error;
     }
 };

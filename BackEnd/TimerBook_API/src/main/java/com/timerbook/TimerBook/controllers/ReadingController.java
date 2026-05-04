@@ -5,6 +5,7 @@ import com.timerbook.TimerBook.dto.FinishReadingDTO;
 import com.timerbook.TimerBook.dto.InitReadingDTO;
 import com.timerbook.TimerBook.models.Reading;
 import com.timerbook.TimerBook.services.ReadingService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class ReadingController implements ReadingControllerDocs {
     @PostMapping("/{userId}/start")
     public ResponseEntity<Reading> startReading(
             @PathVariable Long userId,
-            @RequestBody InitReadingDTO dto) {
+            @Valid @RequestBody InitReadingDTO dto) {
         try {
             Reading reading = readingService.initializeReading(userId, dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(reading);
@@ -36,7 +37,7 @@ public class ReadingController implements ReadingControllerDocs {
     public ResponseEntity<Reading> finishReading(
             @PathVariable Long userId,
             @PathVariable Long readingId,
-            @RequestBody FinishReadingDTO dto) {
+            @Valid @RequestBody FinishReadingDTO dto) {
         try {
             Reading reading = readingService.finishReading(userId, readingId, dto);
             return ResponseEntity.ok(reading);
@@ -67,7 +68,7 @@ public class ReadingController implements ReadingControllerDocs {
             @PathVariable Long userId,
             @PathVariable Long bookId) {
         try {
-            List<Reading> readings = readingService.getReadingsByBookId(userId, bookId);
+            List<Reading> readings = readingService.getReadingsByBookId(bookId, userId);
             return ResponseEntity.ok(readings);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
