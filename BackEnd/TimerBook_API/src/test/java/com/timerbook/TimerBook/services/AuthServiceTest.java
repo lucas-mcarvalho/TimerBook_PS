@@ -229,6 +229,7 @@ class AuthServiceTest {
 
         when(tokenService.validateAndDecodeToken("old-refresh")).thenReturn(decodedJWT);
         when(decodedJWT.getSubject()).thenReturn("reader@mail.com");
+        user.setRefreshToken("old-refresh");
         when(userRepository.findByEmail("reader@mail.com")).thenReturn(Optional.of(user));
         when(tokenService.generateToken(user)).thenReturn("new-access");
         when(tokenService.createRefreshToken(user)).thenReturn("new-refresh");
@@ -256,6 +257,48 @@ class AuthServiceTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> service.refreshToken("Bearer old-refresh"));
 
         assertEquals("Refresh Token expirado ou inválido. Faça login novamente.", exception.getMessage());
+    }
+
+    @Test
+    void refreshTokenShouldRejectRefreshTokenThatDoesNotMatchStoredToken() {
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        User user = user("reader", "reader@mail.com");
+        user.setRefreshToken("stored-refresh");
+
+        when(tokenService.validateAndDecodeToken("old-refresh")).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("reader@mail.com");
+        when(userRepository.findByEmail("reader@mail.com")).thenReturn(Optional.of(user));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.refreshToken("Bearer old-refresh"));
+
+        assertEquals("Refresh Token expirado ou inválido. Faça login novamente.", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void logoutShouldClearStoredRefreshToken() {
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        User user = user("reader", "reader@mail.com");
+        user.setRefreshToken("refresh-token");
+
+        when(tokenService.validateAndDecodeToken("access-token")).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("reader@mail.com");
+        when(userRepository.findByEmail("reader@mail.com")).thenReturn(Optional.of(user));
+
+        service.logout("Bearer access-token");
+
+        assertNull(user.getRefreshToken());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void logoutShouldRejectInvalidToken() {
+        when(tokenService.validateAndDecodeToken("access-token")).thenReturn(null);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.logout("Bearer access-token"));
+
+        assertEquals("Token inválido", exception.getMessage());
+        verify(userRepository, never()).save(any());
     }
 
     private User user(String username, String email) {

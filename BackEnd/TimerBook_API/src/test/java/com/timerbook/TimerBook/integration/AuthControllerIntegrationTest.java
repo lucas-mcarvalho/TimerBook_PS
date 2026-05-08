@@ -88,6 +88,8 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
     void refreshShouldAcceptRefreshTokenWithoutRolesClaim() throws Exception {
         User user = createEnabledUser("reader", "reader@mail.com", "secret123");
         String refreshToken = tokenService.createRefreshToken(user);
+        user.setRefreshToken(refreshToken);
+        userRepository.saveAndFlush(user);
 
         mockMvc.perform(post("/auth/refresh")
                         .header("Authorization", "Bearer " + refreshToken))
@@ -102,5 +104,31 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/auth/refresh")
                         .header("Authorization", "invalid"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void refreshShouldReturnForbiddenWhenRefreshTokenWasInvalidatedByLogout() throws Exception {
+        User user = createEnabledUser("reader", "reader@mail.com", "secret123");
+        String accessToken = tokenService.generateToken(user);
+        String refreshToken = tokenService.createRefreshToken(user);
+        user.setRefreshToken(refreshToken);
+        userRepository.saveAndFlush(user);
+
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNoContent());
+
+        assertNull(userRepository.findById(user.getId()).orElseThrow().getRefreshToken());
+
+        mockMvc.perform(post("/auth/refresh")
+                        .header("Authorization", "Bearer " + refreshToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void logoutShouldReturnUnauthorizedForInvalidToken() throws Exception {
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer invalid"))
+                .andExpect(status().isUnauthorized());
     }
 }
