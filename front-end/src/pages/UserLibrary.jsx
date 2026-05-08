@@ -114,6 +114,27 @@ function UserLibrary() {
     loadBooks();
   }, []);
 
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handlePageButtonClick = (event) => {
+      const clickedButton = event.target?.closest?.("button");
+
+      if (!clickedButton) return;
+
+      const shouldKeepEditing =
+        clickedButton.closest(".btn-edit-book") ||
+        clickedButton.closest(".btn-delete-book");
+
+      if (!shouldKeepEditing) {
+        setIsEditing(false);
+      }
+    };
+
+    document.addEventListener("click", handlePageButtonClick, true);
+    return () => document.removeEventListener("click", handlePageButtonClick, true);
+  }, [isEditing]);
+
   const loadBooks = async () => {
     try {
       setLoading(true);
@@ -154,6 +175,7 @@ function UserLibrary() {
     try {
       await deleteBook(bookId);
       setBooks((prev) => prev.filter((b) => b.id !== bookId));
+      setIsEditing(false);
     } catch (err) {
       console.error("Erro ao deletar livro:", err);
       setError("Erro ao deletar livro: " + err.message);

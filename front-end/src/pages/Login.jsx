@@ -76,7 +76,7 @@ export default function Login() {
           showAchievementToast(conquista);
         });
       }
-      navigate('/home');
+      navigate('/home', { replace: true });
     } catch (err) {
       const status = err.response?.status;
       const message = err.response?.data;
