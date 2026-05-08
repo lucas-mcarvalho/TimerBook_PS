@@ -51,6 +51,17 @@ public interface AuthControllerDocs {
 
     );
 
+    @Operation(summary = "Logout do usuário")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Logout realizado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+    })
+    ResponseEntity<Void> logout(
+            @Parameter(description = "Access token no formato Bearer",
+                    example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+            @RequestHeader("Authorization") String authHeader
+    );
+
     @Operation(summary = "Verificar e-mail do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "E-mail verificado com sucesso"),

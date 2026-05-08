@@ -138,10 +138,33 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        if (user.getRefreshToken() == null || !user.getRefreshToken().equals(token)) {
+            throw new RuntimeException("Refresh Token expirado ou inválido. Faça login novamente.");
+        }
+
         String newAccessToken = tokenService.generateToken(user);
         String newRefreshToken = tokenService.createRefreshToken(user);
         user.setRefreshToken(newRefreshToken);
         userRepository.save(user);
         return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken,null);
+    }
+
+    public void logout(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido ou ausente");
+        }
+        String token = authHeader.replace("Bearer ", "");
+
+        DecodedJWT decodedJWT = tokenService.validateAndDecodeToken(token);
+        if (decodedJWT == null) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        String email = decodedJWT.getSubject();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        user.setRefreshToken(null);
+        userRepository.save(user);
     }
 }
