@@ -51,11 +51,14 @@ public class AuthService {
     private PasswordValidatorService passwordValidatorService;
 
     public ResponseDTO login(LoginRequestDTO body) {
+        String loginIdentifier = body.email();
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(body.email(), body.password())
+            new UsernamePasswordAuthenticationToken(loginIdentifier, body.password())
         );
 
-        User user = userRepository.findByEmail(body.email())
+        User user = userRepository.findByEmail(loginIdentifier)
+            .or(() -> userRepository.findByUsername(loginIdentifier))
                 .orElseThrow(() -> new RuntimeException("Usuario nao encontrado"));
 
         String accessToken = tokenService.generateToken(user);
