@@ -47,6 +47,9 @@ public class AuthService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PasswordValidatorService passwordValidatorService;
+
     public ResponseDTO login(LoginRequestDTO body) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(body.email(), body.password())
@@ -76,6 +79,8 @@ public class AuthService {
         if (existingUsername.isPresent()) {
             throw new RuntimeException("Este username já está em uso!");
         }
+
+        passwordValidatorService.validate(body.password());
 
         User newUser = new User();
         newUser.setEnabled(false);
