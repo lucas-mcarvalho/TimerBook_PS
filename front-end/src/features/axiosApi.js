@@ -1,7 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080"
+  baseURL: "http://192.168.10.102:8080"  
+  
+  /***Coloque o ip de sua máquina aqui(depois faça o mesmo no aplication.yml em cors:
+  originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173,http://localhost:8081,http://192.168.10.102:5173 -->Seu IP )***/
+
 });
 
 // 🔹 REQUEST → adiciona access token (exceto rotas de auth)
@@ -28,7 +32,7 @@ const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
 
   const response = await axios.post(
-    "http://localhost:8080/auth/refresh",
+    "http://192.168.10.102:8080/auth/refresh",
     { refreshToken },
     { withCredentials: true }
   );

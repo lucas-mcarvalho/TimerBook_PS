@@ -10,30 +10,66 @@ import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
 import "../styles/Leitor.css";
 
+// Detects if running inside the React Native WebView
+function isInWebView() {
+  return typeof window !== "undefined" && !!window.ReactNativeWebView;
+}
+
 export default function Leitor() {
   const { showToast, showAchievementToast } = useToast();
   const navigate = useNavigate();
   const { state } = useLocation();
-  const book = state?.book;
-  const sessionId = state?.sessionId;
-  const initialPage = state?.initialPage || 1;
 
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [pdfContext, setPdfContext] = useState("");
+  // ── Read URL params (sent by React Native) ──────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const urlBookId   = params.get("bookId");
+  const urlSessionId = params.get("sessionId");
+  const urlPage     = Number(params.get("page")) || 1;
+  const urlToken    = params.get("token");
+
+  // ── Save token from URL into localStorage before anything else ──────────
+  // This runs synchronously so ProtectedRoute and axios already see it
+  if (urlToken) {
+    localStorage.setItem("token", urlToken);
+    localStorage.setItem("refreshToken", urlToken);
+  }
+
+  // ── Resolve book, sessionId, initialPage from state OR url params ────────
+  const [book, setBook]     = useState(state?.book || null);
+  const sessionId           = state?.sessionId   || urlSessionId;
+  const initialPage         = state?.initialPage || urlPage;
+
+  const [question, setQuestion]     = useState("");
+  const [messages, setMessages]     = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [pdfContext, setPdfContext]  = useState("");
   const [extracting, setExtracting] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [endingSession, setEndingSession] = useState(false);
-  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfFile, setPdfFile]       = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
 
-  const PAGE_RANGE = 2;
-  const chatEndRef = useRef(null);
+  const PAGE_RANGE  = 2;
+  const chatEndRef  = useRef(null);
   const textareaRef = useRef(null);
 
-  const SUGGESTIONS = ["Quem é o personagem principal?", "Resumir este capítulo", "Temas desta passagem"];
+  const SUGGESTIONS = [
+    "Quem é o personagem principal?",
+    "Resumir este capítulo",
+    "Temas desta passagem",
+  ];
 
+  // ── If book wasn't passed via state, fetch it from the API using URL bookId
+  useEffect(() => {
+    if (book) return;              // already have it from navigation state
+    if (!urlBookId) return;        // no id available at all
+
+    api.get(`/book/${urlBookId}`)
+      .then((res) => setBook(res.data))
+      .catch((err) => console.error("Erro ao carregar livro:", err));
+  }, [urlBookId]);
+
+  // ── End session ──────────────────────────────────────────────────────────
   const handleEndSession = async () => {
     if (!sessionId) {
       showToast("Sessão não encontrada.", "error");
@@ -41,15 +77,23 @@ export default function Leitor() {
     }
     setEndingSession(true);
     try {
+      console.log("Encerrando sessão:", sessionId, "na página", currentPage);
+      
       const response = await endReadingSession(sessionId, currentPage);
       const novas = response?.data?.novasConquistas || response?.novasConquistas;
       if (novas && novas.length > 0) {
-        novas.forEach(conquista => {
-          showAchievementToast(conquista);
-        });
+        novas.forEach((conquista) => showAchievementToast(conquista));
       }
       showToast("Sessão de leitura encerrada!", "success");
-      navigate("/meus-livros");
+
+      if (isInWebView()) {
+        // Tell React Native to close the reader and finish the session
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: "SESSION_END", page: currentPage })
+        );
+      } else {
+        navigate("/meus-livros");
+      }
     } catch (err) {
       showToast("Erro ao encerrar sessão: " + err.message, "error");
     } finally {
@@ -57,6 +101,7 @@ export default function Leitor() {
     }
   };
 
+  // ── Load PDF ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const loadPDF = async () => {
       try {
@@ -69,14 +114,15 @@ export default function Leitor() {
     if (book?.dataPath) loadPDF();
   }, [book]);
 
+  // ── Extract PDF text range for AI context ────────────────────────────────
   useEffect(() => {
     if (!pdfFile) return;
     const extractRange = async () => {
       setExtracting(true);
       try {
         const startPage = Math.max(1, currentPage - PAGE_RANGE);
-        const endPage = currentPage + PAGE_RANGE;
-        const text = await extractPDFRange(pdfFile, startPage, endPage);
+        const endPage   = currentPage + PAGE_RANGE;
+        const text      = await extractPDFRange(pdfFile, startPage, endPage);
         setPdfContext(text);
       } catch (error) {
         console.error("Erro ao extrair range:", error);
@@ -87,10 +133,12 @@ export default function Leitor() {
     extractRange();
   }, [currentPage, pdfFile]);
 
+  // ── Auto-scroll chat ─────────────────────────────────────────────────────
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ── AI submit ────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!question.trim() || loading) return;
@@ -122,11 +170,21 @@ export default function Leitor() {
     textareaRef.current?.focus();
   };
 
-  if (!book) {
+  // ── Book not found (only show after fetch attempt) ───────────────────────
+  if (!book && !urlBookId) {
     return (
       <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
         <Link to="/home">← Voltar</Link>
         <p style={{ marginTop: "1rem" }}>Livro não encontrado.</p>
+      </div>
+    );
+  }
+
+  // ── Loading state while fetching book from API ───────────────────────────
+  if (!book) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "sans-serif", textAlign: "center" }}>
+        <p>Carregando livro…</p>
       </div>
     );
   }
@@ -152,7 +210,7 @@ export default function Leitor() {
           </button>
 
           <div className="leitor-book-meta">
-            <span className="leitor-book-title">{book.title || "Livro"}</span>
+            <span className="leitor-book-title">{book.name || book.title || "Livro"}</span>
             <span className="leitor-book-subtitle">
               {extracting ? "Carregando contexto…" : pdfContext ? `p. ${currentPage}` : "Sem contexto"}
             </span>

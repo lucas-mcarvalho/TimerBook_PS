@@ -69,14 +69,16 @@ export async function startReadingSession(bookId, startPage){
 } 
 ***/
 
-export async function endReadingSession(sessionId, endPage){
-    try {
-        const response = await api.put(`/reading-sessions/${sessionId}/finish`, { endPage });
-        return response.data;
-    } catch (error) {
-        console.error("Erro ao finalizar sessão de leitura:", error);
-        throw new Error("Erro ao finalizar sessão de leitura");
-    }
+export async function endReadingSession(sessionId, endPage) {
+  try {
+    const response = await api.put(`/reading-sessions/${sessionId}/finish`, { endPage });
+    return response.data;
+  } catch (error) {
+    console.error("Status:", error.response?.status);
+    console.error("Data:", error.response?.data);
+    console.error("URL:", error.config?.url);
+    throw error; // throw the real error so we can see it
+  }
 }
 
 export async function getReadingSessions() {
