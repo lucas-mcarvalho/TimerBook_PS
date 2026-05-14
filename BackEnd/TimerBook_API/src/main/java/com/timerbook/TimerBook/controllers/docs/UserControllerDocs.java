@@ -87,7 +87,10 @@ public interface UserControllerDocs {
     })
     ResponseEntity<UserReadingGoalResponseDTO> getMyReadingGoal(@RequestHeader("Authorization") String authHeader);
 
-    @Operation(summary = "Atualiza meta diária de leitura do usuário autenticado")
+    @Operation(
+            summary = "Atualiza meta diária de leitura do usuário autenticado",
+            description = "Valores permitidos para dailyReadingGoalMinutes: 5, 10, 15, 30 e 60"
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

@@ -16,7 +16,7 @@ import java.util.Set;
 @Service
 public class UserService {
 
-    private static final Set<Integer> ALLOWED_READING_GOALS = Set.of(10, 20, 30);
+    private static final Set<Integer> ALLOWED_READING_GOALS = Set.of(5, 10, 15, 30, 60);
 
     @Autowired
     private UserRepository userRepository;
@@ -138,7 +138,7 @@ public class UserService {
             return User.DEFAULT_DAILY_READING_GOAL_MINUTES;
         }
         if (!ALLOWED_READING_GOALS.contains(goalMinutes)) {
-            throw new IllegalArgumentException("Meta de leitura inválida. Valores permitidos: 10, 20 ou 30 minutos.");
+            throw new IllegalArgumentException("Meta de leitura inválida. Valores permitidos: 5, 10, 15, 30 ou 60 minutos.");
         }
         return goalMinutes;
     }
