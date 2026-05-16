@@ -57,6 +57,9 @@ class AuthServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private PasswordValidatorService passwordValidatorService;
+
     @InjectMocks
     private AuthService service;
 
@@ -95,7 +98,7 @@ class AuthServiceTest {
 
     @Test
     void registerShouldCreateDisabledUserStorePhotoAssignRoleAndSendVerificationEmail() {
-        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "secret", null, 20);
+        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "Secret@123", null, 15);
         MockMultipartFile photo = new MockMultipartFile("photo", "avatar.png", "image/png", "img".getBytes());
         Role role = new Role(1L, "ROLE_USER");
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -103,7 +106,7 @@ class AuthServiceTest {
         when(userRepository.findByEmail(body.email())).thenReturn(Optional.empty());
         when(userRepository.findByUsername(body.username())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(body.password())).thenReturn("encoded-secret");
-        when(userService.normalizeReadingGoal(20)).thenReturn(20);
+        when(userService.normalizeReadingGoal(15)).thenReturn(15);
         when(fileStorageService.storeFile(photo, "profile")).thenReturn("uploads/profile/avatar.png");
         when(roleRepository.findByAuthority("ROLE_USER")).thenReturn(role);
         when(tokenService.generateEmailVerificationToken(body.email())).thenReturn("email-token");
@@ -118,8 +121,9 @@ class AuthServiceTest {
         assertEquals("reader@mail.com", savedUser.getEmail());
         assertEquals("encoded-secret", savedUser.getPassword());
         assertEquals("uploads/profile/avatar.png", savedUser.getPhotopath());
-        assertEquals(20, savedUser.getDailyReadingGoalMinutes());
+        assertEquals(15, savedUser.getDailyReadingGoalMinutes());
         assertTrue(savedUser.getRoles().contains(role));
+        verify(passwordValidatorService).validate("Secret@123");
         verify(emailService).sendVerificationEmail(
                 "reader@mail.com",
                 "http://localhost:5173/verify-email?token=email-token"
@@ -128,7 +132,7 @@ class AuthServiceTest {
 
     @Test
     void registerShouldCreateUserRoleWhenItDoesNotExist() {
-        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "secret", null, null);
+        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "Secret@123", null, null);
 
         when(userRepository.findByEmail(body.email())).thenReturn(Optional.empty());
         when(userRepository.findByUsername(body.username())).thenReturn(Optional.empty());
@@ -143,22 +147,24 @@ class AuthServiceTest {
         verify(roleRepository).save(roleCaptor.capture());
         assertEquals("ROLE_USER", roleCaptor.getValue().getAuthority());
         verify(userRepository).save(argThat(user -> user.getRoles().contains(roleCaptor.getValue())));
+        verify(passwordValidatorService).validate("Secret@123");
     }
 
     @Test
     void registerShouldRejectDuplicatedEmail() {
-        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "secret", null, 10);
+        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "Secret@123", null, 10);
         when(userRepository.findByEmail(body.email())).thenReturn(Optional.of(new User()));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> service.register(body, null));
 
         assertEquals("Email já cadastrado!", exception.getMessage());
         verify(userRepository, never()).save(any());
+        verify(passwordValidatorService, never()).validate(anyString());
     }
 
     @Test
     void registerShouldRejectDuplicatedUsername() {
-        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "secret", null, 10);
+        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "Secret@123", null, 10);
         when(userRepository.findByEmail(body.email())).thenReturn(Optional.empty());
         when(userRepository.findByUsername(body.username())).thenReturn(Optional.of(new User()));
 
@@ -166,6 +172,24 @@ class AuthServiceTest {
 
         assertEquals("Este username já está em uso!", exception.getMessage());
         verify(userRepository, never()).save(any());
+        verify(passwordValidatorService, never()).validate(anyString());
+    }
+
+    @Test
+    void registerShouldRejectInvalidPasswordBeforeEncodingOrSavingUser() {
+        RegisterRequestDTO body = new RegisterRequestDTO("reader", "reader@mail.com", "weak", null, 10);
+
+        when(userRepository.findByEmail(body.email())).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(body.username())).thenReturn(Optional.empty());
+        doThrow(new IllegalArgumentException("Senha inválida")).when(passwordValidatorService).validate(body.password());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> service.register(body, null));
+
+        assertEquals("Senha inválida", exception.getMessage());
+        verify(passwordValidatorService).validate("weak");
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any());
+        verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
     }
 
     @Test

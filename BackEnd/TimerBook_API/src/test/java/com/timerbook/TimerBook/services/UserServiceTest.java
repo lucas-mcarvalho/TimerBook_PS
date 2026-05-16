@@ -75,7 +75,7 @@ class UserServiceTest {
         MockMultipartFile photo = new MockMultipartFile("photo", "me.png", "image/png", "img".getBytes());
         UserDTO dto = userDto("teste", "teste@gmail.com", "123456");
         dto.setPhotopath(photo);
-        dto.setDailyReadingGoalMinutes(20);
+        dto.setDailyReadingGoalMinutes(15);
 
         when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
         when(userRepository.findByUsername(dto.getUsername())).thenReturn(Optional.empty());
@@ -87,7 +87,7 @@ class UserServiceTest {
         User result = service.create(dto);
 
         assertEquals("uploads/users/me.png", result.getPhotopath());
-        assertEquals(20, result.getDailyReadingGoalMinutes());
+        assertEquals(15, result.getDailyReadingGoalMinutes());
         verify(fileStorageService).storeFile(photo, "users");
     }
 
@@ -284,10 +284,65 @@ class UserServiceTest {
         when(userRepository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        User result = service.updateMyReadingGoalMinutes("Bearer token", 20);
+        User result = service.updateMyReadingGoalMinutes("Bearer token", 15);
 
-        assertEquals(20, result.getDailyReadingGoalMinutes());
+        assertEquals(15, result.getDailyReadingGoalMinutes());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateMyCustomReadingGoalMinutesShouldAllowPaidUserToSaveAnyPositiveGoal() {
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        User user = user(1L, "teste", "teste@gmail.com");
+        user.setSubscriptionPlan("PAID");
+
+        when(tokenService.validateAndDecodeToken("token")).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("teste@gmail.com");
+        when(userRepository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = service.updateMyCustomReadingGoalMinutes("Bearer token", 25);
+
+        assertEquals(25, result.getDailyReadingGoalMinutes());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateMyCustomReadingGoalMinutesShouldRejectFreeUser() {
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        User user = user(1L, "teste", "teste@gmail.com");
+        user.setSubscriptionPlan("FREE");
+
+        when(tokenService.validateAndDecodeToken("token")).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("teste@gmail.com");
+        when(userRepository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(user));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateMyCustomReadingGoalMinutes("Bearer token", 25)
+        );
+
+        assertEquals("Apenas usuários com plano pago podem definir metas personalizadas. Utilize um dos valores pré-definidos: 5, 10, 15, 30 ou 60 minutos.", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMyCustomReadingGoalMinutesShouldRejectNonPositiveGoalForPaidUser() {
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        User user = user(1L, "teste", "teste@gmail.com");
+        user.setSubscriptionPlan("PAID");
+
+        when(tokenService.validateAndDecodeToken("token")).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn("teste@gmail.com");
+        when(userRepository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(user));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateMyCustomReadingGoalMinutes("Bearer token", 0)
+        );
+
+        assertEquals("Meta de leitura inválida. Informe um valor maior que zero.", exception.getMessage());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -297,8 +352,8 @@ class UserServiceTest {
 
     @Test
     void normalizeReadingGoalShouldRejectInvalidValues() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> service.normalizeReadingGoal(15));
-        assertEquals("Meta de leitura inválida. Valores permitidos: 10, 20 ou 30 minutos.", exception.getMessage());
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> service.normalizeReadingGoal(20));
+        assertEquals("Meta de leitura inválida. Valores permitidos: 5, 10, 15, 30 ou 60 minutos.", exception.getMessage());
     }
 
     @Test
