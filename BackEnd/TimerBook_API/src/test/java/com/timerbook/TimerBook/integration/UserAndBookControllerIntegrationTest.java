@@ -51,10 +51,46 @@ class UserAndBookControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "dailyReadingGoalMinutes": 15
+                                  "dailyReadingGoalMinutes": 20
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateCustomReadingGoalShouldAllowPaidUserToUseCustomValue() throws Exception {
+        User user = createEnabledUser("reader", "reader@mail.com", "secret123");
+        user.setSubscriptionPlan("PAID");
+        userRepository.saveAndFlush(user);
+
+        mockMvc.perform(put("/user/me/reading-goal/custom")
+                        .header("Authorization", bearerFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dailyReadingGoalMinutes": 25
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyReadingGoalMinutes").value(25));
+
+        assertEquals(25, userRepository.findById(user.getId()).orElseThrow().getDailyReadingGoalMinutes());
+    }
+
+    @Test
+    void updateCustomReadingGoalShouldRejectFreeUser() throws Exception {
+        User user = createEnabledUser("reader", "reader@mail.com", "secret123");
+
+        mockMvc.perform(put("/user/me/reading-goal/custom")
+                        .header("Authorization", bearerFor(user))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dailyReadingGoalMinutes": 25
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.dailyReadingGoalMinutes").doesNotExist());
     }
 
     @Test

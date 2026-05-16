@@ -21,16 +21,16 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(multipart("/auth/register")
                         .param("username", "reader")
                         .param("email", "reader@mail.com")
-                        .param("password", "secret123")
-                        .param("dailyReadingGoalMinutes", "20"))
+                        .param("password", "Secret@123")
+                        .param("dailyReadingGoalMinutes", "15"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Usuário registrado com sucesso. Verifique seu e-mail para ativar a conta."));
 
         User savedUser = userRepository.findByEmail("reader@mail.com").orElseThrow();
         assertFalse(savedUser.getEnabled());
         assertEquals("reader", savedUser.getUsername());
-        assertEquals(20, savedUser.getDailyReadingGoalMinutes());
-        assertTrue(passwordEncoder.matches("secret123", savedUser.getPassword()));
+        assertEquals(15, savedUser.getDailyReadingGoalMinutes());
+        assertTrue(passwordEncoder.matches("Secret@123", savedUser.getPassword()));
         assertTrue(savedUser.getRoles().stream().anyMatch(role -> role.getAuthority().equals("ROLE_USER")));
 
         ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
