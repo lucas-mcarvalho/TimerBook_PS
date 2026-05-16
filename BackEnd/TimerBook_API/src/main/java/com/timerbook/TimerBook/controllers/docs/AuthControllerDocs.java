@@ -35,6 +35,7 @@ public interface AuthControllerDocs {
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
+            @Parameter(description = "Meta diária de leitura em minutos (valores permitidos: 5, 10, 15, 30, 60)", example = "15")
             @RequestParam(value = "dailyReadingGoalMinutes", required = false) Integer dailyReadingGoalMinutes,
             MultipartFile photo
     );

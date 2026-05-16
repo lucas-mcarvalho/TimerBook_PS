@@ -1,15 +1,16 @@
 package com.timerbook.TimerBook.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-public class UserReadingGoalRequestDTO {
+public class UserCustomReadingGoalRequestDTO {
 
     @Schema(
-            description = "Meta diária de leitura em minutos. Valores permitidos: 5, 10, 15, 30 e 60",
-            example = "15",
-            allowableValues = {"5", "10", "15", "30", "60"}
+            description = "Meta diária de leitura em minutos definida livremente pelo usuário",
+            example = "25"
     )
+    @NotNull
     @Positive
     private Integer dailyReadingGoalMinutes;
 
