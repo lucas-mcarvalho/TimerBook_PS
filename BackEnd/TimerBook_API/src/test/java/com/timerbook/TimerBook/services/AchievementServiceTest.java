@@ -2,10 +2,13 @@ package com.timerbook.TimerBook.services;
 
 import com.timerbook.TimerBook.dto.AchievementDTO;
 import com.timerbook.TimerBook.models.Achievement;
+import com.timerbook.TimerBook.models.Reading;
+import com.timerbook.TimerBook.models.ReadingSession;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.models.UserAchievement;
 import com.timerbook.TimerBook.repository.AchievementRepository;
-import com.timerbook.TimerBook.repository.ReadingRepository;
+import com.timerbook.TimerBook.repository.BookRepository;
+import com.timerbook.TimerBook.repository.ReadingSessionRepository;
 import com.timerbook.TimerBook.repository.UserAchievementRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,8 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -27,7 +33,10 @@ class AchievementServiceTest {
     private AchievementRepository achievementRepo;
 
     @Mock
-    private ReadingRepository readingRepository;
+    private BookRepository bookRepository;
+
+    @Mock
+    private ReadingSessionRepository readingSessionRepository;
 
     @Mock
     private UserAchievementRepository userAchievementRepo;
@@ -123,11 +132,141 @@ class AchievementServiceTest {
         verify(userAchievementRepo, never()).save(any());
     }
 
+    @Test
+    void checkReadingStreakShouldUnlockReachedMilestones() {
+        User user = user();
+        Achievement oneDay = achievement("READING_STREAK_1", "Sequência de 1 dia");
+        Achievement tenDays = achievement("READING_STREAK_10", "Sequência de 10 dias");
+
+        when(readingSessionRepository.findByReadingUserIdAndStartedAtBetweenOrderByStartedAtAsc(eq(1L), any(), any()))
+                .thenReturn(readingSessionsForConsecutiveDays(10));
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "READING_STREAK_1")).thenReturn(false);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "READING_STREAK_10")).thenReturn(false);
+        when(achievementRepo.findByKeyCode("READING_STREAK_1")).thenReturn(Optional.of(oneDay));
+        when(achievementRepo.findByKeyCode("READING_STREAK_10")).thenReturn(Optional.of(tenDays));
+
+        List<AchievementDTO> result = service.checkReadingStreak(user);
+
+        assertEquals(2, result.size());
+        assertEquals("Sequência de 1 dia", result.get(0).getNome());
+        assertEquals("Sequência de 10 dias", result.get(1).getNome());
+        verify(userAchievementRepo, times(2)).save(any(UserAchievement.class));
+        verify(achievementRepo, never()).findByKeyCode("READING_STREAK_15");
+        verify(achievementRepo, never()).findByKeyCode("READING_STREAK_30");
+    }
+
+    @Test
+    void checkReadingStreakShouldSkipAlreadyUnlockedMilestones() {
+        User user = user();
+        Achievement fifteenDays = achievement("READING_STREAK_15", "Sequência de 15 dias");
+
+        when(readingSessionRepository.findByReadingUserIdAndStartedAtBetweenOrderByStartedAtAsc(eq(1L), any(), any()))
+                .thenReturn(readingSessionsForConsecutiveDays(15));
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "READING_STREAK_1")).thenReturn(true);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "READING_STREAK_10")).thenReturn(true);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "READING_STREAK_15")).thenReturn(false);
+        when(achievementRepo.findByKeyCode("READING_STREAK_15")).thenReturn(Optional.of(fifteenDays));
+
+        List<AchievementDTO> result = service.checkReadingStreak(user);
+
+        assertEquals(1, result.size());
+        assertEquals("Sequência de 15 dias", result.get(0).getNome());
+        verify(achievementRepo, never()).findByKeyCode("READING_STREAK_1");
+        verify(achievementRepo, never()).findByKeyCode("READING_STREAK_10");
+        verify(userAchievementRepo, times(1)).save(any(UserAchievement.class));
+    }
+
+    @Test
+    void checkRegisteredBookMilestonesShouldUnlockReachedMilestones() {
+        User user = user();
+        Achievement threeBooks = achievement("REGISTERED_BOOKS_3", "Biblioteca inicial");
+        Achievement tenBooks = achievement("REGISTERED_BOOKS_10", "Biblioteca em crescimento");
+
+        when(bookRepository.countByUserId(1L)).thenReturn(10L);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "REGISTERED_BOOKS_3")).thenReturn(false);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "REGISTERED_BOOKS_10")).thenReturn(false);
+        when(achievementRepo.findByKeyCode("REGISTERED_BOOKS_3")).thenReturn(Optional.of(threeBooks));
+        when(achievementRepo.findByKeyCode("REGISTERED_BOOKS_10")).thenReturn(Optional.of(tenBooks));
+
+        List<AchievementDTO> result = service.checkRegisteredBookMilestones(user);
+
+        assertEquals(2, result.size());
+        assertEquals("Biblioteca inicial", result.get(0).getNome());
+        assertEquals("Biblioteca em crescimento", result.get(1).getNome());
+        verify(userAchievementRepo, times(2)).save(any(UserAchievement.class));
+    }
+
+    @Test
+    void checkRegisteredBookMilestonesShouldSkipAlreadyUnlockedMilestones() {
+        User user = user();
+        Achievement tenBooks = achievement("REGISTERED_BOOKS_10", "Biblioteca em crescimento");
+
+        when(bookRepository.countByUserId(1L)).thenReturn(10L);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "REGISTERED_BOOKS_3")).thenReturn(true);
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "REGISTERED_BOOKS_10")).thenReturn(false);
+        when(achievementRepo.findByKeyCode("REGISTERED_BOOKS_10")).thenReturn(Optional.of(tenBooks));
+
+        List<AchievementDTO> result = service.checkRegisteredBookMilestones(user);
+
+        assertEquals(1, result.size());
+        assertEquals("Biblioteca em crescimento", result.get(0).getNome());
+        verify(achievementRepo, never()).findByKeyCode("REGISTERED_BOOKS_3");
+        verify(userAchievementRepo, times(1)).save(any(UserAchievement.class));
+    }
+
+    @Test
+    void checkFastBookReadShouldUnlockWhenReadingFinishedInLessThanOneDay() {
+        User user = user();
+        Reading reading = reading(user, LocalDateTime.of(2024, 5, 8, 10, 0), LocalDateTime.of(2024, 5, 9, 9, 59));
+        Achievement fastRead = achievement("FAST_BOOK_READ_UNDER_1_DAY", "Leitura relâmpago");
+
+        when(userAchievementRepo.existsByUserAndAchievement_KeyCode(user, "FAST_BOOK_READ_UNDER_1_DAY")).thenReturn(false);
+        when(achievementRepo.findByKeyCode("FAST_BOOK_READ_UNDER_1_DAY")).thenReturn(Optional.of(fastRead));
+
+        List<AchievementDTO> result = service.checkFastBookRead(reading);
+
+        assertEquals(1, result.size());
+        assertEquals("Leitura relâmpago", result.get(0).getNome());
+        verify(userAchievementRepo).save(any(UserAchievement.class));
+    }
+
+    @Test
+    void checkFastBookReadShouldReturnEmptyWhenReadingTakesOneDayOrMore() {
+        Reading reading = reading(user(), LocalDateTime.of(2024, 5, 8, 10, 0), LocalDateTime.of(2024, 5, 9, 10, 0));
+
+        List<AchievementDTO> result = service.checkFastBookRead(reading);
+
+        assertTrue(result.isEmpty());
+        verify(userAchievementRepo, never()).existsByUserAndAchievement_KeyCode(any(), anyString());
+        verify(achievementRepo, never()).findByKeyCode(anyString());
+        verify(userAchievementRepo, never()).save(any());
+    }
+
     private User user() {
         User user = new User();
         user.setId(1L);
         user.setUsername("reader");
         return user;
+    }
+
+    private List<ReadingSession> readingSessionsForConsecutiveDays(int days) {
+        return IntStream.rangeClosed(1, days)
+                .mapToObj(day -> readingSession(LocalDate.of(2024, 5, day).atTime(10, 0)))
+                .toList();
+    }
+
+    private ReadingSession readingSession(LocalDateTime startedAt) {
+        ReadingSession session = new ReadingSession();
+        session.setStartedAt(startedAt);
+        return session;
+    }
+
+    private Reading reading(User user, LocalDateTime startedAt, LocalDateTime finishedAt) {
+        Reading reading = new Reading();
+        reading.setUser(user);
+        reading.setStartedAt(startedAt);
+        reading.setFinishedAt(finishedAt);
+        return reading;
     }
 
     private Achievement achievement(String keyCode, String name) {

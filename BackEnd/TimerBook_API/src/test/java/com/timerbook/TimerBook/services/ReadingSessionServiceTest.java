@@ -93,16 +93,20 @@ class ReadingSessionServiceTest {
     @Test
     void finishReadingSessionShouldUpdateEndPageEndedAtAndReturnAchievements() {
         ReadingSession session = session(10L);
-        List<AchievementDTO> achievements = List.of(new AchievementDTO("Primeiro livro", "book.svg", "Descrição"));
+        AchievementDTO firstSessionAchievement = new AchievementDTO("Primeiro livro", "book.svg", "Descrição");
+        AchievementDTO streakAchievement = new AchievementDTO("Sequência de 1 dia", "fire.svg", "Descrição streak");
 
         when(readingSessionRepository.findById(10L)).thenReturn(Optional.of(session));
         when(readingSessionRepository.save(session)).thenReturn(session);
-        when(achievementService.checkFirstSession(session.getReading().getUser())).thenReturn(achievements);
+        when(achievementService.checkFirstSession(session.getReading().getUser()))
+                .thenReturn(List.of(firstSessionAchievement));
+        when(achievementService.checkReadingStreak(session.getReading().getUser()))
+                .thenReturn(List.of(streakAchievement));
 
         FinishSessionResponseDTO response = service.finishReadingSession(10L, 30);
 
         assertEquals(session, response.session());
-        assertEquals(achievements, response.novasConquistas());
+        assertEquals(List.of(firstSessionAchievement, streakAchievement), response.novasConquistas());
         assertEquals(30, session.getEndPage());
         assertNotNull(session.getEndedAt());
         verify(readingSessionRepository).save(session);

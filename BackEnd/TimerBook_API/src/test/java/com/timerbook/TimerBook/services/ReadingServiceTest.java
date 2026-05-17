@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +39,9 @@ class ReadingServiceTest {
 
     @Mock
     private ReadingSessionRepository readingSessionRepository;
+
+    @Mock
+    private AchievementService achievementService;
 
     @InjectMocks
     private ReadingService service;
@@ -136,6 +140,7 @@ class ReadingServiceTest {
         assertEquals(45, result.getCurrentPage());
         assertNotNull(result.getFinishedAt());
         verify(readingRepository).save(reading);
+        verify(achievementService).checkFastBookRead(reading);
     }
 
     @Test
@@ -151,6 +156,7 @@ class ReadingServiceTest {
 
         assertEquals(20, result.getCurrentPage());
         assertNotNull(result.getFinishedAt());
+        verify(achievementService).checkFastBookRead(reading);
     }
 
     @Test
@@ -165,6 +171,7 @@ class ReadingServiceTest {
 
         assertEquals("Você não tem permissão para finalizar esta leitura", exception.getMessage());
         verify(readingRepository, never()).save(any());
+        verify(achievementService, never()).checkFastBookRead(any());
     }
 
     @Test
@@ -235,6 +242,7 @@ class ReadingServiceTest {
         reading.setUser(user);
         reading.setBook(book);
         reading.setCurrentPage(0);
+        reading.setStartedAt(LocalDateTime.of(2024, 5, 8, 10, 0));
         return reading;
     }
 }

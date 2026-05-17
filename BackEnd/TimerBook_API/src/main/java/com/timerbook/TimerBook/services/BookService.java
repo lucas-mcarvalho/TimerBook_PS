@@ -1,5 +1,7 @@
 package com.timerbook.TimerBook.services;
 
+import com.timerbook.TimerBook.dto.AchievementDTO;
+import com.timerbook.TimerBook.dto.BookCreationResponseDTO;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.models.User;
@@ -9,7 +11,6 @@ import com.timerbook.TimerBook.services.exception.BookException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -17,13 +18,16 @@ public class BookService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final AchievementService achievementService;
 
     public BookService(BookRepository bookRepository,
                        UserRepository userRepository,
-                       FileStorageService fileStorageService) {
+                       FileStorageService fileStorageService,
+                       AchievementService achievementService) {
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
+        this.achievementService = achievementService;
     }
 
     public List<Book> findAll() {
@@ -35,7 +39,7 @@ public class BookService {
                 .orElseThrow(() -> new BookException("Livro não encontrado"));
     }
 
-    public Book create(Long userId, BookDTO dto) {
+    public BookCreationResponseDTO create(Long userId, BookDTO dto) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
@@ -57,7 +61,9 @@ public class BookService {
         book.setDataPath(pdfPath);
         book.setUser(user);
 
-        return bookRepository.save(book);
+        Book savedBook = bookRepository.save(book);
+        List<AchievementDTO> novasConquistas = achievementService.checkRegisteredBookMilestones(user);
+        return new BookCreationResponseDTO(savedBook, novasConquistas);
     }
 
     public Book update(Long id, BookDTO dto) {
