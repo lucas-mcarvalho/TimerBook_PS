@@ -14,18 +14,22 @@ from services.ollama_service import ask_model
 
 router = APIRouter(prefix="/api/v1", tags=["chat"])
 
+PAGE_RANGE = 2
+
 
 @router.post("/ask", response_model=AskResponse)
 async def ask(req: AskRequest):
     """
     Main chat endpoint.
-    If 'page' is given  → extract that page only.
-    If 'start_page' and 'end_page' are given → extract that range.
+    If 'page' is given  → extract page ± PAGE_RANGE around it.
+    If 'start_page' and 'end_page' are given → extract that exact range.
     Otherwise           → extract pages 1-10 as default context.
     """
     try:
         if req.page is not None:
-            context = extract_page_text(req.pdf_path, req.page)
+            start = max(1, req.page - PAGE_RANGE)
+            end = req.page + PAGE_RANGE
+            context = extract_page_range(req.pdf_path, start, end)
         elif req.start_page is not None and req.end_page is not None:
             context = extract_page_range(req.pdf_path, req.start_page, req.end_page)
         else:

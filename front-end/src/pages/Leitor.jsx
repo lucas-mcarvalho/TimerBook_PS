@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
+import { askAI, searchPDF, getPageText, buildPdfPath } from "../features/ia-service/aiApi.js";
 import "../styles/Leitor.css";
 
 export default function Leitor() {
@@ -27,7 +28,11 @@ export default function Leitor() {
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const SUGGESTIONS = ["Quem é o personagem principal?", "Resumir este capítulo", "Temas desta passagem"];
+  const SUGGESTIONS = [
+    "Quem é o personagem principal?",
+    "Resumir este capítulo",
+    "Temas desta passagem",
+  ];
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -38,8 +43,8 @@ export default function Leitor() {
     try {
       const response = await endReadingSession(sessionId, currentPage);
       const novas = response?.data?.novasConquistas || response?.novasConquistas;
-      if (novas && novas.length > 0) {
-        novas.forEach(conquista => showAchievementToast(conquista));
+      if (novas?.length > 0) {
+        novas.forEach((conquista) => showAchievementToast(conquista));
       }
       showToast("Sessão de leitura encerrada!", "success");
       navigate("/meus-livros");
@@ -50,6 +55,7 @@ export default function Leitor() {
     }
   };
 
+  // Loads the PDF blob from Java (for display in the viewer)
   useEffect(() => {
     const loadPDF = async () => {
       try {
@@ -66,9 +72,7 @@ export default function Leitor() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ---------------------------------------------------------------------------
-  // AI — sends question + current page to Java, which forwards to Python/Ollama
-  // ---------------------------------------------------------------------------
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!question.trim() || loading) return;
@@ -79,12 +83,8 @@ export default function Leitor() {
     setLoading(true);
 
     try {
-      const response = await api.post("/ai/ask", {
-        bookId: book.id,
-        page: currentPage,
-        question: userMsg,
-      });
-      setMessages((prev) => [...prev, { role: "ai", content: response.data.answer }]);
+      const answer = await askAI(buildPdfPath(book.dataPath), currentPage, userMsg);
+      setMessages((prev) => [...prev, { role: "ai", content: answer }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -95,25 +95,13 @@ export default function Leitor() {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Search — delegates to Python via Java, returns [{ page, excerpt }]
-  // ---------------------------------------------------------------------------
+
   const handleSearchRequest = async (query) => {
-    const response = await api.post("/ai/search", {
-      bookId: book.id,
-      query,
-    });
-    return response.data.results; // Array<{ page: number, excerpt: string }>
+    return await searchPDF(buildPdfPath(book.dataPath), query);
   };
 
-  // ---------------------------------------------------------------------------
-  // Text mode — fetches plain text for a page from Python via Java
-  // ---------------------------------------------------------------------------
   const handleTextPageRequest = async (pageNumber) => {
-    const response = await api.get("/ai/page-text", {
-      params: { bookId: book.id, page: pageNumber },
-    });
-    return response.data.text;
+    return await getPageText(buildPdfPath(book.dataPath), pageNumber);
   };
 
   const handleKeyDown = (e) => {
@@ -203,11 +191,11 @@ export default function Leitor() {
           </div>
         </div>
 
-        {/* AI DRAWER */}
+       
         <div className={`leitor-drawer ${drawerOpen ? "open" : ""}`}>
           <div className="leitor-drawer-inner">
 
-            {/* Drawer header */}
+            
             <div className="leitor-drawer-header">
               <div className="leitor-drawer-header-row">
                 <span className="leitor-drawer-title">Assistente</span>
@@ -238,7 +226,10 @@ export default function Leitor() {
               ) : (
                 <>
                   {messages.map((msg, i) => (
-                    <div key={i} className={msg.role === "user" ? "leitor-user-bubble" : "leitor-ai-bubble"}>
+                    <div
+                      key={i}
+                      className={msg.role === "user" ? "leitor-user-bubble" : "leitor-ai-bubble"}
+                    >
                       <span className="leitor-bubble-label">
                         {msg.role === "user" ? "Você" : "IA"}
                       </span>
@@ -267,7 +258,7 @@ export default function Leitor() {
               )}
             </div>
 
-            {/* Suggestion chips — only when no messages yet */}
+            
             {messages.length === 0 && (
               <div className="leitor-chips">
                 {SUGGESTIONS.map((s) => (

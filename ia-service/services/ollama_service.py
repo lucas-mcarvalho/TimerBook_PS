@@ -1,4 +1,3 @@
-
 import httpx
 
 OLLAMA_URL = "http://host.docker.internal:11434/api/generate"
