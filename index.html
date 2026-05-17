@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimerBook - Seus livros em um só lugar</title>
+    <link rel="stylesheet" href="landing_page/style.css">
+    <link rel="icon" type="image/svg+xml" href="front-end/src/assets/Home/TimerbookLogo.svg">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo-container">
+                <img src="front-end/src/assets/Home/TimerbookLogo.svg" alt="TimerBook Logo" class="logo">
+                <span class="logo-text">TimerBook</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#inicio">Início</a></li>
+                    <li><a href="#como-funciona">Como funciona?</a></li>
+                    <li><a href="#assistente">Assistente</a></li>
+                    <li><a href="#estatisticas">Estatísticas</a></li>
+                    <li><a href="#meta-diaria">Meta Diária</a></li>
+                    <li><a href="#sobre">Sobre</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button id="theme-toggle" class="theme-btn">
+                    <img src="front-end/src/assets/Home/MoonIcon.svg" alt="Tema" id="theme-icon">
+                </button>
+                <a href="/front-end/src/pages/Login.jsx" class="btn-login">Entrar</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="inicio" class="hero-section">
+            <div class="carousel-container">
+                <div class="book-carousel">
+                    <!-- 1 -->
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l1.jpg" alt="Livro 1"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l2.jpg" alt="Livro 2"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l3.jpg" alt="Livro 3"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l4.jpg" alt="Livro 4"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l5.jpeg" alt="Livro 5"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l6.jpg" alt="Livro 6"></div></div>
+                    <!-- Set 2 -->
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l1.jpg" alt="Livro 1"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l2.jpg" alt="Livro 2"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l3.jpg" alt="Livro 3"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l4.jpg" alt="Livro 4"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l5.jpeg" alt="Livro 5"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l6.jpg" alt="Livro 6"></div></div>
+                    <!-- 3 -->
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l1.jpg" alt="Livro 1"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l2.jpg" alt="Livro 2"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l3.jpg" alt="Livro 3"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l4.jpg" alt="Livro 4"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l5.jpeg" alt="Livro 5"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l6.jpg" alt="Livro 6"></div></div>
+                    <!-- 4 -->
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l1.jpg" alt="Livro 1"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l2.jpg" alt="Livro 2"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l3.jpg" alt="Livro 3"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l4.jpg" alt="Livro 4"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l5.jpeg" alt="Livro 5"></div></div>
+                    <div class="book-item"><div class="book-cover real-cover"><img src="front-end/src/assets/Leitor/l6.jpg" alt="Livro 6"></div></div>
+                </div>
+                <div class="carousel-fade"></div>
+            </div>
+
+            <div class="hero-content">
+                <h1 class="main-title">TimerBook</h1>
+                <p class="hero-subtitle">Seus livros em um só lugar para ler <span id="changing-word">hoje</span></p>
+            </div>
+        </section>
+
+        <section id="como-funciona" class="how-it-works-section">
+            <div class="section-container">
+                <h2 class="section-title">Como funciona?</h2>
+                <div class="steps-container">
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <div class="plus-square">+</div>
+                        </div>
+                        <div class="step-number">1</div>
+                        <h3>Cadastre seus livros</h3>
+                        <p>Organize sua biblioteca pessoal adicionando seus arquivos PDF.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <div class="book-icon-simple"></div>
+                        </div>
+                        <div class="step-number">2</div>
+                        <h3>Leia quando quiser</h3>
+                        <p>Depois de cadastrados, os livros aparecem na sua biblioteca para leitura a qualquer momento.</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <div class="chart-simple">
+                                <div class="chart-bar"></div>
+                                <div class="chart-bar"></div>
+                                <div class="chart-bar"></div>
+                            </div>
+                        </div>
+                        <div class="step-number">3</div>
+                        <h3>Acompanhe sua evolução</h3>
+                        <p>Visualize estatísticas detalhadas sobre seu progresso, páginas lidas e metas alcançadas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="assistente" class="assistant-section">
+            <div class="section-container split-layout">
+                <div class="assistant-image-container">
+                    <img src="front-end/src/assets/Leitor/LeitorEscuro.png" alt="Interface do Leitor TimerBook" class="assistant-img theme-dark-only">
+                    <img src="front-end/src/assets/Leitor/LeitorClaro.png" alt="Interface do Leitor TimerBook" class="assistant-img theme-light-only">
+                </div>
+                <div class="assistant-content">
+                    <h2 class="section-title text-left">Assistente Inteligente</h2>
+                    <p class="assistant-description">
+                        Conheça o Assistente TimerBook: seu companheiro inteligente para uma leitura mais produtiva. 
+                        Faça perguntas, peça resumos e esclareça dúvidas. 
+                    </p>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <span class="feature-bullet"></span>
+                            <p>Interação inteligente via IA;</p>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet"></span>
+                            <p>Contexto ativo;</p>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-bullet"></span>
+                            <p>Foco total.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="estatisticas" class="stats-section">
+            <div class="section-container">
+                <div class="stats-content">
+                    <h2 class="section-title">Acompanhe seu Progresso</h2>
+                    <p class="stats-description">
+                        Visualize sua jornada literária com gráficos detalhados e insights precisos. 
+                        O TimerBook transforma seus dados de leitura em estatísticas visuais que ajudam você 
+                        a entender seus hábitos e superar seus limites.
+                    </p>
+                </div>
+                <div class="stats-image-container">
+                    <img src="front-end/src/assets/Leitor/EstatisticaEscuro.png" alt="Estatísticas de Leitura" class="stats-img theme-dark-only">
+                    <img src="front-end/src/assets/Leitor/EstatisticaClaro.png" alt="Estatísticas de Leitura" class="stats-img theme-light-only">
+                </div>
+            </div>
+        </section>
+
+        <section id="meta-diaria" class="goal-section">
+            <div class="section-container">
+                <h2 class="section-title">Escolha sua meta diária</h2>
+                <div class="goal-visualization">
+                    <div class="reading-goal-content-wrapper">
+                        <p class="goal-subtitle">Quanto tempo você deseja dedicar à leitura hoje?</p>
+                        
+                        <div class="reading-goal-options-landing">
+                            <button type="button" class="goal-option-btn selected" data-minutes="10">
+                                <strong>10</strong>
+                                <span>min/dia</span>
+                            </button>
+                            <button type="button" class="goal-option-btn" data-minutes="20">
+                                <strong>20</strong>
+                                <span>min/dia</span>
+                            </button>
+                            <button type="button" class="goal-option-btn" data-minutes="30">
+                                <strong>30</strong>
+                                <span>min/dia</span>
+                            </button>
+                        </div>
+
+                        <div class="goal-cta-container">
+                            <a href="/front-end/src/pages/CadastrarUsuario.jsx" class="btn-create-goal-large">
+                                Criar conta e definir meta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sobre" class="about-section">
+            <div class="section-container about-minimal-layout">
+                <div class="about-item">
+                    <a href="https://github.com/lucas-mcarvalho/TimerBook_PS" target="_blank" class="github-btn-simple">
+                        <svg class="github-icon-small" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 4.438 9.8 10.564 11.148.6.113.82-.258.82-.577 0-.285-.011-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C19.565 21.795 24 17.295 24 12c0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        <span>Repositório do Github</span>
+                    </a>
+                </div>
+                
+                <div class="about-item">
+                    <p class="copyright-text">©TimerBook. Todos os direitos reservados. 2026</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+
+        const sunIcon = "front-end/src/assets/Home/SunIcon.svg";
+        const moonIcon = "front-end/src/assets/Home/MoonIcon.svg";
+
+        const savedTheme = localStorage.getItem("timerbook-theme");
+        if (savedTheme === "dark") {
+            body.classList.add('dark-theme');
+            themeIcon.src = sunIcon;
+        } else {
+            themeIcon.src = moonIcon;
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = body.classList.toggle('dark-theme');
+            localStorage.setItem("timerbook-theme", isDark ? "dark" : "light");
+            themeIcon.src = isDark ? sunIcon : moonIcon;
+        });
+
+        const words = ["hoje", "agora", "sempre"];
+        let currentIndex = 0;
+        const changingWord = document.getElementById('changing-word');
+
+        setInterval(() => {
+            changingWord.classList.add('fade-out');
+
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % words.length;
+                changingWord.textContent = words[currentIndex];
+                
+                changingWord.classList.remove('fade-out');
+                changingWord.classList.add('prepare-top');
+
+                void changingWord.offsetWidth;
+
+                changingWord.classList.remove('prepare-top');
+            }, 400); 
+        }, 3000);
+
+        const goalButtons = document.querySelectorAll('.goal-option-btn');
+        goalButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                goalButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+    </script>
+</body>
+</html>
