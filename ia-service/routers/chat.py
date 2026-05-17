@@ -39,6 +39,10 @@ async def ask(req: AskRequest):
 
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"PDF não encontrado: {req.pdf_path}")
+    except (IndexError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/search", response_model=SearchResponse)
@@ -51,6 +55,8 @@ async def search(req: SearchRequest):
         total = get_page_count(req.pdf_path)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"PDF não encontrado: {req.pdf_path}")
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
     results = []
     query_lower = req.query.lower()
@@ -82,3 +88,5 @@ async def page_text(pdf_path: str, page: int):
         raise HTTPException(status_code=404, detail=f"PDF não encontrado: {pdf_path}")
     except IndexError:
         raise HTTPException(status_code=422, detail=f"Página {page} não existe neste PDF.")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))

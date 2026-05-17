@@ -40,8 +40,7 @@ services:
 
   backend:
     build: ./BackEnd/TimerBook_API
-    ports:
-      - "8080:8080"
+    network_mode: host
     volumes:
       - ./uploads:/app/uploads
     env_file:
@@ -51,18 +50,18 @@ services:
         condition: service_healthy
     environment:
       - APP_UPLOAD_DIR=/app/uploads
+      - AI_SERVICE_URL=http://127.0.0.1:8000
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5433/timerbook
       - SPRING_PROFILES_ACTIVE=dev
 
   python-ai:
     build: ./ia-service
-    ports:
-      - "8000:8000"
+    network_mode: host
     volumes:
       - ./uploads:/app/uploads
     environment:
       - UPLOADS_DIR=/app/uploads
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - OLLAMA_URL=http://127.0.0.1:11434/api/generate
     depends_on:
       - backend
     restart: on-failure

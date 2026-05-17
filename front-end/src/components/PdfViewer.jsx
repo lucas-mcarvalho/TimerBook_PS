@@ -50,6 +50,10 @@ function highlightText(text, query) {
   ));
 }
 
+function getErrorMessage(error, fallback) {
+  return error?.message || fallback;
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -96,6 +100,7 @@ function PdfViewer({
   const [searchResults, setSearchResults] = useState([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
   const containerRef = useRef(null);
   const viewportRef = useRef(null);
   const pageRefs = useRef([]);
@@ -171,7 +176,7 @@ function PdfViewer({
         if (!cancelled) setPageText(text || "Nenhum texto extraível nesta página.");
       } catch (error) {
         console.error("Erro ao obter texto da página:", error);
-        if (!cancelled) setPageText("Não foi possível obter o texto desta página.");
+        if (!cancelled) setPageText(getErrorMessage(error, "Não foi possível obter o texto desta página."));
       } finally {
         if (!cancelled) setTextLoading(false);
       }
@@ -291,6 +296,7 @@ function PdfViewer({
     }
 
     setSearching(true);
+    setSearchError("");
     try {
       // onSearchRequest returns Array<{ page: number, excerpt: string }>
       const results = await onSearchRequest(query);
@@ -301,6 +307,7 @@ function PdfViewer({
       console.error("Erro ao buscar no PDF:", error);
       setSearchResults([]);
       setActiveSearchIndex(-1);
+      setSearchError(getErrorMessage(error, "Não foi possível buscar no PDF."));
     } finally {
       setSearching(false);
     }
@@ -464,7 +471,10 @@ function PdfViewer({
             ref={searchInputRef}
             type="search"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              if (searchError) setSearchError("");
+            }}
             placeholder="Buscar"
             aria-label="Buscar no PDF"
           />
@@ -544,7 +554,7 @@ function PdfViewer({
         </div>
       </div>
 
-      {(bookmarks.length > 0 || activeResult) && (
+      {(bookmarks.length > 0 || activeResult || searchError) && (
         <div className="pdf-secondary-bar">
           {bookmarks.length > 0 && (
             <div className="pdf-bookmarks" aria-label="Marcadores">
@@ -561,6 +571,7 @@ function PdfViewer({
               p. {activeResult.page}: {activeResult.excerpt}
             </button>
           )}
+          {searchError && <span className="pdf-search-error">{searchError}</span>}
         </div>
       )}
 

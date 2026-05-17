@@ -169,6 +169,13 @@
   text-align: left;
 }
 
+.pdf-search-error {
+  max-width: min(100%, 520px);
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .pdf-viewport {
   flex: 1;
   min-height: 0;

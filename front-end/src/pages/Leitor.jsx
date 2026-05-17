@@ -8,6 +8,26 @@ import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
 import "../styles/Leitor.css";
 
+function getRequestErrorMessage(error, fallback) {
+  const data = error?.response?.data;
+
+  if (typeof data === "string" && data.trim()) return data;
+  if (data?.message) return data.message;
+  if (typeof data?.detail === "string") return data.detail;
+  if (Array.isArray(data?.detail)) {
+    const details = data.detail
+      .map((item) => item?.msg || item?.message)
+      .filter(Boolean)
+      .join(" ");
+
+    if (details) return details;
+  }
+
+  if (error?.code === "ERR_NETWORK") return "Não foi possível conectar ao servidor.";
+
+  return error?.message || fallback;
+}
+
 export default function Leitor() {
   const { showToast, showAchievementToast } = useToast();
   const navigate = useNavigate();
@@ -22,12 +42,16 @@ export default function Leitor() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
+  const [pdfError, setPdfError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
 
   const SUGGESTIONS = ["Quem é o personagem principal?", "Resumir este capítulo", "Temas desta passagem"];
+  const bookTitle = book?.title || book?.name || "Livro";
+  const aiReady = Boolean(book?.id && book?.dataPath);
+  const aiStatus = loading ? "Analisando" : aiReady ? "Pronto" : "Sem PDF";
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -52,14 +76,22 @@ export default function Leitor() {
 
   useEffect(() => {
     const loadPDF = async () => {
+      setPdfError("");
+      setPdfFile(null);
       try {
         const response = await api.get(`/${book.dataPath}`, { responseType: "blob" });
         setPdfFile(response.data);
       } catch (error) {
         console.error("Erro ao carregar PDF:", error);
+        setPdfError(getRequestErrorMessage(error, "Não foi possível carregar este PDF."));
       }
     };
-    if (book?.dataPath) loadPDF();
+    if (book?.dataPath) {
+      loadPDF();
+    } else if (book) {
+      setPdfFile(null);
+      setPdfError("Este livro não tem PDF cadastrado.");
+    }
   }, [book]);
 
   useEffect(() => {
@@ -76,6 +108,15 @@ export default function Leitor() {
     const userMsg = question.trim();
     setQuestion("");
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+
+    if (!aiReady) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "Este livro ainda não tem um PDF disponível para análise." },
+      ]);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -86,9 +127,10 @@ export default function Leitor() {
       });
       setMessages((prev) => [...prev, { role: "ai", content: response.data.answer }]);
     } catch (error) {
+      const message = getRequestErrorMessage(error, "Não foi possível obter resposta da IA.");
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "Erro ao obter resposta: " + error.message },
+        { role: "ai", content: `Erro ao obter resposta: ${message}` },
       ]);
     } finally {
       setLoading(false);
@@ -99,21 +141,29 @@ export default function Leitor() {
   // Search — delegates to Python via Java, returns [{ page, excerpt }]
   // ---------------------------------------------------------------------------
   const handleSearchRequest = async (query) => {
-    const response = await api.post("/ai/search", {
-      bookId: book.id,
-      query,
-    });
-    return response.data.results; // Array<{ page: number, excerpt: string }>
+    try {
+      const response = await api.post("/ai/search", {
+        bookId: book.id,
+        query,
+      });
+      return response.data.results || []; // Array<{ page: number, excerpt: string }>
+    } catch (error) {
+      throw new Error(getRequestErrorMessage(error, "Não foi possível buscar no PDF."));
+    }
   };
 
   // ---------------------------------------------------------------------------
   // Text mode — fetches plain text for a page from Python via Java
   // ---------------------------------------------------------------------------
   const handleTextPageRequest = async (pageNumber) => {
-    const response = await api.get("/ai/page-text", {
-      params: { bookId: book.id, page: pageNumber },
-    });
-    return response.data.text;
+    try {
+      const response = await api.get("/ai/page-text", {
+        params: { bookId: book.id, page: pageNumber },
+      });
+      return response.data.text;
+    } catch (error) {
+      throw new Error(getRequestErrorMessage(error, "Não foi possível obter o texto desta página."));
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -155,7 +205,7 @@ export default function Leitor() {
           </button>
 
           <div className="leitor-book-meta">
-            <span className="leitor-book-title">{book.title || "Livro"}</span>
+            <span className="leitor-book-title">{bookTitle}</span>
             <span className="leitor-book-subtitle">p. {currentPage}</span>
           </div>
         </div>
@@ -191,9 +241,13 @@ export default function Leitor() {
                 initialPage={initialPage}
                 onPageChange={setCurrentPage}
                 storageKey={book.id || book.dataPath || "livro"}
-                onSearchRequest={handleSearchRequest}
-                onTextPageRequest={handleTextPageRequest}
+                onSearchRequest={aiReady ? handleSearchRequest : undefined}
+                onTextPageRequest={aiReady ? handleTextPageRequest : undefined}
               />
+            ) : pdfError ? (
+              <div className="leitor-pdf-loading">
+                <span className="leitor-loading-text leitor-loading-error">{pdfError}</span>
+              </div>
             ) : (
               <div className="leitor-pdf-loading">
                 <div className="leitor-spinner" />
@@ -211,7 +265,7 @@ export default function Leitor() {
             <div className="leitor-drawer-header">
               <div className="leitor-drawer-header-row">
                 <span className="leitor-drawer-title">Assistente</span>
-                <span className="leitor-status-badge active">Pronto</span>
+                <span className={`leitor-status-badge ${aiReady ? "active" : "warning"}`}>{aiStatus}</span>
               </div>
               <p className="leitor-context-info">Página {currentPage} em contexto</p>
             </div>
@@ -287,8 +341,8 @@ export default function Leitor() {
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Pergunte sobre a obra…"
-                  disabled={loading}
+                  placeholder={aiReady ? "Pergunte sobre a obra…" : "Assistente indisponível para este livro"}
+                  disabled={loading || !aiReady}
                   rows={2}
                 />
                 <div className="leitor-input-footer">
@@ -296,7 +350,7 @@ export default function Leitor() {
                   <button
                     className="leitor-send-btn"
                     onClick={handleSubmit}
-                    disabled={loading || !question.trim()}
+                    disabled={loading || !question.trim() || !aiReady}
                   >
                     {loading ? (
                       <div className="leitor-spinner-small" />
