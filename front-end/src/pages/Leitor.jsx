@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import PdfViewer from "../components/PdfViewer";
 import { Link, useLocation } from "react-router-dom";
 import { endReadingSession } from "../features/books/readSessions.js";
-import { extractPDFRange } from "../features/books/pdfExtractor.js";
-import { askAI } from "../lib/llama.js";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
@@ -21,14 +19,11 @@ export default function Leitor() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pdfContext, setPdfContext] = useState("");
-  const [extracting, setExtracting] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(true);
 
-  const PAGE_RANGE = 2;
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -44,9 +39,7 @@ export default function Leitor() {
       const response = await endReadingSession(sessionId, currentPage);
       const novas = response?.data?.novasConquistas || response?.novasConquistas;
       if (novas && novas.length > 0) {
-        novas.forEach(conquista => {
-          showAchievementToast(conquista);
-        });
+        novas.forEach(conquista => showAchievementToast(conquista));
       }
       showToast("Sessão de leitura encerrada!", "success");
       navigate("/meus-livros");
@@ -70,27 +63,12 @@ export default function Leitor() {
   }, [book]);
 
   useEffect(() => {
-    if (!pdfFile) return;
-    const extractRange = async () => {
-      setExtracting(true);
-      try {
-        const startPage = Math.max(1, currentPage - PAGE_RANGE);
-        const endPage = currentPage + PAGE_RANGE;
-        const text = await extractPDFRange(pdfFile, startPage, endPage);
-        setPdfContext(text);
-      } catch (error) {
-        console.error("Erro ao extrair range:", error);
-      } finally {
-        setExtracting(false);
-      }
-    };
-    extractRange();
-  }, [currentPage, pdfFile]);
-
-  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ---------------------------------------------------------------------------
+  // AI — sends question + current page to Java, which forwards to Python/Ollama
+  // ---------------------------------------------------------------------------
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!question.trim() || loading) return;
@@ -101,8 +79,12 @@ export default function Leitor() {
     setLoading(true);
 
     try {
-      const response = await askAI(userMsg, pdfContext);
-      setMessages((prev) => [...prev, { role: "ai", content: response }]);
+      const response = await api.post("/ai/ask", {
+        bookId: book.id,
+        page: currentPage,
+        question: userMsg,
+      });
+      setMessages((prev) => [...prev, { role: "ai", content: response.data.answer }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -111,6 +93,27 @@ export default function Leitor() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Search — delegates to Python via Java, returns [{ page, excerpt }]
+  // ---------------------------------------------------------------------------
+  const handleSearchRequest = async (query) => {
+    const response = await api.post("/ai/search", {
+      bookId: book.id,
+      query,
+    });
+    return response.data.results; // Array<{ page: number, excerpt: string }>
+  };
+
+  // ---------------------------------------------------------------------------
+  // Text mode — fetches plain text for a page from Python via Java
+  // ---------------------------------------------------------------------------
+  const handleTextPageRequest = async (pageNumber) => {
+    const response = await api.get("/ai/page-text", {
+      params: { bookId: book.id, page: pageNumber },
+    });
+    return response.data.text;
   };
 
   const handleKeyDown = (e) => {
@@ -153,9 +156,7 @@ export default function Leitor() {
 
           <div className="leitor-book-meta">
             <span className="leitor-book-title">{book.title || "Livro"}</span>
-            <span className="leitor-book-subtitle">
-              {extracting ? "Carregando contexto…" : pdfContext ? `p. ${currentPage}` : "Sem contexto"}
-            </span>
+            <span className="leitor-book-subtitle">p. {currentPage}</span>
           </div>
         </div>
 
@@ -164,7 +165,6 @@ export default function Leitor() {
             <span className="leitor-page-label">
               Página <strong>{currentPage}</strong>
             </span>
-            <div className={`leitor-context-dot ${pdfContext ? "active" : ""}`} />
           </div>
 
           <button
@@ -191,6 +191,8 @@ export default function Leitor() {
                 initialPage={initialPage}
                 onPageChange={setCurrentPage}
                 storageKey={book.id || book.dataPath || "livro"}
+                onSearchRequest={handleSearchRequest}
+                onTextPageRequest={handleTextPageRequest}
               />
             ) : (
               <div className="leitor-pdf-loading">
@@ -209,15 +211,9 @@ export default function Leitor() {
             <div className="leitor-drawer-header">
               <div className="leitor-drawer-header-row">
                 <span className="leitor-drawer-title">Assistente</span>
-                <span className={`leitor-status-badge ${pdfContext ? "active" : ""}`}>
-                  {extracting ? "Analisando…" : pdfContext ? "Contexto ativo" : "Aguardando PDF"}
-                </span>
+                <span className="leitor-status-badge active">Pronto</span>
               </div>
-              {pdfContext && (
-                <p className="leitor-context-info">
-                  Páginas {Math.max(1, currentPage - PAGE_RANGE)}–{currentPage + PAGE_RANGE} carregadas
-                </p>
-              )}
+              <p className="leitor-context-info">Página {currentPage} em contexto</p>
             </div>
 
             {/* Chat messages */}
@@ -292,7 +288,7 @@ export default function Leitor() {
                   onChange={(e) => setQuestion(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Pergunte sobre a obra…"
-                  disabled={extracting || !pdfContext}
+                  disabled={loading}
                   rows={2}
                 />
                 <div className="leitor-input-footer">
@@ -300,7 +296,7 @@ export default function Leitor() {
                   <button
                     className="leitor-send-btn"
                     onClick={handleSubmit}
-                    disabled={loading || extracting || !pdfContext || !question.trim()}
+                    disabled={loading || !question.trim()}
                   >
                     {loading ? (
                       <div className="leitor-spinner-small" />
