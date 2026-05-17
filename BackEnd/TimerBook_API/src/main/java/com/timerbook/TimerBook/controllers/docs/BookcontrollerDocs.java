@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.controllers.docs;
 
+import com.timerbook.TimerBook.dto.BookCreationResponseDTO;
 import com.timerbook.TimerBook.models.Book;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,11 +27,11 @@ public interface BookcontrollerDocs {
             @ApiResponse(responseCode = "400", description = "Erro de validação"),
             @ApiResponse(responseCode = "500", description = "Erro interno")
     })
-    ResponseEntity<Book> create(@Parameter(description = "ID do usuário dono do livro", example = "1") Long userId,
-                                @Parameter(description = "Nome do livro", example = "Harry Potter") String name,
-                                @Parameter(description = "Descrição do livro", example = "Livro de fantasia") String description,
-                                @Parameter(description = "Imagem de capa (arquivo)") MultipartFile cover,
-                                @Parameter(description = "Arquivo PDF do livro") MultipartFile pdf
+    ResponseEntity<BookCreationResponseDTO> create(@Parameter(description = "ID do usuário dono do livro", example = "1") Long userId,
+                                                   @Parameter(description = "Nome do livro", example = "Harry Potter") String name,
+                                                   @Parameter(description = "Descrição do livro", example = "Livro de fantasia") String description,
+                                                   @Parameter(description = "Imagem de capa (arquivo)") MultipartFile cover,
+                                                   @Parameter(description = "Arquivo PDF do livro") MultipartFile pdf
     );
 
     @Operation(summary = "Listar livros", description = "Retorna todos os livros")

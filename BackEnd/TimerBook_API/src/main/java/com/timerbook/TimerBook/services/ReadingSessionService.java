@@ -10,6 +10,7 @@ import com.timerbook.TimerBook.repository.ReadingSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,7 +52,9 @@ public class ReadingSessionService {
 
         ReadingSession savedSession = readingSessionRepository.save(existingSession);
 
-        List<AchievementDTO> novas = achievementService.checkFirstSession(savedSession.getReading().getUser());
+        List<AchievementDTO> novas = new ArrayList<>();
+        novas.addAll(achievementService.checkFirstSession(savedSession.getReading().getUser()));
+        novas.addAll(achievementService.checkReadingStreak(savedSession.getReading().getUser()));
 
         return new FinishSessionResponseDTO(savedSession, novas);
     }

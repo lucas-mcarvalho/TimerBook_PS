@@ -1,5 +1,6 @@
 package com.timerbook.TimerBook.services;
 
+import com.timerbook.TimerBook.dto.BookCreationResponseDTO;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.models.User;
@@ -33,11 +34,14 @@ class BookServiceTest {
     @Mock
     FileStorageService fileStorageService;
 
+    @Mock
+    AchievementService achievementService;
+
     private BookService bookService;
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookRepository, userRepository, fileStorageService);
+        bookService = new BookService(bookRepository, userRepository, fileStorageService, achievementService);
     }
 
     @Test
@@ -106,18 +110,19 @@ class BookServiceTest {
         when(fileStorageService.storeFile(dataFile, "pdfs")).thenReturn("pdfs/livro.pdf");
         when(bookRepository.save(any(Book.class))).thenReturn(savedBook);
 
-        Book result = bookService.create(userId, dto);
+        BookCreationResponseDTO result = bookService.create(userId, dto);
 
         assertNotNull(result);
-        assertEquals(10L, result.getId());
-        assertEquals("Novo Livro", result.getName());
-        assertEquals("covers/capa.jpg", result.getCoverUrl());
-        assertEquals("pdfs/livro.pdf", result.getDataPath());
+        assertEquals(10L, result.getBook().getId());
+        assertEquals("Novo Livro", result.getBook().getName());
+        assertEquals("covers/capa.jpg", result.getBook().getCoverUrl());
+        assertEquals("pdfs/livro.pdf", result.getBook().getDataPath());
 
         verify(userRepository, times(1)).findById(userId);
         verify(fileStorageService, times(1)).storeFile(coverFile, "covers");
         verify(fileStorageService, times(1)).storeFile(dataFile, "pdfs");
         verify(bookRepository, times(1)).save(any(Book.class));
+        verify(achievementService).checkRegisteredBookMilestones(user);
     }
 
     @Test
@@ -133,14 +138,15 @@ class BookServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Book result = bookService.create(userId, dto);
+        BookCreationResponseDTO result = bookService.create(userId, dto);
 
-        assertEquals("Livro sem arquivos", result.getName());
-        assertEquals("Descrição", result.getDescription());
-        assertNull(result.getCoverUrl());
-        assertNull(result.getDataPath());
-        assertEquals(user, result.getUser());
+        assertEquals("Livro sem arquivos", result.getBook().getName());
+        assertEquals("Descrição", result.getBook().getDescription());
+        assertNull(result.getBook().getCoverUrl());
+        assertNull(result.getBook().getDataPath());
+        assertEquals(user, result.getBook().getUser());
         verify(fileStorageService, never()).storeFile(any(), anyString());
+        verify(achievementService).checkRegisteredBookMilestones(user);
     }
 
     @Test
@@ -153,6 +159,7 @@ class BookServiceTest {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> bookService.create(99L, dto));
         assertEquals("Usuário não encontrado", exception.getMessage());
         verify(bookRepository, never()).save(any());
+        verify(achievementService, never()).checkRegisteredBookMilestones(any());
     }
 
     @Test
