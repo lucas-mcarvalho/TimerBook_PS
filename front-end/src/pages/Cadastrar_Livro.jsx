@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { registerBook } from "../features/books/booksApi.js";
+import { getUser } from "../features/user/userApi.js";
+import { useToast } from "../components/ToastContext.js";
 
 export default function CadastrarLivro() {
+  const { showAchievementToast } = useToast();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -38,14 +41,22 @@ export default function CadastrarLivro() {
     setError(null);
     setSuccess(false);
     try {
+      const response = await getUser();
+      const userId = response.data?.id || response.id;
       const bookData = {
         name: formData.name,
+        description: ""
       };
-      await registerBook(
+      const savedBook = await registerBook(
+        userId,
         bookData,
         coverFile ?? undefined,
         pdfFile ?? undefined
       );
+      const novas = savedBook?.novasConquistas || [];
+      if (novas.length > 0) {
+        novas.forEach((conquista) => showAchievementToast(conquista));
+      }
       setSuccess(true);
       setFormData({
         name: ""

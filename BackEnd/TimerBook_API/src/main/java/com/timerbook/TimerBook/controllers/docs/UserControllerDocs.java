@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.controllers.docs;
 
 import com.timerbook.TimerBook.dto.UserReadingGoalRequestDTO;
+import com.timerbook.TimerBook.dto.UserCustomReadingGoalRequestDTO;
 import com.timerbook.TimerBook.dto.UserReadingGoalResponseDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
 import com.timerbook.TimerBook.models.User;
@@ -87,7 +88,10 @@ public interface UserControllerDocs {
     })
     ResponseEntity<UserReadingGoalResponseDTO> getMyReadingGoal(@RequestHeader("Authorization") String authHeader);
 
-    @Operation(summary = "Atualiza meta diária de leitura do usuário autenticado")
+    @Operation(
+            summary = "Atualiza meta diária de leitura do usuário autenticado",
+            description = "Valores permitidos para dailyReadingGoalMinutes: 5, 10, 15, 30 e 60"
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -100,5 +104,22 @@ public interface UserControllerDocs {
     ResponseEntity<UserReadingGoalResponseDTO> updateMyReadingGoal(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody UserReadingGoalRequestDTO body);
+
+    @Operation(
+            summary = "Atualiza meta diária de leitura personalizada do usuário autenticado",
+            description = "Permite definir qualquer valor positivo de minutos para a meta diária de leitura."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Meta atualizada com sucesso",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserReadingGoalResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Meta inválida", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content)
+    })
+    ResponseEntity<UserReadingGoalResponseDTO> updateMyCustomReadingGoal(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UserCustomReadingGoalRequestDTO body);
 
 }

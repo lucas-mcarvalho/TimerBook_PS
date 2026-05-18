@@ -32,9 +32,17 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
   };
 
   const handleLogout = () => {
+    const shouldLogout = window.confirm("Você tem certeza que quer sair da conta?");
+
+    if (!shouldLogout) {
+      return;
+    }
+
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
-    navigate("/"); 
+    localStorage.removeItem("user");
+    setIsConfigOpen(false);
+    navigate("/", { replace: true });
   };
 
   return (
