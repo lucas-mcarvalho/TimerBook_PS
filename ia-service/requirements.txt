@@ -1,0 +1,9 @@
+# requirements.txt
+fastapi
+uvicorn
+pymupdf          # fitz — the best PDF library available
+httpx            # async HTTP client for Ollama
+python-multipart # for receiving uploaded files
+pydantic
+pytesseract      # only if you need OCR fallback for scanned PDFs
+Pillow

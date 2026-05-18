@@ -50,7 +50,26 @@ function highlightText(text, query) {
   ));
 }
 
-function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default" }) {
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+// onSearchRequest  : async (query: string) => Array<{ page: number, excerpt: string }>
+//                    Called when the user submits a search. The backend (Python)
+//                    performs the full-document text search and returns results.
+//
+// onTextPageRequest: async (pageNumber: number) => string
+//                    Called when text mode is active and the page changes.
+//                    The backend extracts and returns the plain text for that page.
+// ---------------------------------------------------------------------------
+
+function PdfViewer({
+  file,
+  initialPage = 1,
+  onPageChange,
+  storageKey = "default",
+  onSearchRequest,
+  onTextPageRequest,
+}) {
   const preferencesKey = `timerbook-pdf-preferences-${storageKey}`;
   const bookmarksKey = `timerbook-pdf-bookmarks-${storageKey}`;
   const savedPreferences = useMemo(() => readStorage(preferencesKey, DEFAULT_PREFERENCES), [preferencesKey]);
@@ -71,7 +90,6 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const [rotation, setRotation] = useState(savedPreferences.rotation);
   const [bookmarks, setBookmarks] = useState(savedBookmarks);
   const [containerWidth, setContainerWidth] = useState(700);
-  const [pdfDocument, setPdfDocument] = useState(null);
   const [pageText, setPageText] = useState("");
   const [textLoading, setTextLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,7 +101,6 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   const pageRefs = useRef([]);
   const observerRef = useRef(null);
   const searchInputRef = useRef(null);
-  const pageTextCacheRef = useRef(new Map());
   const isScrollingToPage = useRef(false);
   const hasScrolledToInitial = useRef(false);
 
@@ -125,33 +142,6 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
   }, [file, initialPage]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadDocument = async () => {
-      if (!file) return;
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const loadedPdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-        if (!cancelled) {
-          pageTextCacheRef.current = new Map();
-          setPdfDocument(loadedPdf);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Erro ao preparar texto do PDF:", error);
-          setPdfDocument(null);
-        }
-      }
-    };
-
-    loadDocument();
-    return () => {
-      cancelled = true;
-    };
-  }, [file]);
-
-  useEffect(() => {
     const target = viewportRef.current;
     if (!target) return;
 
@@ -163,49 +153,35 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     return () => resizeObserver.disconnect();
   }, []);
 
-  const extractPageText = useCallback(async (targetPage) => {
-    if (!pdfDocument) return "";
-    if (pageTextCacheRef.current.has(targetPage)) {
-      return pageTextCacheRef.current.get(targetPage);
-    }
-
-    const page = await pdfDocument.getPage(targetPage);
-    const textContent = await page.getTextContent();
-    const extractedText = textContent.items.map((item) => item.str).join(" ");
-    pageTextCacheRef.current.set(targetPage, extractedText);
-    return extractedText;
-  }, [pdfDocument]);
-
+  // ---------------------------------------------------------------------------
+  // Text mode — delegate extraction to the backend via onTextPageRequest
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
 
     const loadPageText = async () => {
-      if (!textMode || !pdfDocument) {
+      if (!textMode || !onTextPageRequest) {
         setPageText("");
         return;
       }
 
       setTextLoading(true);
       try {
-        const extractedText = await extractPageText(pageNumber);
-        if (!cancelled) setPageText(extractedText || "Nenhum texto extraivel nesta pagina.");
+        const text = await onTextPageRequest(pageNumber);
+        if (!cancelled) setPageText(text || "Nenhum texto extraível nesta página.");
       } catch (error) {
-        console.error("Erro ao extrair texto da pagina:", error);
-        if (!cancelled) setPageText("Nao foi possivel extrair o texto desta pagina.");
+        console.error("Erro ao obter texto da página:", error);
+        if (!cancelled) setPageText("Não foi possível obter o texto desta página.");
       } finally {
         if (!cancelled) setTextLoading(false);
       }
     };
 
     loadPageText();
-    return () => {
-      cancelled = true;
-    };
-  }, [extractPageText, pageNumber, pdfDocument, textMode]);
+    return () => { cancelled = true; };
+  }, [textMode, pageNumber, onTextPageRequest]);
 
   // Scroll to initialPage once enough pages have rendered.
-  // We wait until the target page itself has rendered (pagesRendered >= initialPage)
-  // AND has a non-zero offsetHeight, meaning its canvas is painted.
   useEffect(() => {
     if (viewMode !== "continuous") return;
     if (initialPage <= 1 || hasScrolledToInitial.current) return;
@@ -214,18 +190,14 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     const target = pageRefs.current[initialPage - 1];
     if (!target) return;
 
-    // Use a ResizeObserver on the target page to detect when it gains real height
-    // (canvas painted) and then scroll. Disconnect immediately after first scroll.
     const ro = new ResizeObserver(() => {
       if (target.offsetHeight > 0) {
         ro.disconnect();
         hasScrolledToInitial.current = true;
         isScrollingToPage.current = true;
 
-        // scrollIntoView positions relative to the scrollable ancestor
         target.scrollIntoView({ behavior: "instant", block: "start" });
 
-        // Keep the flag on long enough to suppress the IntersectionObserver
         setTimeout(() => { isScrollingToPage.current = false; }, 600);
       }
     });
@@ -273,12 +245,11 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     return () => observerRef.current?.disconnect();
   }, [numPages, viewMode]);
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }) => {
-    setNumPages(numPages);
-    pageRefs.current = new Array(numPages).fill(null);
+  const onDocumentLoadSuccess = useCallback(({ numPages: total }) => {
+    setNumPages(total);
+    pageRefs.current = new Array(total).fill(null);
   }, []);
 
-  // Called by each Page when it finishes rendering its canvas
   const handlePageRenderSuccess = useCallback((pageIndex) => {
     setPagesRendered((prev) => Math.max(prev, pageIndex + 1));
   }, []);
@@ -290,9 +261,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
 
     isScrollingToPage.current = true;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => {
-      isScrollingToPage.current = false;
-    }, 500);
+    setTimeout(() => { isScrollingToPage.current = false; }, 500);
   }, [viewMode]);
 
   const goToPage = useCallback((targetPage) => {
@@ -310,9 +279,12 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
     goToPage(searchResults[nextIndex].page);
   }, [goToPage, searchResults]);
 
+  // ---------------------------------------------------------------------------
+  // Search — delegate to the backend via onSearchRequest
+  // ---------------------------------------------------------------------------
   const handleSearch = async () => {
     const query = searchQuery.trim();
-    if (!query || !pdfDocument) {
+    if (!query || !onSearchRequest) {
       setSearchResults([]);
       setActiveSearchIndex(-1);
       return;
@@ -320,29 +292,15 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
 
     setSearching(true);
     try {
-      const results = [];
-      const normalizedQuery = query.toLowerCase();
-
-      for (let page = 1; page <= pdfDocument.numPages; page += 1) {
-        const text = await extractPageText(page);
-        const normalizedText = text.toLowerCase();
-        const matchIndex = normalizedText.indexOf(normalizedQuery);
-
-        if (matchIndex >= 0) {
-          const excerptStart = Math.max(0, matchIndex - 45);
-          const excerptEnd = Math.min(text.length, matchIndex + query.length + 75);
-          results.push({
-            page,
-            excerpt: text.slice(excerptStart, excerptEnd).trim(),
-          });
-        }
-      }
-
+      // onSearchRequest returns Array<{ page: number, excerpt: string }>
+      const results = await onSearchRequest(query);
       setSearchResults(results);
       setActiveSearchIndex(results.length ? 0 : -1);
       if (results.length) goToPage(results[0].page);
     } catch (error) {
       console.error("Erro ao buscar no PDF:", error);
+      setSearchResults([]);
+      setActiveSearchIndex(-1);
     } finally {
       setSearching(false);
     }
@@ -510,7 +468,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
             placeholder="Buscar"
             aria-label="Buscar no PDF"
           />
-          <button type="submit" disabled={searching || !pdfDocument}>
+          <button type="submit" disabled={searching || !onSearchRequest}>
             {searching ? "..." : "Ir"}
           </button>
           <button
@@ -571,6 +529,7 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
             className={textMode ? "active" : ""}
             onClick={() => setTextMode((value) => !value)}
             aria-pressed={textMode}
+            disabled={!onTextPageRequest}
           >
             Texto
           </button>
@@ -614,11 +573,11 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
         {textMode ? (
           <section className="pdf-text-reader" aria-label={`Texto extraído da página ${pageNumber}`}>
             <div className="pdf-text-toolbar">
-              <span>Texto da pagina {pageNumber}</span>
+              <span>Texto da página {pageNumber}</span>
               <button type="button" onClick={() => setTextSize((value) => Math.max(14, value - 1))}>A-</button>
               <button type="button" onClick={() => setTextSize((value) => Math.min(28, value + 1))}>A+</button>
-              <button type="button" onClick={() => setLineHeight((value) => Math.max(1.3, Number((value - 0.1).toFixed(1))))}>Espaco -</button>
-              <button type="button" onClick={() => setLineHeight((value) => Math.min(2.2, Number((value + 0.1).toFixed(1))))}>Espaco +</button>
+              <button type="button" onClick={() => setLineHeight((value) => Math.max(1.3, Number((value - 0.1).toFixed(1))))}>Espaço -</button>
+              <button type="button" onClick={() => setLineHeight((value) => Math.min(2.2, Number((value + 0.1).toFixed(1))))}>Espaço +</button>
             </div>
             <article
               className="pdf-text-page"
@@ -629,36 +588,36 @@ function PdfViewer({ file, initialPage = 1, onPageChange, storageKey = "default"
           </section>
         ) : (
           <div ref={containerRef} className="pdf-pages">
-          <Document
-            file={file}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={(err) => console.error("ERRO AO CARREGAR PDF:", err)}
-            onSourceError={(err) => console.error("ERRO NA SOURCE:", err)}
-            loading={<p className="pdf-message">Carregando PDF...</p>}
-            error={<p className="pdf-message pdf-message-error">Erro ao carregar PDF</p>}
-          >
-            {pagesToRender.map((renderedPage) => {
-              const pageIndex = renderedPage - 1;
-              return (
-                <div
-                  key={renderedPage}
-                  className="pdf-page-shell"
-                  data-page-index={pageIndex}
-                  ref={(el) => (pageRefs.current[pageIndex] = el)}
-                  aria-label={`Página ${renderedPage}`}
-                >
-                  <Page
-                    pageNumber={renderedPage}
-                    width={pageWidth}
-                    rotate={rotation}
-                    renderTextLayer
-                    renderAnnotationLayer
-                    onRenderSuccess={() => handlePageRenderSuccess(pageIndex)}
-                  />
-                </div>
-              );
-            })}
-          </Document>
+            <Document
+              file={file}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(err) => console.error("ERRO AO CARREGAR PDF:", err)}
+              onSourceError={(err) => console.error("ERRO NA SOURCE:", err)}
+              loading={<p className="pdf-message">Carregando PDF...</p>}
+              error={<p className="pdf-message pdf-message-error">Erro ao carregar PDF</p>}
+            >
+              {pagesToRender.map((renderedPage) => {
+                const pageIndex = renderedPage - 1;
+                return (
+                  <div
+                    key={renderedPage}
+                    className="pdf-page-shell"
+                    data-page-index={pageIndex}
+                    ref={(el) => (pageRefs.current[pageIndex] = el)}
+                    aria-label={`Página ${renderedPage}`}
+                  >
+                    <Page
+                      pageNumber={renderedPage}
+                      width={pageWidth}
+                      rotate={rotation}
+                      renderTextLayer
+                      renderAnnotationLayer
+                      onRenderSuccess={() => handlePageRenderSuccess(pageIndex)}
+                    />
+                  </div>
+                );
+              })}
+            </Document>
           </div>
         )}
       </div>
