@@ -1,14 +1,15 @@
 package com.timerbook.TimerBook.services;
 
+import com.timerbook.TimerBook.dto.BookCreationResponseDTO;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.BookRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
+import com.timerbook.TimerBook.services.exception.BookException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
@@ -18,9 +19,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
 class BookServiceTest {
 
@@ -33,8 +34,15 @@ class BookServiceTest {
     @Mock
     FileStorageService fileStorageService;
 
-    @InjectMocks
+    @Mock
+    AchievementService achievementService;
+
     private BookService bookService;
+
+    @BeforeEach
+    void setUp() {
+        bookService = new BookService(bookRepository, userRepository, fileStorageService, achievementService);
+    }
 
     @Test
     void findAll() {
@@ -68,6 +76,14 @@ class BookServiceTest {
     }
 
     @Test
+    void findByIdShouldThrowWhenBookDoesNotExist() {
+        when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+
+        BookException exception = assertThrows(BookException.class, () -> bookService.findById(1L));
+        assertEquals("Livro não encontrado", exception.getMessage());
+    }
+
+    @Test
     void create() {
         Long userId = 1L;
         User user = new User();
@@ -94,18 +110,56 @@ class BookServiceTest {
         when(fileStorageService.storeFile(dataFile, "pdfs")).thenReturn("pdfs/livro.pdf");
         when(bookRepository.save(any(Book.class))).thenReturn(savedBook);
 
-        Book result = bookService.create(userId, dto);
+        BookCreationResponseDTO result = bookService.create(userId, dto);
 
         assertNotNull(result);
-        assertEquals(10L, result.getId());
-        assertEquals("Novo Livro", result.getName());
-        assertEquals("covers/capa.jpg", result.getCoverUrl());
-        assertEquals("pdfs/livro.pdf", result.getDataPath());
+        assertEquals(10L, result.getBook().getId());
+        assertEquals("Novo Livro", result.getBook().getName());
+        assertEquals("covers/capa.jpg", result.getBook().getCoverUrl());
+        assertEquals("pdfs/livro.pdf", result.getBook().getDataPath());
 
         verify(userRepository, times(1)).findById(userId);
         verify(fileStorageService, times(1)).storeFile(coverFile, "covers");
         verify(fileStorageService, times(1)).storeFile(dataFile, "pdfs");
         verify(bookRepository, times(1)).save(any(Book.class));
+        verify(achievementService).checkRegisteredBookMilestones(user);
+    }
+
+    @Test
+    void createShouldSaveBookWithoutOptionalFiles() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+
+        BookDTO dto = new BookDTO();
+        dto.setName("Livro sem arquivos");
+        dto.setDescription("Descrição");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookCreationResponseDTO result = bookService.create(userId, dto);
+
+        assertEquals("Livro sem arquivos", result.getBook().getName());
+        assertEquals("Descrição", result.getBook().getDescription());
+        assertNull(result.getBook().getCoverUrl());
+        assertNull(result.getBook().getDataPath());
+        assertEquals(user, result.getBook().getUser());
+        verify(fileStorageService, never()).storeFile(any(), anyString());
+        verify(achievementService).checkRegisteredBookMilestones(user);
+    }
+
+    @Test
+    void createShouldThrowWhenUserDoesNotExist() {
+        BookDTO dto = new BookDTO();
+        dto.setName("Novo Livro");
+
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> bookService.create(99L, dto));
+        assertEquals("Usuário não encontrado", exception.getMessage());
+        verify(bookRepository, never()).save(any());
+        verify(achievementService, never()).checkRegisteredBookMilestones(any());
     }
 
     @Test
@@ -152,6 +206,33 @@ class BookServiceTest {
     }
 
     @Test
+    void updateShouldKeepExistingFilesWhenNoNewFilesAreSent() {
+        Long bookId = 1L;
+        Book existingBook = new Book();
+        existingBook.setId(bookId);
+        existingBook.setName("Livro Antigo");
+        existingBook.setDescription("Antiga");
+        existingBook.setCoverUrl("old_cover.jpg");
+        existingBook.setDataPath("old_book.pdf");
+
+        BookDTO dto = new BookDTO();
+        dto.setName("Livro Atualizado");
+        dto.setDescription("Nova");
+
+        when(bookRepository.findById(bookId)).thenReturn(Optional.of(existingBook));
+        when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Book result = bookService.update(bookId, dto);
+
+        assertEquals("Livro Atualizado", result.getName());
+        assertEquals("Nova", result.getDescription());
+        assertEquals("old_cover.jpg", result.getCoverUrl());
+        assertEquals("old_book.pdf", result.getDataPath());
+        verify(fileStorageService, never()).deleteFile(anyString());
+        verify(fileStorageService, never()).storeFile(any(), anyString());
+    }
+
+    @Test
     void delete() {
         Long bookId = 1L;
         Book book = new Book();
@@ -167,5 +248,19 @@ class BookServiceTest {
         verify(fileStorageService, times(1)).deleteFile("cover.jpg");
         verify(fileStorageService, times(1)).deleteFile("livro.pdf");
         verify(bookRepository, times(1)).delete(book);
+    }
+
+    @Test
+    void findByUserIdShouldDelegateToRepository() {
+        Book book = new Book();
+        book.setId(1L);
+        book.setName("Livro do usuário");
+        when(bookRepository.findByUserId(10L)).thenReturn(List.of(book));
+
+        List<Book> result = bookService.findByUserId(10L);
+
+        assertEquals(1, result.size());
+        assertEquals("Livro do usuário", result.get(0).getName());
+        verify(bookRepository).findByUserId(10L);
     }
 }

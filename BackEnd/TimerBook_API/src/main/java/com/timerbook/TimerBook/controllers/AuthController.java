@@ -71,4 +71,16 @@ public class AuthController  implements AuthControllerDocs{
             return ResponseEntity.status(403).build();
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            authService.logout(authHeader);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
 }
