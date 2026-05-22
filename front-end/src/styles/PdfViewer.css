@@ -327,9 +327,37 @@
   transition: all 0.2s;
 }
 
+.pdf-text-toolbar select {
+  max-width: 180px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 8px;
+}
+
+.pdf-text-toolbar .pdf-speech-rate-button {
+  min-width: 54px;
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+}
+
 .pdf-text-toolbar button:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
+}
+
+.pdf-text-toolbar button.active {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.pdf-text-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .pdf-text-page {

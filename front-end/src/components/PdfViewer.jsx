@@ -6,6 +6,9 @@ import "../styles/AnnotationLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
+const SPEECH_RATES = [0.5, 1, 1.5, 2];
+const DEFAULT_SPEECH_RATE = 1;
+
 const DEFAULT_PREFERENCES = {
   viewMode: "continuous",
   zoom: 1,
@@ -15,6 +18,8 @@ const DEFAULT_PREFERENCES = {
   textSize: 18,
   lineHeight: 1.7,
   rotation: 0,
+  speechRate: DEFAULT_SPEECH_RATE,
+  speechVoiceURI: "",
 };
 
 const VIEW_MODES = new Set(["continuous", "single"]);
@@ -35,6 +40,11 @@ function readStorage(key, fallback) {
   }
 }
 
+function normalizeSpeechRate(value) {
+  const numericValue = Number(value);
+  return SPEECH_RATES.includes(numericValue) ? numericValue : DEFAULT_SPEECH_RATE;
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -45,9 +55,92 @@ function highlightText(text, query) {
   const parts = text.split(new RegExp(`(${escapeRegExp(query.trim())})`, "gi"));
   return parts.map((part, index) => (
     part.toLowerCase() === query.trim().toLowerCase()
-      ? <mark key={`${part}-${index}`}>{part}</mark>
+      ? <mark key={`highlight-${index}-${part}`}>{part}</mark>
       : part
   ));
+}
+
+function prepareTextForSpeech(text) {
+  return text
+    .replace(/\r/g, "\n")
+    .replace(/([A-Za-zÀ-ÿ])-\s*\n\s*([A-Za-zÀ-ÿ])/g, "$1$2")
+    .replace(/[ \t]*\n[ \t]*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function splitTextForSpeech(text, maxLength = 220) {
+  const sentences = text.match(/[^.!?;:]+[.!?;:]?/g) || [text];
+  const chunks = [];
+  let currentChunk = "";
+
+  const pushLongPart = (part) => {
+    let wordChunk = "";
+
+    part.split(/\s+/).forEach((word) => {
+      if (!word) return;
+
+      const nextWordChunk = wordChunk ? `${wordChunk} ${word}` : word;
+      if (nextWordChunk.length > maxLength && wordChunk) {
+        chunks.push(wordChunk);
+        wordChunk = word;
+      } else {
+        wordChunk = nextWordChunk;
+      }
+    });
+
+    if (wordChunk) chunks.push(wordChunk);
+  };
+
+  sentences.forEach((rawSentence) => {
+    const sentence = rawSentence.trim();
+    if (!sentence) return;
+
+    if (sentence.length > maxLength) {
+      sentence.split(/,\s+|\s+-\s+/).forEach((part) => {
+        const cleanedPart = part.trim();
+        if (cleanedPart) pushLongPart(cleanedPart);
+      });
+      return;
+    }
+
+    const nextChunk = currentChunk ? `${currentChunk} ${sentence}` : sentence;
+    if (nextChunk.length > maxLength && currentChunk) {
+      chunks.push(currentChunk);
+      currentChunk = sentence;
+    } else {
+      currentChunk = nextChunk;
+    }
+  });
+
+  if (currentChunk) chunks.push(currentChunk);
+  return chunks;
+}
+
+function getPortugueseVoiceScore(voice) {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+  let score = 0;
+
+  if (lang === "pt-br") score += 120;
+  else if (lang.startsWith("pt")) score += 80;
+  else score -= 100;
+
+  if (name.includes("natural")) score += 35;
+  if (name.includes("neural")) score += 35;
+  if (name.includes("online")) score += 25;
+  if (name.includes("google")) score += 25;
+  if (name.includes("microsoft")) score += 15;
+  if (name.includes("brasil") || name.includes("brazil")) score += 15;
+  if (name.includes("portugu")) score += 10;
+
+  return score;
+}
+
+function chooseBestPortugueseVoice(voices) {
+  return [...voices]
+    .filter((voice) => voice.lang.toLowerCase().startsWith("pt"))
+    .sort((voiceA, voiceB) => getPortugueseVoiceScore(voiceB) - getPortugueseVoiceScore(voiceA))[0] || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +181,8 @@ function PdfViewer({
   const [textSize, setTextSize] = useState(savedPreferences.textSize);
   const [lineHeight, setLineHeight] = useState(savedPreferences.lineHeight);
   const [rotation, setRotation] = useState(savedPreferences.rotation);
+  const [speechRate, setSpeechRate] = useState(() => normalizeSpeechRate(savedPreferences.speechRate));
+  const [speechVoiceURI, setSpeechVoiceURI] = useState(savedPreferences.speechVoiceURI || DEFAULT_PREFERENCES.speechVoiceURI);
   const [bookmarks, setBookmarks] = useState(savedBookmarks);
   const [containerWidth, setContainerWidth] = useState(700);
   const [pageText, setPageText] = useState("");
@@ -96,6 +191,16 @@ function PdfViewer({
   const [searchResults, setSearchResults] = useState([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
+  
+  // =====================================
+  // ESTADOS E REFS DO ÁUDIO
+  // =====================================
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const speechSessionRef = useRef(0);
+
   const containerRef = useRef(null);
   const viewportRef = useRef(null);
   const pageRefs = useRef([]);
@@ -114,23 +219,49 @@ function PdfViewer({
 
   useEffect(() => {
     const preferences = {
-      viewMode,
-      zoom,
-      fitWidth,
-      visualMode,
-      textMode,
-      textSize,
-      lineHeight,
-      rotation,
+      viewMode, zoom, fitWidth, visualMode, textMode, textSize, lineHeight, rotation, speechRate, speechVoiceURI,
     };
     localStorage.setItem(preferencesKey, JSON.stringify(preferences));
-  }, [fitWidth, lineHeight, preferencesKey, rotation, textMode, textSize, viewMode, visualMode, zoom]);
+  }, [fitWidth, lineHeight, preferencesKey, rotation, speechRate, speechVoiceURI, textMode, textSize, viewMode, visualMode, zoom]);
 
   useEffect(() => {
     localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
   }, [bookmarks, bookmarksKey]);
 
-  // Reset scroll flag when file changes
+  // Carrega as vozes disponíveis no navegador.
+  useEffect(() => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setSpeechSupported(false);
+      return undefined;
+    }
+
+    let retryCount = 0;
+    let retryTimer;
+
+    const loadVoices = () => {
+      setSpeechSupported(true);
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+
+      // Firefox nem sempre dispara voiceschanged; repetir getVoices ajuda a
+      // capturar vozes carregadas um pouco depois da primeira renderizacao.
+      if (!voices.length && retryCount < 8) {
+        retryCount += 1;
+        retryTimer = window.setTimeout(loadVoices, 250);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+
+    return () => {
+      window.clearTimeout(retryTimer);
+      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+      window.speechSynthesis.cancel();
+      speechSessionRef.current += 1;
+    };
+  }, []);
+
   useEffect(() => {
     hasScrolledToInitial.current = false;
     const frame = requestAnimationFrame(() => {
@@ -145,16 +276,23 @@ function PdfViewer({
     const target = viewportRef.current;
     if (!target) return;
 
+    let timeoutId;
     const resizeObserver = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setContainerWidth(entry.contentRect.width);
+      }, 100);
     });
 
     resizeObserver.observe(target);
-    return () => resizeObserver.disconnect();
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Text mode — delegate extraction to the backend via onTextPageRequest
+  // Text mode
   // ---------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
@@ -395,10 +533,102 @@ function PdfViewer({
     }
   };
 
+  const stopSpeaking = useCallback(() => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    speechSessionRef.current += 1;
+    setIsSpeaking(false);
+    setIsSpeechPaused(false);
+  }, []);
+
+  const pauseSpeaking = useCallback(() => {
+    if (!isSpeaking || isSpeechPaused || !("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.pause();
+    setIsSpeechPaused(true);
+  }, [isSpeaking, isSpeechPaused]);
+
+  const resumeSpeaking = useCallback(() => {
+    if (!isSpeaking || !isSpeechPaused || !("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.resume();
+    setIsSpeechPaused(false);
+  }, [isSpeaking, isSpeechPaused]);
+
+  const cycleSpeechRate = useCallback(() => {
+    setSpeechRate((currentRate) => {
+      const normalizedRate = normalizeSpeechRate(currentRate);
+      const currentIndex = SPEECH_RATES.indexOf(normalizedRate);
+      return SPEECH_RATES[(currentIndex + 1) % SPEECH_RATES.length];
+    });
+  }, []);
+
+  const speakPage = useCallback(() => {
+    if (!speechSupported || !pageText.trim()) return;
+
+    const preparedText = prepareTextForSpeech(pageText);
+    const chunks = splitTextForSpeech(preparedText);
+    if (!chunks.length) return;
+
+    stopSpeaking();
+
+    const sessionId = speechSessionRef.current + 1;
+    const selectedVoice = availableVoices.find((voice) => voice.voiceURI === speechVoiceURI)
+      || chooseBestPortugueseVoice(availableVoices);
+    let chunkIndex = 0;
+
+    speechSessionRef.current = sessionId;
+    setIsSpeaking(true);
+    setIsSpeechPaused(false);
+
+    const speakNextChunk = () => {
+      if (speechSessionRef.current !== sessionId) return;
+
+      const chunk = chunks[chunkIndex];
+      if (!chunk) {
+        setIsSpeaking(false);
+        setIsSpeechPaused(false);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      utterance.lang = selectedVoice?.lang || "pt-BR";
+      utterance.voice = selectedVoice;
+      utterance.rate = speechRate;
+      utterance.pitch = 1.04;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        if (speechSessionRef.current !== sessionId) return;
+        chunkIndex += 1;
+        speakNextChunk();
+      };
+
+      utterance.onerror = (event) => {
+        if (event.error !== "interrupted" && event.error !== "canceled") {
+          console.error("Erro na síntese de voz:", event.error);
+        }
+
+        if (speechSessionRef.current === sessionId) {
+          setIsSpeaking(false);
+          setIsSpeechPaused(false);
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakNextChunk();
+  }, [availableVoices, pageText, speechRate, speechSupported, speechVoiceURI, stopSpeaking]);
+  // ==========================================
+
   const baseWidth = fitWidth ? Math.min(900, Math.max(320, containerWidth - 48)) : 650;
   const pageWidth = Math.round(baseWidth * zoom);
   const isCurrentPageBookmarked = bookmarks.includes(pageNumber);
   const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
+  const canSpeakPage = speechSupported && !textLoading && Boolean(pageText.trim());
+  const portugueseVoices = availableVoices.filter((voice) => voice.lang.toLowerCase().startsWith("pt"));
   const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
   const pagesToRender = safeViewMode === "single" && numPages
     ? [pageNumber]
@@ -578,6 +808,56 @@ function PdfViewer({
               <button type="button" onClick={() => setTextSize((value) => Math.min(28, value + 1))}>A+</button>
               <button type="button" onClick={() => setLineHeight((value) => Math.max(1.3, Number((value - 0.1).toFixed(1))))}>Espaço -</button>
               <button type="button" onClick={() => setLineHeight((value) => Math.min(2.2, Number((value + 0.1).toFixed(1))))}>Espaço +</button>
+              {portugueseVoices.length > 1 && (
+                <select
+                  value={speechVoiceURI}
+                  onChange={(event) => setSpeechVoiceURI(event.target.value)}
+                  aria-label="Voz da leitura"
+                  title="Voz da leitura"
+                >
+                  <option value="">Voz auto</option>
+                  {portugueseVoices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                type="button"
+                className="pdf-speech-rate-button"
+                onClick={cycleSpeechRate}
+                aria-label={`Velocidade da voz: ${speechRate}x`}
+                title="Mudar velocidade da voz"
+              >
+                {speechRate}x
+              </button>
+              
+              <button
+                type="button"
+                className={isSpeaking ? "active" : ""}
+                onClick={speakPage}
+                disabled={!isSpeaking && !canSpeakPage}
+                aria-pressed={isSpeaking}
+                title={speechSupported ? "Ler esta página em voz alta" : "Leitura em voz não suportada neste navegador"}
+              >
+                {isSpeaking ? "Reiniciar" : "Ler página"}
+              </button>
+              {isSpeaking && (
+                <>
+                  <button
+                    type="button"
+                    className={isSpeechPaused ? "active" : ""}
+                    onClick={isSpeechPaused ? resumeSpeaking : pauseSpeaking}
+                    aria-pressed={isSpeechPaused}
+                  >
+                    {isSpeechPaused ? "Retomar" : "Pausar"}
+                  </button>
+                  <button type="button" onClick={stopSpeaking}>
+                    Parar
+                  </button>
+                </>
+              )}
             </div>
             <article
               className="pdf-text-page"
