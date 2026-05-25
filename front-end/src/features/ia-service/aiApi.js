@@ -61,3 +61,13 @@ export async function getPageText(pdfPath, pageNumber) {
   });
   return response.data.text;
 }
+
+export async function translatePageText(pdfPath, page, pageText) {
+  const prompt = `Traduza para português do Brasil o texto desta página de PDF. Preserve o significado e a estrutura do texto, sem adicionar explicações extras.\n\nTexto:\n${pageText}`;
+  const response = await iaApi.post("/ask", {
+    pdf_path: pdfPath,
+    page,
+    question: prompt,
+  });
+  return response.data.answer;
+}

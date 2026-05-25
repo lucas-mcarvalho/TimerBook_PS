@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
-import { askAI, searchPDF, getPageText, buildPdfPath } from "../features/ia-service/aiApi.js";
+import { askAI, searchPDF, getPageText, translatePageText, buildPdfPath } from "../features/ia-service/aiApi.js";
 import "../styles/Leitor.css";
 
 export default function Leitor() {
@@ -104,6 +104,10 @@ export default function Leitor() {
     return await getPageText(buildPdfPath(book.dataPath), pageNumber);
   };
 
+  const handleTranslatePageText = async (pageNumber, pageText) => {
+    return await translatePageText(buildPdfPath(book.dataPath), pageNumber, pageText);
+  };
+
   const handleKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSubmit();
   };
@@ -181,6 +185,7 @@ export default function Leitor() {
                 storageKey={book.id || book.dataPath || "livro"}
                 onSearchRequest={handleSearchRequest}
                 onTextPageRequest={handleTextPageRequest}
+                onTranslatePageRequest={handleTranslatePageText}
               />
             ) : (
               <div className="leitor-pdf-loading">

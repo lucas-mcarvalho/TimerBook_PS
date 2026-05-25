@@ -24,6 +24,25 @@ const DEFAULT_PREFERENCES = {
 
 const VIEW_MODES = new Set(["continuous", "single"]);
 
+// ===========================================================================
+// FUNÇÃO DE TRADUÇÃO DIRETO NO FRONT-END (GRATUITA)
+// ===========================================================================
+
+async function fetchFreeTranslation(text) {
+  // Rota pública do Google Translate que não exige API Key
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(text)}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Erro na rede do tradutor gratuito");
+  const data = await response.json();
+  
+  // O retorno vem em blocos, aqui juntamos tudo em um texto único
+  return data[0].map((pedaco) => pedaco[0]).join("");
+}
+
+// ===========================================================================
+// UTILITÁRIOS
+// ===========================================================================
+
 function readStorage(key, fallback) {
   try {
     const storedValue = localStorage.getItem(key);
@@ -144,15 +163,7 @@ function chooseBestPortugueseVoice(voices) {
 }
 
 // ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-// onSearchRequest  : async (query: string) => Array<{ page: number, excerpt: string }>
-//                    Called when the user submits a search. The backend (Python)
-//                    performs the full-document text search and returns results.
-//
-// onTextPageRequest: async (pageNumber: number) => string
-//                    Called when text mode is active and the page changes.
-//                    The backend extracts and returns the plain text for that page.
+// COMPONENTE PRINCIPAL
 // ---------------------------------------------------------------------------
 
 function PdfViewer({
@@ -186,6 +197,16 @@ function PdfViewer({
   const [bookmarks, setBookmarks] = useState(savedBookmarks);
   const [containerWidth, setContainerWidth] = useState(700);
   const [pageText, setPageText] = useState("");
+  
+  // =====================================
+  // ESTADOS DE TRADUÇÃO
+  // =====================================
+  const [translatedText, setTranslatedText] = useState("");
+  const [translationCache, setTranslationCache] = useState({});
+  const [translationLoading, setTranslationLoading] = useState(false);
+  const [isTranslationActive, setIsTranslationActive] = useState(false);
+  const [translationError, setTranslationError] = useState("");
+  
   const [textLoading, setTextLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -212,7 +233,6 @@ function PdfViewer({
   const onPageChangeRef = useRef(onPageChange);
   useEffect(() => { onPageChangeRef.current = onPageChange; }, [onPageChange]);
 
-  // Notify parent whenever pageNumber changes
   useEffect(() => {
     onPageChangeRef.current?.(pageNumber);
   }, [pageNumber]);
@@ -228,7 +248,6 @@ function PdfViewer({
     localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
   }, [bookmarks, bookmarksKey]);
 
-  // Carrega as vozes disponíveis no navegador.
   useEffect(() => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setSpeechSupported(false);
@@ -243,8 +262,6 @@ function PdfViewer({
       const voices = window.speechSynthesis.getVoices();
       setAvailableVoices(voices);
 
-      // Firefox nem sempre dispara voiceschanged; repetir getVoices ajuda a
-      // capturar vozes carregadas um pouco depois da primeira renderizacao.
       if (!voices.length && retryCount < 8) {
         retryCount += 1;
         retryTimer = window.setTimeout(loadVoices, 250);
@@ -292,7 +309,7 @@ function PdfViewer({
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Text mode
+  // Extração do Texto
   // ---------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
@@ -300,13 +317,21 @@ function PdfViewer({
     const loadPageText = async () => {
       if (!textMode || !onTextPageRequest) {
         setPageText("");
+        setTranslatedText("");
+        setIsTranslationActive(false);
+        setTranslationError("");
         return;
       }
 
       setTextLoading(true);
       try {
         const text = await onTextPageRequest(pageNumber);
-        if (!cancelled) setPageText(text || "Nenhum texto extraível nesta página.");
+        if (!cancelled) {
+          setPageText(text || "Nenhum texto extraível nesta página.");
+          setTranslatedText("");
+          setIsTranslationActive(false);
+          setTranslationError("");
+        }
       } catch (error) {
         console.error("Erro ao obter texto da página:", error);
         if (!cancelled) setPageText("Não foi possível obter o texto desta página.");
@@ -319,7 +344,6 @@ function PdfViewer({
     return () => { cancelled = true; };
   }, [textMode, pageNumber, onTextPageRequest]);
 
-  // Scroll to initialPage once enough pages have rendered.
   useEffect(() => {
     if (viewMode !== "continuous") return;
     if (initialPage <= 1 || hasScrolledToInitial.current) return;
@@ -344,7 +368,6 @@ function PdfViewer({
     return () => ro.disconnect();
   }, [pagesRendered, initialPage, viewMode]);
 
-  // IntersectionObserver: track which page is most visible
   useEffect(() => {
     if (!numPages || viewMode !== "continuous") return;
 
@@ -417,9 +440,6 @@ function PdfViewer({
     goToPage(searchResults[nextIndex].page);
   }, [goToPage, searchResults]);
 
-  // ---------------------------------------------------------------------------
-  // Search — delegate to the backend via onSearchRequest
-  // ---------------------------------------------------------------------------
   const handleSearch = async () => {
     const query = searchQuery.trim();
     if (!query || !onSearchRequest) {
@@ -430,7 +450,6 @@ function PdfViewer({
 
     setSearching(true);
     try {
-      // onSearchRequest returns Array<{ page: number, excerpt: string }>
       const results = await onSearchRequest(query);
       setSearchResults(results);
       setActiveSearchIndex(results.length ? 0 : -1);
@@ -441,6 +460,49 @@ function PdfViewer({
       setActiveSearchIndex(-1);
     } finally {
       setSearching(false);
+    }
+  };
+
+  // =====================================
+  // APLICAÇÃO DA TRADUÇÃO
+  // =====================================
+  const handleTranslatePageText = async () => {
+    if (!pageText.trim()) return;
+
+    if (translationCache[pageNumber]) {
+      setTranslatedText(translationCache[pageNumber]);
+      setIsTranslationActive(true);
+      return;
+    }
+
+    setTranslationLoading(true);
+    setTranslationError("");
+    
+    const currentPageAtRequest = pageNumber;
+
+    try {
+      // Chama a função gratuita definida no início do arquivo
+      const translated = await fetchFreeTranslation(pageText);
+      
+      if (translated) {
+        setTranslationCache((prev) => ({ ...prev, [currentPageAtRequest]: translated }));
+      }
+
+      if (currentPageAtRequest === pageNumber) {
+        setTranslatedText(translated || "Não foi possível traduzir o texto desta página.");
+        setIsTranslationActive(true);
+      }
+    } catch (error) {
+      console.error("Erro no fluxo de tradução:", error);
+      if (currentPageAtRequest === pageNumber) {
+        setTranslationError("Erro na tradução. Tente novamente.");
+        setIsTranslationActive(false);
+        setTranslatedText("");
+      }
+    } finally {
+      if (currentPageAtRequest === pageNumber) {
+        setTranslationLoading(false);
+      }
     }
   };
 
@@ -565,9 +627,11 @@ function PdfViewer({
   }, []);
 
   const speakPage = useCallback(() => {
-    if (!speechSupported || !pageText.trim()) return;
+    const currentText = isTranslationActive ? translatedText : pageText;
+    
+    if (!speechSupported || !currentText.trim()) return;
 
-    const preparedText = prepareTextForSpeech(pageText);
+    const preparedText = prepareTextForSpeech(currentText);
     const chunks = splitTextForSpeech(preparedText);
     if (!chunks.length) return;
 
@@ -620,8 +684,7 @@ function PdfViewer({
     };
 
     speakNextChunk();
-  }, [availableVoices, pageText, speechRate, speechSupported, speechVoiceURI, stopSpeaking]);
-  // ==========================================
+  }, [availableVoices, pageText, translatedText, isTranslationActive, speechRate, speechSupported, speechVoiceURI, stopSpeaking]);
 
   const baseWidth = fitWidth ? Math.min(900, Math.max(320, containerWidth - 48)) : 650;
   const pageWidth = Math.round(baseWidth * zoom);
@@ -835,6 +898,25 @@ function PdfViewer({
               
               <button
                 type="button"
+                className={isTranslationActive ? "active" : ""}
+                onClick={handleTranslatePageText}
+                disabled={!pageText.trim() || translationLoading}
+                aria-pressed={isTranslationActive}
+              >
+                {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar tradução" : "Traduzir PT-BR"}
+              </button>
+              {isTranslationActive && (
+                <button
+                  type="button"
+                  onClick={() => setIsTranslationActive(false)}
+                  disabled={translationLoading}
+                >
+                  Original
+                </button>
+              )}
+              
+              <button
+                type="button"
                 className={isSpeaking ? "active" : ""}
                 onClick={speakPage}
                 disabled={!isSpeaking && !canSpeakPage}
@@ -863,8 +945,17 @@ function PdfViewer({
               className="pdf-text-page"
               style={{ fontSize: `${textSize}px`, lineHeight }}
             >
-              {textLoading ? "Carregando texto..." : highlightText(pageText, searchQuery)}
+              {textLoading
+                ? "Carregando texto..."
+                : translationLoading
+                  ? "Traduzindo texto..."
+                  : highlightText(isTranslationActive ? translatedText : pageText, searchQuery)}
             </article>
+            {translationError && (
+              <div className="pdf-text-error" role="alert">
+                {translationError}
+              </div>
+            )}
           </section>
         ) : (
           <div ref={containerRef} className="pdf-pages">
