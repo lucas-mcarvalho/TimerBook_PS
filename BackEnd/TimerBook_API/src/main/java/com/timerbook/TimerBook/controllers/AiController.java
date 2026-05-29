@@ -5,6 +5,8 @@ import com.timerbook.TimerBook.dto.AiAskResponseDTO;
 import com.timerbook.TimerBook.dto.AiPageTextResponseDTO;
 import com.timerbook.TimerBook.dto.AiSearchRequestDTO;
 import com.timerbook.TimerBook.dto.AiSearchResponseDTO;
+import com.timerbook.TimerBook.dto.AiTranslateRequestDTO;
+import com.timerbook.TimerBook.dto.AiTranslateResponseDTO;
 import com.timerbook.TimerBook.services.AiChatService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +37,11 @@ public class AiController {
     @PostMapping("/search")
     public ResponseEntity<AiSearchResponseDTO> search(@Valid @RequestBody AiSearchRequestDTO request) {
         return ResponseEntity.ok(new AiSearchResponseDTO(aiChatService.search(request.getPdfPath(), request.getQuery())));
+    }
+
+    @PostMapping("/translate")
+    public ResponseEntity<AiTranslateResponseDTO> translate(@Valid @RequestBody AiTranslateRequestDTO request) {
+        return ResponseEntity.ok(new AiTranslateResponseDTO(aiChatService.translatePage(request)));
     }
 
     @GetMapping("/page-text")

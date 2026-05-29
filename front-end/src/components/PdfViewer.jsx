@@ -8,6 +8,16 @@ pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 const SPEECH_RATES = [0.5, 1, 1.5, 2];
 const DEFAULT_SPEECH_RATE = 1;
+const DEFAULT_TRANSLATION_LANGUAGE = "pt-BR";
+const TRANSLATION_LANGUAGES = [
+  { code: "pt-BR", label: "Português BR", googleCode: "pt" },
+  { code: "pt-PT", label: "Português PT", googleCode: "pt" },
+  { code: "en", label: "Inglês", googleCode: "en" },
+  { code: "es", label: "Espanhol", googleCode: "es" },
+  { code: "fr", label: "Francês", googleCode: "fr" },
+  { code: "de", label: "Alemão", googleCode: "de" },
+  { code: "it", label: "Italiano", googleCode: "it" },
+];
 
 const DEFAULT_PREFERENCES = {
   viewMode: "continuous",
@@ -20,6 +30,7 @@ const DEFAULT_PREFERENCES = {
   rotation: 0,
   speechRate: DEFAULT_SPEECH_RATE,
   speechVoiceURI: "",
+  translationLanguage: DEFAULT_TRANSLATION_LANGUAGE,
 };
 
 const VIEW_MODES = new Set(["continuous", "single"]);
@@ -28,8 +39,13 @@ const VIEW_MODES = new Set(["continuous", "single"]);
 // Fallback de tradução direta no front caso o endpoint Java não seja informado.
 // ===========================================================================
 
-async function fetchFreeTranslation(text) {
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(text)}`;
+function getTranslationLanguage(code) {
+  return TRANSLATION_LANGUAGES.find((language) => language.code === code) || TRANSLATION_LANGUAGES[0];
+}
+
+async function fetchFreeTranslation(text, targetLanguage = DEFAULT_TRANSLATION_LANGUAGE) {
+  const language = getTranslationLanguage(targetLanguage);
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${language.googleCode}&dt=t&q=${encodeURIComponent(text)}`;
   const response = await fetch(url);
   if (!response.ok) throw new Error("Erro na rede do tradutor gratuito");
   const data = await response.json();
@@ -205,6 +221,9 @@ function PdfViewer({
   const [translationLoading, setTranslationLoading] = useState(false);
   const [isTranslationActive, setIsTranslationActive] = useState(false);
   const [translationError, setTranslationError] = useState("");
+  const [translationLanguage, setTranslationLanguage] = useState(
+    getTranslationLanguage(savedPreferences.translationLanguage).code
+  );
   
   const [textLoading, setTextLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -238,10 +257,10 @@ function PdfViewer({
 
   useEffect(() => {
     const preferences = {
-      viewMode, zoom, fitWidth, visualMode, textMode, textSize, lineHeight, rotation, speechRate, speechVoiceURI,
+      viewMode, zoom, fitWidth, visualMode, textMode, textSize, lineHeight, rotation, speechRate, speechVoiceURI, translationLanguage,
     };
     localStorage.setItem(preferencesKey, JSON.stringify(preferences));
-  }, [fitWidth, lineHeight, preferencesKey, rotation, speechRate, speechVoiceURI, textMode, textSize, viewMode, visualMode, zoom]);
+  }, [fitWidth, lineHeight, preferencesKey, rotation, speechRate, speechVoiceURI, textMode, textSize, translationLanguage, viewMode, visualMode, zoom]);
 
   useEffect(() => {
     localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
@@ -342,6 +361,12 @@ function PdfViewer({
     loadPageText();
     return () => { cancelled = true; };
   }, [textMode, pageNumber, onTextPageRequest]);
+
+  useEffect(() => {
+    setTranslatedText("");
+    setIsTranslationActive(false);
+    setTranslationError("");
+  }, [translationLanguage]);
 
   useEffect(() => {
     if (viewMode !== "continuous") return;
@@ -468,8 +493,10 @@ function PdfViewer({
   const handleTranslatePageText = async () => {
     if (!pageText.trim()) return;
 
-    if (translationCache[pageNumber]) {
-      setTranslatedText(translationCache[pageNumber]);
+    const cacheKey = `${pageNumber}:${translationLanguage}`;
+
+    if (translationCache[cacheKey]) {
+      setTranslatedText(translationCache[cacheKey]);
       setIsTranslationActive(true);
       return;
     }
@@ -478,31 +505,30 @@ function PdfViewer({
     setTranslationError("");
     
     const currentPageAtRequest = pageNumber;
+    const currentLanguageAtRequest = translationLanguage;
 
     try {
       const translated = onTranslatePageRequest
-        ? await onTranslatePageRequest(currentPageAtRequest, pageText)
-        : await fetchFreeTranslation(pageText);
+        ? await onTranslatePageRequest(currentPageAtRequest, currentLanguageAtRequest)
+        : await fetchFreeTranslation(pageText, currentLanguageAtRequest);
       
       if (translated) {
-        setTranslationCache((prev) => ({ ...prev, [currentPageAtRequest]: translated }));
+        setTranslationCache((prev) => ({ ...prev, [cacheKey]: translated }));
       }
 
-      if (currentPageAtRequest === pageNumber) {
+      if (currentPageAtRequest === pageNumber && currentLanguageAtRequest === translationLanguage) {
         setTranslatedText(translated || "Não foi possível traduzir o texto desta página.");
         setIsTranslationActive(true);
       }
     } catch (error) {
       console.error("Erro no fluxo de tradução:", error);
-      if (currentPageAtRequest === pageNumber) {
+      if (currentPageAtRequest === pageNumber && currentLanguageAtRequest === translationLanguage) {
         setTranslationError("Erro na tradução. Tente novamente.");
         setIsTranslationActive(false);
         setTranslatedText("");
       }
     } finally {
-      if (currentPageAtRequest === pageNumber) {
-        setTranslationLoading(false);
-      }
+      setTranslationLoading(false);
     }
   };
 
@@ -692,6 +718,7 @@ function PdfViewer({
   const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
   const canSpeakPage = speechSupported && !textLoading && Boolean(pageText.trim());
   const portugueseVoices = availableVoices.filter((voice) => voice.lang.toLowerCase().startsWith("pt"));
+  const translationLanguageLabel = getTranslationLanguage(translationLanguage).label;
   const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
   const pagesToRender = safeViewMode === "single" && numPages
     ? [pageNumber]
@@ -895,6 +922,20 @@ function PdfViewer({
               >
                 {speechRate}x
               </button>
+
+              <select
+                value={translationLanguage}
+                onChange={(event) => setTranslationLanguage(event.target.value)}
+                disabled={translationLoading}
+                aria-label="Idioma da tradução"
+                title="Idioma da tradução"
+              >
+                {TRANSLATION_LANGUAGES.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.label}
+                  </option>
+                ))}
+              </select>
               
               <button
                 type="button"
@@ -902,8 +943,9 @@ function PdfViewer({
                 onClick={handleTranslatePageText}
                 disabled={!pageText.trim() || translationLoading}
                 aria-pressed={isTranslationActive}
+                title={`Traduzir para ${translationLanguageLabel}`}
               >
-                {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar tradução" : "Traduzir PT-BR"}
+                {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar" : "Traduzir"}
               </button>
               {isTranslationActive && (
                 <button

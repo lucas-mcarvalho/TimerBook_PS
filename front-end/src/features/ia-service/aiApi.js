@@ -57,12 +57,11 @@ export async function getPageText(pdfPath, pageNumber) {
   return response.data.text;
 }
 
-export async function translatePageText(pdfPath, page, pageText) {
-  const prompt = `Traduza para português do Brasil o texto desta página de PDF. Preserve o significado e a estrutura do texto, sem adicionar explicações extras.\n\nTexto:\n${pageText}`;
-  const response = await api.post(`${IA_BASE_PATH}/ask`, {
+export async function translatePageText(pdfPath, page, targetLanguage = "pt-BR") {
+  const response = await api.post(`${IA_BASE_PATH}/translate`, {
     pdf_path: pdfPath,
     page,
-    question: prompt,
+    target_language: targetLanguage,
   });
-  return response.data.answer;
+  return response.data.translation;
 }

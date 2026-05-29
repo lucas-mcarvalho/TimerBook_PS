@@ -48,6 +48,23 @@ public class AiOllamaService {
                 Responda de forma clara e baseada somente no conteúdo fornecido.
                 """.formatted(context, question);
 
+        return sendPrompt(prompt);
+    }
+
+    public String translateText(String text, String targetLanguage) {
+        String prompt = """
+                Traduza o texto abaixo para %s.
+                Preserve o significado, a estrutura e a separação de parágrafos.
+                Não adicione comentários, explicações, títulos ou notas.
+
+                TEXTO:
+                %s
+                """.formatted(targetLanguage, text);
+
+        return sendPrompt(prompt);
+    }
+
+    private String sendPrompt(String prompt) {
         try {
             String body = objectMapper.writeValueAsString(Map.of(
                     "model", model,
