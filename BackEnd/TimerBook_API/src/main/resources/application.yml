@@ -36,6 +36,10 @@ cors:
   originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173,http://localhost:8081,http://*:5173, http://*:8081
 
 app:
+  ai:
+    ollama:
+      url: ${OLLAMA_URL:http://localhost:11434/api/generate}
+      model: ${OLLAMA_MODEL:qwen2.5:14b}
   reminders:
     reading:
       enabled: true

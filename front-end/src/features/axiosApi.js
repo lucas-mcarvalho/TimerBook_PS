@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080"
+  baseURL: "http://172.31.89.45:8080"
 });
 
 // 🔹 REQUEST → adiciona access token (exceto rotas de auth)
@@ -28,7 +28,7 @@ const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
 
   const response = await axios.post(
-    "http://localhost:8080/auth/refresh",
+    "http://172.31.89.45:8080/auth/refresh",
     { refreshToken },
     { withCredentials: true }
   );

@@ -1,19 +1,14 @@
-import axios from "axios";
+import api from "../axiosApi.js";
 
-// Direct connection to Python AI service
-const iaApi = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
-});
-
+const IA_BASE_PATH = "/api/v1";
 
 export function buildPdfPath(dataPath) {
-  console.log("Building PDF path for:", dataPath);
   return `${dataPath}`;
 }
 
 /**
  * Ask a question about the current page of a PDF.
- * Python automatically extracts currentPage ± 2 as context and sends to Ollama.
+ * Java automatically extracts currentPage ± 2 as context and sends to Ollama.
  *
  * @param {string} pdfPath  - absolute container path: /app/uploads/pdfs/file.pdf
  * @param {number} page     - current page the user is reading
@@ -21,7 +16,7 @@ export function buildPdfPath(dataPath) {
  * @returns {Promise<string>} AI answer
  */
 export async function askAI(pdfPath, page, question) {
-  const response = await iaApi.post("/ask", {
+  const response = await api.post(`${IA_BASE_PATH}/ask`, {
     pdf_path: pdfPath,
     page,
     question,
@@ -37,7 +32,7 @@ export async function askAI(pdfPath, page, question) {
  * @returns {Promise<Array<{ page: number, excerpt: string }>>}
  */
 export async function searchPDF(pdfPath, query) {
-  const response = await iaApi.post("/search", {
+  const response = await api.post(`${IA_BASE_PATH}/search`, {
     pdf_path: pdfPath,
     query,
   });
@@ -53,7 +48,7 @@ export async function searchPDF(pdfPath, query) {
  * @returns {Promise<string>} plain text of the page
  */
 export async function getPageText(pdfPath, pageNumber) {
-  const response = await iaApi.get("/page-text", {
+  const response = await api.get(`${IA_BASE_PATH}/page-text`, {
     params: {
       pdf_path: pdfPath,
       page: pageNumber,
@@ -64,7 +59,7 @@ export async function getPageText(pdfPath, pageNumber) {
 
 export async function translatePageText(pdfPath, page, pageText) {
   const prompt = `Traduza para português do Brasil o texto desta página de PDF. Preserve o significado e a estrutura do texto, sem adicionar explicações extras.\n\nTexto:\n${pageText}`;
-  const response = await iaApi.post("/ask", {
+  const response = await api.post(`${IA_BASE_PATH}/ask`, {
     pdf_path: pdfPath,
     page,
     question: prompt,

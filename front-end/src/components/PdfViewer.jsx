@@ -25,17 +25,15 @@ const DEFAULT_PREFERENCES = {
 const VIEW_MODES = new Set(["continuous", "single"]);
 
 // ===========================================================================
-// FUNÇÃO DE TRADUÇÃO DIRETO NO FRONT-END (GRATUITA)
+// Fallback de tradução direta no front caso o endpoint Java não seja informado.
 // ===========================================================================
 
 async function fetchFreeTranslation(text) {
-  // Rota pública do Google Translate que não exige API Key
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=pt&dt=t&q=${encodeURIComponent(text)}`;
   const response = await fetch(url);
   if (!response.ok) throw new Error("Erro na rede do tradutor gratuito");
   const data = await response.json();
   
-  // O retorno vem em blocos, aqui juntamos tudo em um texto único
   return data[0].map((pedaco) => pedaco[0]).join("");
 }
 
@@ -173,6 +171,7 @@ function PdfViewer({
   storageKey = "default",
   onSearchRequest,
   onTextPageRequest,
+  onTranslatePageRequest,
 }) {
   const preferencesKey = `timerbook-pdf-preferences-${storageKey}`;
   const bookmarksKey = `timerbook-pdf-bookmarks-${storageKey}`;
@@ -481,8 +480,9 @@ function PdfViewer({
     const currentPageAtRequest = pageNumber;
 
     try {
-      // Chama a função gratuita definida no início do arquivo
-      const translated = await fetchFreeTranslation(pageText);
+      const translated = onTranslatePageRequest
+        ? await onTranslatePageRequest(currentPageAtRequest, pageText)
+        : await fetchFreeTranslation(pageText);
       
       if (translated) {
         setTranslationCache((prev) => ({ ...prev, [currentPageAtRequest]: translated }));
