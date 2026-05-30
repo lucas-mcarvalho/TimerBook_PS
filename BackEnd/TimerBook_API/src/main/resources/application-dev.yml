@@ -21,3 +21,7 @@ app:
       timezone: America/Sao_Paulo
       inactivity-hours: 24
       reminder-interval-minutes: 1440
+
+payment:
+  webhook-signature:
+    enabled: ${PAYMENT_WEBHOOK_SIGNATURE_ENABLED:false}

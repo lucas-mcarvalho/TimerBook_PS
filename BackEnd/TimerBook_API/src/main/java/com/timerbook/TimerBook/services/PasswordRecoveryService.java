@@ -35,7 +35,7 @@ public class PasswordRecoveryService {
         tokenEntity.setExpiresAt(LocalDateTime.now().plusMinutes(2));
 
         tokenRepository.save(tokenEntity);
-        String linkRecuperacao = "http://localhost:5173/redefinir-senha?token=" + generatedToken;
+        String linkRecuperacao = "timerbook://reset-password?token=" + generatedToken;
 
         EmailRequestDTO emailRequest = new EmailRequestDTO();
         emailRequest.setTo(email);

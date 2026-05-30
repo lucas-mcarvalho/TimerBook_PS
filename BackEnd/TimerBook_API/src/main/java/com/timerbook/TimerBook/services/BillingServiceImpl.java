@@ -33,6 +33,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
@@ -45,9 +46,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class BillingServiceImpl implements BillingService {
@@ -55,7 +59,8 @@ public class BillingServiceImpl implements BillingService {
     private static final Logger logger = LoggerFactory.getLogger(BillingServiceImpl.class);
     private static final String PROVIDER_MERCADO_PAGO = "MERCADO_PAGO";
     private static final Pattern WEBHOOK_SIGNATURE_PATTERN = Pattern.compile("(?i)(ts|v1)=([^,]+)");
-    private static final long WEBHOOK_SKEW_SECONDS = 300L;
+    private static final long WEBHOOK_SKEW_MILLIS = 300_000L;
+    private static final long TIMESTAMP_SECONDS_THRESHOLD = 100_000_000_000L;
 
     @Autowired
     private UserService userService;
@@ -85,6 +90,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Value("${payment.webhook-secret:}")
     private String paymentWebhookSecret;
+
+    @Value("${payment.webhook-signature.enabled:true}")
+    private boolean webhookSignatureValidationEnabled;
 
     @Value("${payment.mercado-pago.base-url:https://api.mercadopago.com}")
     private String mercadoPagoBaseUrl;
@@ -130,7 +138,7 @@ public class BillingServiceImpl implements BillingService {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("external_reference", String.valueOf(user.getId()));
-        payload.put("notification_url", notificationUrl);
+        payload.put("notification_url", ensureWebhookNotificationUrl(notificationUrl));
         if (useAutoReturn) {
             payload.put("auto_return", "approved");
         } else {
@@ -259,9 +267,15 @@ public class BillingServiceImpl implements BillingService {
             event.setProcessedAt(LocalDateTime.now());
             webhookEventRepository.save(event);
             return true;
+        } catch (ResponseStatusException ex) {
+            logger.warn("Webhook Mercado Pago rejeitado: status={} reason={}", ex.getStatusCode(), ex.getReason());
+            throw ex;
+        } catch (HttpStatusCodeException ex) {
+            logger.error("Falha ao consultar Mercado Pago durante webhook. status={} body={}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Falha ao consultar Mercado Pago durante webhook.");
         } catch (Exception ex) {
             logger.error("Erro ao processar webhook Mercado Pago", ex);
-            return false;
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Erro ao processar webhook Mercado Pago.");
         }
     }
 
@@ -400,6 +414,11 @@ public class BillingServiceImpl implements BillingService {
     }
 
     private void validateMercadoPagoWebhookSignature(String payload, Map<String, String> headers) {
+        if (!webhookSignatureValidationEnabled) {
+            logger.warn("Validação de assinatura do webhook Mercado Pago desabilitada por configuração.");
+            return;
+        }
+
         if (paymentWebhookSecret == null || paymentWebhookSecret.isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_WEBHOOK_SECRET não configurado.");
         }
@@ -409,6 +428,7 @@ public class BillingServiceImpl implements BillingService {
         if (xSignature == null || xSignature.isBlank() || xRequestId == null || xRequestId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cabeçalhos x-signature e x-request-id são obrigatórios.");
         }
+        xRequestId = xRequestId.trim();
 
         JsonNode root;
         try {
@@ -417,10 +437,7 @@ public class BillingServiceImpl implements BillingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payload inválido do webhook.");
         }
 
-        String dataId = extractWebhookIdentifier(root, headers);
-        if (dataId == null || dataId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Webhook sem identificador do evento.");
-        }
+        Set<String> dataIds = extractWebhookIdentifierCandidates(root, headers);
 
         Map<String, String> signatureParts = parseWebhookSignature(xSignature);
         String ts = signatureParts.get("ts");
@@ -429,57 +446,71 @@ public class BillingServiceImpl implements BillingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "x-signature inválido.");
         }
 
-        long timestampSeconds;
+        long timestampMillis;
         try {
-            timestampSeconds = Long.parseLong(ts);
+            timestampMillis = parseMercadoPagoTimestampMillis(ts);
         } catch (NumberFormatException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Timestamp do webhook inválido.");
         }
 
-        long nowSeconds = System.currentTimeMillis() / 1000L;
-        if (Math.abs(nowSeconds - timestampSeconds) > WEBHOOK_SKEW_SECONDS) {
+        long nowMillis = System.currentTimeMillis();
+        if (Math.abs(nowMillis - timestampMillis) > WEBHOOK_SKEW_MILLIS) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Webhook expirado.");
         }
 
-        String manifest = "id:" + dataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
-        String expectedHash = hmacSha256Hex(manifest, paymentWebhookSecret);
-        if (!expectedHash.equalsIgnoreCase(receivedHash)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Assinatura do webhook inválida.");
+        for (String dataId : dataIds) {
+            String manifest = "id:" + dataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
+            String expectedHash = hmacSha256Hex(manifest, paymentWebhookSecret);
+            if (constantTimeEqualsHex(expectedHash, receivedHash)) {
+                return;
+            }
         }
+        String manifestWithoutId = "request-id:" + xRequestId + ";ts:" + ts + ";";
+        String expectedHashWithoutId = hmacSha256Hex(manifestWithoutId, paymentWebhookSecret);
+        if (constantTimeEqualsHex(expectedHashWithoutId, receivedHash)) {
+            return;
+        }
+
+        logger.warn(
+                "Assinatura inválida do Mercado Pago. dataIds={} triedWithoutId=true xRequestId={} ts={} receivedHashPrefix={}",
+                dataIds,
+                xRequestId,
+                ts,
+                abbreviateHash(receivedHash)
+        );
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Assinatura do webhook inválida.");
     }
 
-    private String extractWebhookIdentifier(JsonNode root, Map<String, String> headers) {
+    private Set<String> extractWebhookIdentifierCandidates(JsonNode root, Map<String, String> headers) {
+        Set<String> candidates = new LinkedHashSet<>();
         String queryString = getHeaderIgnoreCase(headers, "__query_string__");
-        String queryId = extractQueryParam(queryString, "data.id_url");
-        if (queryId != null && !queryId.isBlank()) {
-            return queryId.trim().toLowerCase();
-        }
+        addWebhookIdentifierCandidate(candidates, extractQueryParam(queryString, "data.id"));
+        addWebhookIdentifierCandidate(candidates, extractQueryParam(queryString, "id"));
+        addWebhookIdentifierCandidate(candidates, extractQueryParam(queryString, "data_id"));
+        addWebhookIdentifierCandidate(candidates, extractQueryParam(queryString, "data.id_url"));
 
-        String dataIdUrl = root.path("data").path("id_url").asText(null);
-        if (dataIdUrl != null && !dataIdUrl.isBlank()) {
-            return dataIdUrl.trim().toLowerCase();
-        }
-
-        String dataId = root.path("data").path("id").asText(null);
-        if (dataId != null && !dataId.isBlank()) {
-            return dataId.trim().toLowerCase();
-        }
-
-        String rootId = root.path("id").asText(null);
-        if (rootId != null && !rootId.isBlank()) {
-            return rootId.trim().toLowerCase();
-        }
+        addWebhookIdentifierCandidate(candidates, root.path("data").path("id_url").asText(null));
+        addWebhookIdentifierCandidate(candidates, root.path("data").path("id").asText(null));
+        addWebhookIdentifierCandidate(candidates, root.path("id").asText(null));
 
         String resource = root.path("resource").asText(null);
+        addWebhookIdentifierCandidate(candidates, resource);
+
         if (resource != null && !resource.isBlank()) {
             int lastSlash = resource.lastIndexOf('/');
-            String idCandidate = lastSlash >= 0 && lastSlash < resource.length() - 1
-                    ? resource.substring(lastSlash + 1)
-                    : resource;
-            return idCandidate.trim().toLowerCase();
+            if (lastSlash >= 0 && lastSlash < resource.length() - 1) {
+                addWebhookIdentifierCandidate(candidates, resource.substring(lastSlash + 1));
+            }
         }
 
-        return null;
+        return candidates;
+    }
+
+    private void addWebhookIdentifierCandidate(Set<String> candidates, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        candidates.add(value.trim().toLowerCase(Locale.ROOT));
     }
 
     private String extractQueryParam(String queryString, String key) {
@@ -494,16 +525,42 @@ public class BillingServiceImpl implements BillingService {
                 continue;
             }
 
-            String currentKey = pair.substring(0, equalsIndex);
+            String currentKey = URLDecoder.decode(pair.substring(0, equalsIndex), StandardCharsets.UTF_8);
             if (!key.equals(currentKey)) {
                 continue;
             }
 
             String value = pair.substring(equalsIndex + 1);
-            return value == null ? null : value.trim();
+            return value == null ? null : URLDecoder.decode(value, StandardCharsets.UTF_8).trim();
         }
 
         return null;
+    }
+
+    private long parseMercadoPagoTimestampMillis(String ts) {
+        long parsedTimestamp = Long.parseLong(ts);
+        if (parsedTimestamp < TIMESTAMP_SECONDS_THRESHOLD) {
+            return parsedTimestamp * 1000L;
+        }
+        return parsedTimestamp;
+    }
+
+    private boolean constantTimeEqualsHex(String expectedHash, String receivedHash) {
+        if (expectedHash == null || receivedHash == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expectedHash.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8),
+                receivedHash.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
+    private String abbreviateHash(String hash) {
+        if (hash == null || hash.isBlank()) {
+            return "";
+        }
+        String trimmed = hash.trim();
+        return trimmed.length() <= 8 ? trimmed : trimmed.substring(0, 8);
     }
 
     private Map<String, String> parseWebhookSignature(String xSignature) {
@@ -709,6 +766,20 @@ public class BillingServiceImpl implements BillingService {
         }
 
         return !(normalized.contains("localhost") || normalized.contains("127.0.0.1") || normalized.contains("0.0.0.0"));
+    }
+
+    private String ensureWebhookNotificationUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return url;
+        }
+
+        String normalized = url.trim();
+        if (normalized.contains("source_news=")) {
+            return normalized;
+        }
+
+        String separator = normalized.contains("?") ? "&" : "?";
+        return normalized + separator + "source_news=webhooks";
     }
 
     private String safeErrorMessage(String body) {

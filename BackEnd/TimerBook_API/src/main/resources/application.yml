@@ -60,6 +60,8 @@ payment:
   provider: ${PAYMENT_PROVIDER:MERCADO_PAGO}
   secret-key: ${PAYMENT_SECRET_KEY:${MP_ACCESS_TOKEN:}}
   webhook-secret: ${PAYMENT_WEBHOOK_SECRET:${MP_WEBHOOK_SECRET:}}
+  webhook-signature:
+    enabled: ${PAYMENT_WEBHOOK_SIGNATURE_ENABLED:true}
   mercado-pago:
     access-token: ${MP_ACCESS_TOKEN:}
     base-url: ${MP_BASE_URL:https://api.mercadopago.com}
