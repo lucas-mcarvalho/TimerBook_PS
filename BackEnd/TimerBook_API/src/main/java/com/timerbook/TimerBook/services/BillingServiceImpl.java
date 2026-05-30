@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.timerbook.TimerBook.dto.billing.CheckoutSessionRequest;
 import com.timerbook.TimerBook.dto.billing.CheckoutSessionResponse;
 import com.timerbook.TimerBook.dto.billing.SubscriptionResponse;
+import com.timerbook.TimerBook.dto.billing.WebhookEventResponse;
 import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.models.billing.PaymentTransaction;
 import com.timerbook.TimerBook.models.billing.UserSubscription;
@@ -28,10 +29,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.GeneralSecurityException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -46,6 +54,8 @@ public class BillingServiceImpl implements BillingService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillingServiceImpl.class);
     private static final String PROVIDER_MERCADO_PAGO = "MERCADO_PAGO";
+    private static final Pattern WEBHOOK_SIGNATURE_PATTERN = Pattern.compile("(?i)(ts|v1)=([^,]+)");
+    private static final long WEBHOOK_SKEW_SECONDS = 300L;
 
     @Autowired
     private UserService userService;
@@ -72,6 +82,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Value("${payment.mercado-pago.access-token:}")
     private String mercadoPagoAccessToken;
+
+    @Value("${payment.webhook-secret:}")
+    private String paymentWebhookSecret;
 
     @Value("${payment.mercado-pago.base-url:https://api.mercadopago.com}")
     private String mercadoPagoBaseUrl;
@@ -191,8 +204,9 @@ public class BillingServiceImpl implements BillingService {
         }
 
         try {
+            validateMercadoPagoWebhookSignature(payload, headers);
             JsonNode root = objectMapper.readTree(payload);
-            String providerEventId = root.path("id").asText();
+            String providerEventId = getHeaderIgnoreCase(headers, "x-request-id");
             if (providerEventId == null || providerEventId.isBlank()) {
                 providerEventId = "mp_evt_" + sha256(payload).substring(0, 16);
             }
@@ -205,30 +219,41 @@ public class BillingServiceImpl implements BillingService {
             WebhookEvent event = new WebhookEvent();
             event.setProvider(PROVIDER_MERCADO_PAGO);
             event.setProviderEventId(providerEventId);
-            event.setEventType(root.path("type").asText("unknown"));
+            String eventType = resolveWebhookEventType(root);
+            event.setEventType(eventType);
             event.setPayloadHash(sha256(payload));
             event.setRawPayload(payload);
             event.setProcessingStatus("RECEIVED");
             webhookEventRepository.save(event);
 
-            String type = root.path("type").asText("");
-            if (!"payment".equalsIgnoreCase(type)) {
+            String resourceId = resolveWebhookResourceId(root);
+            if (isPaymentWebhookType(eventType)) {
+                if (resourceId == null || resourceId.isBlank()) {
+                    event.setProcessingStatus("FAILED");
+                    event.setProcessedAt(LocalDateTime.now());
+                    webhookEventRepository.save(event);
+                    return false;
+                }
+
+                JsonNode payment = fetchMercadoPagoPayment(resourceId);
+                processPaymentEvent(payment);
+            } else if (isMerchantOrderWebhookType(eventType, root)) {
+                if (resourceId == null || resourceId.isBlank()) {
+                    event.setProcessingStatus("FAILED");
+                    event.setProcessedAt(LocalDateTime.now());
+                    webhookEventRepository.save(event);
+                    return false;
+                }
+
+                JsonNode merchantOrder = fetchMercadoPagoMerchantOrder(resourceId);
+                processMerchantOrderEvent(merchantOrder);
+            } else {
+                logger.info("Webhook Mercado Pago ignorado por tipo não tratado: {}", eventType);
                 event.setProcessingStatus("IGNORED");
                 event.setProcessedAt(LocalDateTime.now());
                 webhookEventRepository.save(event);
                 return true;
             }
-
-            String paymentId = root.path("data").path("id").asText(null);
-            if (paymentId == null || paymentId.isBlank()) {
-                event.setProcessingStatus("FAILED");
-                event.setProcessedAt(LocalDateTime.now());
-                webhookEventRepository.save(event);
-                return false;
-            }
-
-            JsonNode payment = fetchMercadoPagoPayment(paymentId);
-            processPaymentEvent(payment);
 
             event.setProcessingStatus("PROCESSED");
             event.setProcessedAt(LocalDateTime.now());
@@ -238,6 +263,284 @@ public class BillingServiceImpl implements BillingService {
             logger.error("Erro ao processar webhook Mercado Pago", ex);
             return false;
         }
+    }
+
+    @Override
+    public List<WebhookEventResponse> listWebhookEvents(Integer limit) {
+        int effectiveLimit = limit == null || limit <= 0 ? 20 : Math.min(limit, 100);
+        return webhookEventRepository.findAll(PageRequest.of(0, effectiveLimit, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .stream()
+                .map(event -> new WebhookEventResponse(
+                        event.getId(),
+                        event.getProvider(),
+                        event.getProviderEventId(),
+                        event.getEventType(),
+                        event.getProcessingStatus(),
+                        event.getPayloadHash(),
+                        event.getRawPayload(),
+                        event.getProcessedAt(),
+                        event.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    private JsonNode fetchMercadoPagoMerchantOrder(String merchantOrderId) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(mercadoPagoAccessToken);
+        ResponseEntity<String> response = restTemplate.exchange(
+                mercadoPagoBaseUrl + "/merchant_orders/" + merchantOrderId,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                String.class
+        );
+        return objectMapper.readTree(response.getBody());
+    }
+
+    private void processMerchantOrderEvent(JsonNode merchantOrder) {
+        String merchantOrderId = merchantOrder.path("id").asText("");
+        JsonNode payments = merchantOrder.path("payments");
+
+        if (payments.isArray()) {
+            for (JsonNode paymentRef : payments) {
+                String paymentRefId = paymentRef.path("id").asText("");
+                if (paymentRefId.isBlank()) {
+                    continue;
+                }
+
+                try {
+                    JsonNode payment = fetchMercadoPagoPayment(paymentRefId);
+                    processPaymentEvent(payment);
+                    if ("approved".equalsIgnoreCase(payment.path("status").asText(""))) {
+                        return;
+                    }
+                } catch (Exception ex) {
+                    logger.warn("Falha ao processar payment {} encontrado em merchant order {}", paymentRefId, merchantOrderId, ex);
+                }
+            }
+        }
+
+        String orderStatus = merchantOrder.path("status").asText("");
+        if (isPaidMerchantOrderStatus(orderStatus)) {
+            String paymentId = merchantOrder.path("payment_id").asText(null);
+            if (paymentId != null && !paymentId.isBlank()) {
+                try {
+                    JsonNode payment = fetchMercadoPagoPayment(paymentId);
+                    processPaymentEvent(payment);
+                    return;
+                } catch (Exception ex) {
+                    throw new IllegalStateException("Falha ao processar merchant order paga " + merchantOrderId, ex);
+                }
+            }
+        }
+
+        logger.info("Merchant order {} sem pagamento aprovado para processar.", merchantOrderId);
+    }
+
+    private String resolveWebhookEventType(JsonNode root) {
+        String type = root.path("type").asText("");
+        if (type == null || type.isBlank()) {
+            type = root.path("topic").asText("");
+        }
+        if (type == null || type.isBlank()) {
+            type = root.path("action").asText("");
+        }
+        return type == null || type.isBlank() ? "unknown" : type;
+    }
+
+    private String resolveWebhookResourceId(JsonNode root) {
+        String dataId = root.path("data").path("id").asText(null);
+        if (dataId != null && !dataId.isBlank()) {
+            return dataId;
+        }
+
+        String rootId = root.path("id").asText(null);
+        if (rootId != null && !rootId.isBlank()) {
+            return rootId;
+        }
+
+        String resource = root.path("resource").asText(null);
+        if (resource != null && !resource.isBlank()) {
+            int lastSlash = resource.lastIndexOf('/');
+            if (lastSlash >= 0 && lastSlash < resource.length() - 1) {
+                return resource.substring(lastSlash + 1);
+            }
+            return resource;
+        }
+
+        return null;
+    }
+
+    private boolean isPaymentWebhookType(String eventType) {
+        if (eventType == null) {
+            return false;
+        }
+        String normalized = eventType.trim().toLowerCase();
+        return "payment".equals(normalized) || "payments".equals(normalized);
+    }
+
+    private boolean isMerchantOrderWebhookType(String eventType, JsonNode root) {
+        String normalized = eventType == null ? "" : eventType.trim().toLowerCase();
+        if (normalized.contains("merchant_order") || normalized.contains("merchant_orders")) {
+            return true;
+        }
+
+        String resource = root.path("resource").asText("");
+        return resource.contains("merchant_orders");
+    }
+
+    private boolean isPaidMerchantOrderStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        return switch (status.trim().toLowerCase()) {
+            case "paid", "closed", "completed" -> true;
+            default -> false;
+        };
+    }
+
+    private void validateMercadoPagoWebhookSignature(String payload, Map<String, String> headers) {
+        if (paymentWebhookSecret == null || paymentWebhookSecret.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_WEBHOOK_SECRET não configurado.");
+        }
+
+        String xSignature = getHeaderIgnoreCase(headers, "x-signature");
+        String xRequestId = getHeaderIgnoreCase(headers, "x-request-id");
+        if (xSignature == null || xSignature.isBlank() || xRequestId == null || xRequestId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cabeçalhos x-signature e x-request-id são obrigatórios.");
+        }
+
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(payload);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payload inválido do webhook.");
+        }
+
+        String dataId = extractWebhookIdentifier(root, headers);
+        if (dataId == null || dataId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Webhook sem identificador do evento.");
+        }
+
+        Map<String, String> signatureParts = parseWebhookSignature(xSignature);
+        String ts = signatureParts.get("ts");
+        String receivedHash = signatureParts.get("v1");
+        if (ts == null || receivedHash == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "x-signature inválido.");
+        }
+
+        long timestampSeconds;
+        try {
+            timestampSeconds = Long.parseLong(ts);
+        } catch (NumberFormatException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Timestamp do webhook inválido.");
+        }
+
+        long nowSeconds = System.currentTimeMillis() / 1000L;
+        if (Math.abs(nowSeconds - timestampSeconds) > WEBHOOK_SKEW_SECONDS) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Webhook expirado.");
+        }
+
+        String manifest = "id:" + dataId + ";request-id:" + xRequestId + ";ts:" + ts + ";";
+        String expectedHash = hmacSha256Hex(manifest, paymentWebhookSecret);
+        if (!expectedHash.equalsIgnoreCase(receivedHash)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Assinatura do webhook inválida.");
+        }
+    }
+
+    private String extractWebhookIdentifier(JsonNode root, Map<String, String> headers) {
+        String queryString = getHeaderIgnoreCase(headers, "__query_string__");
+        String queryId = extractQueryParam(queryString, "data.id_url");
+        if (queryId != null && !queryId.isBlank()) {
+            return queryId.trim().toLowerCase();
+        }
+
+        String dataIdUrl = root.path("data").path("id_url").asText(null);
+        if (dataIdUrl != null && !dataIdUrl.isBlank()) {
+            return dataIdUrl.trim().toLowerCase();
+        }
+
+        String dataId = root.path("data").path("id").asText(null);
+        if (dataId != null && !dataId.isBlank()) {
+            return dataId.trim().toLowerCase();
+        }
+
+        String rootId = root.path("id").asText(null);
+        if (rootId != null && !rootId.isBlank()) {
+            return rootId.trim().toLowerCase();
+        }
+
+        String resource = root.path("resource").asText(null);
+        if (resource != null && !resource.isBlank()) {
+            int lastSlash = resource.lastIndexOf('/');
+            String idCandidate = lastSlash >= 0 && lastSlash < resource.length() - 1
+                    ? resource.substring(lastSlash + 1)
+                    : resource;
+            return idCandidate.trim().toLowerCase();
+        }
+
+        return null;
+    }
+
+    private String extractQueryParam(String queryString, String key) {
+        if (queryString == null || queryString.isBlank() || key == null || key.isBlank()) {
+            return null;
+        }
+
+        String[] pairs = queryString.split("&");
+        for (String pair : pairs) {
+            int equalsIndex = pair.indexOf('=');
+            if (equalsIndex <= 0) {
+                continue;
+            }
+
+            String currentKey = pair.substring(0, equalsIndex);
+            if (!key.equals(currentKey)) {
+                continue;
+            }
+
+            String value = pair.substring(equalsIndex + 1);
+            return value == null ? null : value.trim();
+        }
+
+        return null;
+    }
+
+    private Map<String, String> parseWebhookSignature(String xSignature) {
+        Map<String, String> values = new HashMap<>();
+        Matcher matcher = WEBHOOK_SIGNATURE_PATTERN.matcher(xSignature);
+        while (matcher.find()) {
+            values.put(matcher.group(1).toLowerCase(), matcher.group(2).trim());
+        }
+        return values;
+    }
+
+    private String hmacSha256Hex(String value, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(keySpec);
+            byte[] rawHmac = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : rawHmac) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (GeneralSecurityException ex) {
+            throw new IllegalStateException("Erro ao validar assinatura do webhook.", ex);
+        }
+    }
+
+    private String getHeaderIgnoreCase(Map<String, String> headers, String name) {
+        if (headers == null || headers.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(name)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     @Override

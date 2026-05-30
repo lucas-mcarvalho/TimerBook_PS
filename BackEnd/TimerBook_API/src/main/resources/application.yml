@@ -58,6 +58,8 @@ api:
 
 payment:
   provider: ${PAYMENT_PROVIDER:MERCADO_PAGO}
+  secret-key: ${PAYMENT_SECRET_KEY:${MP_ACCESS_TOKEN:}}
+  webhook-secret: ${PAYMENT_WEBHOOK_SECRET:${MP_WEBHOOK_SECRET:}}
   mercado-pago:
     access-token: ${MP_ACCESS_TOKEN:}
     base-url: ${MP_BASE_URL:https://api.mercadopago.com}
@@ -65,7 +67,7 @@ payment:
     title: ${PAYMENT_CHECKOUT_TITLE:TimerBook Premium}
     amount: ${PAYMENT_CHECKOUT_AMOUNT:19.90}
     currency: ${PAYMENT_CHECKOUT_CURRENCY:BRL}
-    success-url: ${PAYMENT_SUCCESS_URL:http://localhost:5173/perfil?payment=success}
-    cancel-url: ${PAYMENT_CANCEL_URL:http://localhost:5173/perfil?payment=cancel}
+    success-url: ${BILLING_SUCCESS_URL:${PAYMENT_SUCCESS_URL:http://localhost:5173/perfil?payment=success}}
+    cancel-url: ${BILLING_CANCEL_URL:${PAYMENT_CANCEL_URL:http://localhost:5173/perfil?payment=cancel}}
     notification-url: ${PAYMENT_NOTIFICATION_URL:http://localhost:8080/billing/webhook/mercado_pago}
   customer-portal-url: ${PAYMENT_CUSTOMER_PORTAL_URL:http://localhost:5173/perfil}
