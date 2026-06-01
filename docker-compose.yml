@@ -52,20 +52,10 @@ services:
     environment:
       - APP_UPLOAD_DIR=/app/uploads
       - SPRING_PROFILES_ACTIVE=dev
-
-  python-ai:
-    build: ./ia-service
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./uploads:/app/uploads
-    environment:
-      - UPLOADS_DIR=/app/uploads
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - OLLAMA_MODEL=qwen2.5:14b
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      - backend
-    restart: on-failure
 
 volumes:
   postgres_data:

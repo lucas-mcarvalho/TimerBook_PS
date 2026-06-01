@@ -104,8 +104,8 @@ export default function Leitor() {
     return await getPageText(buildPdfPath(book.dataPath), pageNumber);
   };
 
-  const handleTranslatePageText = async (pageNumber, pageText) => {
-    return await translatePageText(buildPdfPath(book.dataPath), pageNumber, pageText);
+  const handleTranslatePageText = async (pageNumber, targetLanguage) => {
+    return await translatePageText(buildPdfPath(book.dataPath), pageNumber, targetLanguage);
   };
 
   const handleKeyDown = (e) => {
