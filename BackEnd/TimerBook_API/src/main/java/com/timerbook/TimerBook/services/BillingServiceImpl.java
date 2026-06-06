@@ -78,6 +78,9 @@ public class BillingServiceImpl implements BillingService {
     private WebhookEventRepository webhookEventRepository;
 
     @Autowired
+    private EmailService emailService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -195,6 +198,16 @@ public class BillingServiceImpl implements BillingService {
 
             upsertUserSubscription(user, sessionId, "PENDING", null, null);
             logger.info("Mercado Pago checkout criado para userId={} preferenceId={}", user.getId(), sessionId);
+            try {
+                emailService.sendPaymentReceivedEmail(
+                        user.getEmail(),
+                        user.getUsername(),
+                        checkoutAmount,
+                        checkoutCurrency
+                );
+            } catch (Exception ex) {
+                logger.warn("Falha ao enviar e-mail 'pagamento recebido' após criação de checkout para userId={}", user.getId(), ex);
+            }
 
             return new CheckoutSessionResponse(sessionId, checkoutUrl);
         } catch (Exception e) {
@@ -658,6 +671,8 @@ public class BillingServiceImpl implements BillingService {
                 .findByProviderPaymentId(paymentId)
                 .orElseGet(PaymentTransaction::new);
 
+        String previousStatus = transaction.getStatus();
+
         transaction.setUser(user);
         transaction.setProvider(PROVIDER_MERCADO_PAGO);
         transaction.setProviderPaymentId(paymentId);
@@ -673,6 +688,10 @@ public class BillingServiceImpl implements BillingService {
         }
 
         paymentTransactionRepository.save(transaction);
+
+        if (!statusEquals(previousStatus, transaction.getStatus())) {
+            notifyUserAboutPaymentStatus(user, transaction, status);
+        }
 
         if ("approved".equalsIgnoreCase(status)) {
             user.setSubscriptionPlan("PAID");
@@ -698,6 +717,58 @@ public class BillingServiceImpl implements BillingService {
                     LocalDateTime.now()
             );
         }
+    }
+
+    private void notifyUserAboutPaymentStatus(User user, PaymentTransaction transaction, String providerStatus) {
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            logger.warn("Pagamento {} não possui e-mail do usuário para notificação.", transaction.getProviderPaymentId());
+            return;
+        }
+
+        String normalizedStatus = providerStatus == null ? "" : providerStatus.trim().toLowerCase(Locale.ROOT);
+        try {
+            if ("approved".equals(normalizedStatus)) {
+                emailService.sendPaymentApprovedEmail(
+                        user.getEmail(),
+                        user.getUsername(),
+                        transaction.getAmount(),
+                        transaction.getCurrency()
+                );
+                return;
+            }
+
+            if ("pending".equals(normalizedStatus) || "in_process".equals(normalizedStatus) || "authorized".equals(normalizedStatus)) {
+                emailService.sendPaymentReceivedEmail(
+                        user.getEmail(),
+                        user.getUsername(),
+                        transaction.getAmount(),
+                        transaction.getCurrency()
+                );
+                return;
+            }
+
+            if ("cancelled".equals(normalizedStatus) || "rejected".equals(normalizedStatus) || "refunded".equals(normalizedStatus) || "charged_back".equals(normalizedStatus)) {
+                emailService.sendPaymentFailedEmail(
+                        user.getEmail(),
+                        user.getUsername(),
+                        transaction.getAmount(),
+                        transaction.getCurrency(),
+                        "O pagamento não foi concluído. Status atual: " + normalizedStatus
+                );
+            }
+        } catch (Exception ex) {
+            logger.warn("Falha ao enviar notificação por e-mail do pagamento {}.", transaction.getProviderPaymentId(), ex);
+        }
+    }
+
+    private boolean statusEquals(String previousStatus, String currentStatus) {
+        if (previousStatus == null && currentStatus == null) {
+            return true;
+        }
+        if (previousStatus == null || currentStatus == null) {
+            return false;
+        }
+        return previousStatus.equalsIgnoreCase(currentStatus);
     }
 
     private String resolveTransactionType(Long userId) {
