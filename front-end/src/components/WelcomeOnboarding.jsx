@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { updateReadingGoal } from "../features/user/userApi.js";
 import "../styles/WelcomeOnboarding.css";
+import guideSound from "../assets/conquistas/sounds/notificacao.mp3";
 
 const WelcomeOnboarding = ({ onClose }) => {
   const [readingGoal, setReadingGoal] = useState("");
@@ -25,6 +26,28 @@ const WelcomeOnboarding = ({ onClose }) => {
       setIsSaving(false);
     }
   };
+
+  const guideAudioRef = useRef(null);
+  useEffect(() => {
+    try {
+      guideAudioRef.current = new Audio(guideSound);
+      guideAudioRef.current.preload = "auto";
+      guideAudioRef.current.volume = 0.9;
+      guideAudioRef.current.currentTime = 0;
+      guideAudioRef.current.play().catch(() => {});
+    } catch (err) {
+      guideAudioRef.current = null;
+    }
+
+    return () => {
+      try {
+        guideAudioRef.current?.pause();
+        guideAudioRef.current = null;
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, []);
 
   return (
     <div className="onboarding-overlay">

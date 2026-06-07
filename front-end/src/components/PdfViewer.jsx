@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "../styles/PdfViewer.css";
 import "../styles/TextLayer.css";
 import "../styles/AnnotationLayer.css";
+import pageTurnSound from "../assets/conquistas/sounds/folha.mp3";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
@@ -239,6 +240,8 @@ function PdfViewer({
   const [speechSupported, setSpeechSupported] = useState(false);
   const [availableVoices, setAvailableVoices] = useState([]);
   const speechSessionRef = useRef(0);
+  const pageTurnAudioRef = useRef(null);
+  const hasMountedForAudioRef = useRef(false);
 
   const containerRef = useRef(null);
   const viewportRef = useRef(null);
@@ -253,6 +256,33 @@ function PdfViewer({
 
   useEffect(() => {
     onPageChangeRef.current?.(pageNumber);
+  }, [pageNumber]);
+
+  useEffect(() => {
+    if (!pageTurnAudioRef.current) {
+      try {
+        pageTurnAudioRef.current = new Audio(pageTurnSound);
+        pageTurnAudioRef.current.preload = "auto";
+        pageTurnAudioRef.current.volume = 0.8;
+      } catch (err) {
+        // falha ao inicializar o áudio — não bloquear a leitura
+        pageTurnAudioRef.current = null;
+      }
+    }
+
+    if (!hasMountedForAudioRef.current) {
+      hasMountedForAudioRef.current = true;
+      return;
+    }
+
+    try {
+      if (pageTurnAudioRef.current) {
+        pageTurnAudioRef.current.currentTime = 0;
+        pageTurnAudioRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      // silencioso em caso de erro de reprodução
+    }
   }, [pageNumber]);
 
   useEffect(() => {
