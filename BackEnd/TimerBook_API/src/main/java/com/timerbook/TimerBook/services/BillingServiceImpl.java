@@ -696,13 +696,13 @@ public class BillingServiceImpl implements BillingService {
         if ("approved".equalsIgnoreCase(status)) {
             user.setSubscriptionPlan("PAID");
             userRepository.save(user);
-            upsertUserSubscription(
+                upsertUserSubscription(
                     user,
                     payment.path("order").path("id").asText("payment-" + paymentId),
                     "ACTIVE",
-                    LocalDateTime.now().plusDays(30),
+                    LocalDateTime.now().plusMonths(1),
                     null
-            );
+                );
             return;
         }
 
