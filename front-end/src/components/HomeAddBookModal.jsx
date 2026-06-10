@@ -4,7 +4,9 @@ import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
 import {getUser} from "../features/user/userApi.js";
 
-const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
+const FREE_BOOK_LIMIT = 5;
+
+const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0, isPremium = false }) => {
   const { showToast, showAchievementToast } = useToast();
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState(''); 
@@ -65,9 +67,16 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
 
   if (!isOpen) return null;
 
+  const reachedFreeBookLimit = !isPremium && bookCount >= FREE_BOOK_LIMIT;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
+
+    if (reachedFreeBookLimit) {
+      showToast(`O plano gratuito permite até ${FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar mais.`, "error");
+      return;
+    }
 
     setIsLoading(true);
 
@@ -100,7 +109,8 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
       
     } catch (err) {
       console.error("Erro ao cadastrar livro:", err);
-      showToast("Ops! Falha ao conectar com o servidor.", "error");
+      const message = err.response?.data?.message || err.response?.data || "Ops! Falha ao conectar com o servidor.";
+      showToast(message, "error");
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +120,11 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">Adição de novo livro</h2>
+        {reachedFreeBookLimit && (
+          <div className="modal-limit-warning">
+            O plano gratuito permite até {FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar livros ilimitados.
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="modal-body-flex">
             <div className="modal-inputs-col">
@@ -121,8 +136,8 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
                 <label>Descrição</label>
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} placeholder="Digite um breve resumo do livro..." />
               </div>
-              <button type="submit" className="btn-concluir" disabled={isLoading}>
-                {isLoading ? 'Salvando...' : 'Concluir'}
+              <button type="submit" className="btn-concluir" disabled={isLoading || reachedFreeBookLimit}>
+                {isLoading ? 'Salvando...' : reachedFreeBookLimit ? 'Limite atingido' : 'Concluir'}
               </button>
             </div>
             

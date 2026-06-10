@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { registerBook } from "../features/books/booksApi.js";
+import { useEffect, useState } from "react";
+import { getBookByUserId, registerBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
+import { getMySubscription } from "../features/payments/paymentApi.js";
 import { useToast } from "../components/ToastContext.js";
+
+const FREE_BOOK_LIMIT = 5;
 
 export default function CadastrarLivro() {
   const { showAchievementToast } = useToast();
@@ -16,6 +19,27 @@ export default function CadastrarLivro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [bookCount, setBookCount] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    async function loadPlanAndBooks() {
+      try {
+        const [userResponse, subscription] = await Promise.all([
+          getUser(),
+          getMySubscription(),
+        ]);
+        const user = userResponse.data || userResponse;
+        const books = await getBookByUserId(user.id);
+        setBookCount(books.length);
+        setIsPremium(subscription?.status === "ACTIVE" || user?.subscriptionPlan === "PAID");
+      } catch (err) {
+        console.error("Erro ao carregar plano no cadastro de livro:", err);
+      }
+    }
+
+    loadPlanAndBooks();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,6 +65,11 @@ export default function CadastrarLivro() {
     setError(null);
     setSuccess(false);
     try {
+      if (!isPremium && bookCount >= FREE_BOOK_LIMIT) {
+        setError(`O plano gratuito permite até ${FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar mais livros.`);
+        return;
+      }
+
       const response = await getUser();
       const userId = response.data?.id || response.id;
       const bookData = {
@@ -58,6 +87,7 @@ export default function CadastrarLivro() {
         novas.forEach((conquista) => showAchievementToast(conquista));
       }
       setSuccess(true);
+      setBookCount((value) => value + 1);
       setFormData({
         name: ""
       });
@@ -116,8 +146,8 @@ export default function CadastrarLivro() {
           {pdfFile && <p>✓ {pdfFile.name}</p>}
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Cadastrando..." : "Cadastrar Livro"}
+        <button type="submit" disabled={loading || (!isPremium && bookCount >= FREE_BOOK_LIMIT)}>
+          {loading ? "Cadastrando..." : !isPremium && bookCount >= FREE_BOOK_LIMIT ? "Limite atingido" : "Cadastrar Livro"}
         </button>
 
       </form>

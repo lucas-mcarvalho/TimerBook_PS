@@ -189,6 +189,7 @@ function PdfViewer({
   onSearchRequest,
   onTextPageRequest,
   onTranslatePageRequest,
+  premiumAiEnabled = false,
 }) {
   const preferencesKey = `timerbook-pdf-preferences-${storageKey}`;
   const bookmarksKey = `timerbook-pdf-bookmarks-${storageKey}`;
@@ -521,7 +522,7 @@ function PdfViewer({
   // APLICAÇÃO DA TRADUÇÃO
   // =====================================
   const handleTranslatePageText = async () => {
-    if (!pageText.trim()) return;
+    if (!premiumAiEnabled || !pageText.trim()) return;
 
     const cacheKey = `${pageNumber}:${translationLanguage}`;
 
@@ -802,45 +803,47 @@ function PdfViewer({
           </button>
         </div>
 
-        <form
-          className="pdf-toolbar-group pdf-search"
-          aria-label="Busca no PDF"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSearch();
-          }}
-        >
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Buscar"
-            aria-label="Buscar no PDF"
-          />
-          <button type="submit" disabled={searching || !onSearchRequest}>
-            {searching ? "..." : "Ir"}
-          </button>
-          <button
-            type="button"
-            onClick={() => goToSearchResult(activeSearchIndex - 1)}
-            disabled={!searchResults.length}
-            aria-label="Resultado anterior"
+        {premiumAiEnabled && (
+          <form
+            className="pdf-toolbar-group pdf-search"
+            aria-label="Busca no PDF"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSearch();
+            }}
           >
-            {"<"}
-          </button>
-          <button
-            type="button"
-            onClick={() => goToSearchResult(activeSearchIndex + 1)}
-            disabled={!searchResults.length}
-            aria-label="Próximo resultado"
-          >
-            {">"}
-          </button>
-          <span className="pdf-search-count" aria-live="polite">
-            {searchResults.length ? `${activeSearchIndex + 1}/${searchResults.length}` : "0"}
-          </span>
-        </form>
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar"
+              aria-label="Buscar no PDF"
+            />
+            <button type="submit" disabled={searching || !onSearchRequest}>
+              {searching ? "..." : "Ir"}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSearchResult(activeSearchIndex - 1)}
+              disabled={!searchResults.length}
+              aria-label="Resultado anterior"
+            >
+              {"<"}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSearchResult(activeSearchIndex + 1)}
+              disabled={!searchResults.length}
+              aria-label="Próximo resultado"
+            >
+              {">"}
+            </button>
+            <span className="pdf-search-count" aria-live="polite">
+              {searchResults.length ? `${activeSearchIndex + 1}/${searchResults.length}` : "0"}
+            </span>
+          </form>
+        )}
 
         <div className="pdf-toolbar-group" aria-label="Zoom">
           <button type="button" onClick={() => setZoom((value) => Math.max(0.7, value - 0.1))} aria-label="Diminuir zoom">
@@ -894,7 +897,7 @@ function PdfViewer({
         </div>
       </div>
 
-      {(bookmarks.length > 0 || activeResult) && (
+      {(bookmarks.length > 0 || (premiumAiEnabled && activeResult)) && (
         <div className="pdf-secondary-bar">
           {bookmarks.length > 0 && (
             <div className="pdf-bookmarks" aria-label="Marcadores">
@@ -906,7 +909,7 @@ function PdfViewer({
               ))}
             </div>
           )}
-          {activeResult && (
+          {premiumAiEnabled && activeResult && (
             <button type="button" className="pdf-search-excerpt" onClick={() => goToPage(activeResult.page)}>
               p. {activeResult.page}: {activeResult.excerpt}
             </button>
@@ -953,38 +956,42 @@ function PdfViewer({
                 {speechRate}x
               </button>
 
-              <select
-                value={translationLanguage}
-                onChange={(event) => setTranslationLanguage(event.target.value)}
-                disabled={translationLoading}
-                aria-label="Idioma da tradução"
-                title="Idioma da tradução"
-              >
-                {TRANSLATION_LANGUAGES.map((language) => (
-                  <option key={language.code} value={language.code}>
-                    {language.label}
-                  </option>
-                ))}
-              </select>
-              
-              <button
-                type="button"
-                className={isTranslationActive ? "active" : ""}
-                onClick={handleTranslatePageText}
-                disabled={!pageText.trim() || translationLoading}
-                aria-pressed={isTranslationActive}
-                title={`Traduzir para ${translationLanguageLabel}`}
-              >
-                {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar" : "Traduzir"}
-              </button>
-              {isTranslationActive && (
-                <button
-                  type="button"
-                  onClick={() => setIsTranslationActive(false)}
-                  disabled={translationLoading}
-                >
-                  Original
-                </button>
+              {premiumAiEnabled && (
+                <>
+                  <select
+                    value={translationLanguage}
+                    onChange={(event) => setTranslationLanguage(event.target.value)}
+                    disabled={translationLoading}
+                    aria-label="Idioma da tradução"
+                    title="Idioma da tradução"
+                  >
+                    {TRANSLATION_LANGUAGES.map((language) => (
+                      <option key={language.code} value={language.code}>
+                        {language.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className={isTranslationActive ? "active" : ""}
+                    onClick={handleTranslatePageText}
+                    disabled={!pageText.trim() || translationLoading}
+                    aria-pressed={isTranslationActive}
+                    title={`Traduzir para ${translationLanguageLabel}`}
+                  >
+                    {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar" : "Traduzir"}
+                  </button>
+                  {isTranslationActive && (
+                    <button
+                      type="button"
+                      onClick={() => setIsTranslationActive(false)}
+                      disabled={translationLoading}
+                    >
+                      Original
+                    </button>
+                  )}
+                </>
               )}
               
               <button

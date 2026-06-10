@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { deleteBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
 import { getBookByUserId } from "../features/books/booksApi.js";
+import { getMySubscription } from "../features/payments/paymentApi.js";
 import { useNavigate } from "react-router-dom";
 import { endReading, getReadingInProgressByBookId, startBookReadingSession } from "../features/books/readSessions.js";
 
@@ -12,6 +13,8 @@ import '../styles/HomeDark.css';
 import PencilIcon from '../assets/Home/PencilIcon.svg';
 import Sidebar from '../components/Sidebar';
 import HomeAddBookModal from '../components/HomeAddBookModal';
+
+const FREE_BOOK_LIMIT = 5;
 
 function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
   return (
@@ -108,6 +111,8 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
 
 function UserLibrary() {
   const [books, setBooks] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -153,8 +158,13 @@ function UserLibrary() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getUser();
+      const [response, subscriptionData] = await Promise.all([
+        getUser(),
+        getMySubscription(),
+      ]);
       const userId = response.data.id;
+      setUserInfo(response.data || response);
+      setSubscription(subscriptionData);
       const booksData = await getBookByUserId(userId);
       setBooks(booksData);
     } catch (err) {
@@ -197,6 +207,19 @@ function UserLibrary() {
     }
   };
 
+  const isPremium = subscription?.status === "ACTIVE" || userInfo?.subscriptionPlan === "PAID";
+  const reachedFreeBookLimit = !isPremium && books.length >= FREE_BOOK_LIMIT;
+
+  const handleOpenAddBookModal = () => {
+    if (reachedFreeBookLimit) {
+      setError(`O plano gratuito permite até ${FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar mais livros.`);
+      return;
+    }
+
+    setError(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
       
@@ -217,7 +240,7 @@ function UserLibrary() {
         ) : (
           <div className="books-grid">
             {books.length === 0 ? (
-              <button className="book-card add-new-card" onClick={() => setIsModalOpen(true)} style={{border: 'none', background: 'transparent'}}>
+              <button className="book-card add-new-card" onClick={handleOpenAddBookModal} style={{border: 'none', background: 'transparent'}}>
                 <div className="book-cover-wrapper"><div className="book-cover-placeholder">+</div></div>
                 <div className="book-info"><h3 className="book-title">Adicionar novo livro</h3></div>
               </button>
@@ -237,8 +260,8 @@ function UserLibrary() {
         )}
         
         <div className="bottom-actions">
-          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
-            Adicionar Livro
+          <button className="btn-add-book" onClick={handleOpenAddBookModal}>
+            {reachedFreeBookLimit ? "Limite atingido" : "Adicionar Livro"}
           </button>
           <button className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`} onClick={() => setIsEditing(!isEditing)}>
             <img src={PencilIcon} alt="Lápis" className="nav-icon" />
@@ -250,6 +273,8 @@ function UserLibrary() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onAddBook={handleAddNewBook} 
+        bookCount={books.length}
+        isPremium={isPremium}
       />
       
     </div>
