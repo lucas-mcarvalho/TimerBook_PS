@@ -4,6 +4,7 @@ import { useToast } from "../components/ToastContext.js";
 import { getUser, deleteUser, updateReadingGoal } from "../features/user/userApi.js";
 import { getGeneralStats } from "../features/statistics/reading_stats.js";
 import { getBookByUserId } from "../features/books/booksApi.js";
+import { getMySubscription } from "../features/payments/paymentApi.js";
 import Sidebar from "../components/Sidebar";
 import EditProfileModal from "../components/EditProfileModal";
 import AchievementsList from "../components/AchievementsList";
@@ -21,6 +22,27 @@ function formatSeconds(totalSeconds) {
   if (h > 0) return { value: h, unit: `h ${m}min` };
   if (m > 0) return { value: m, unit: `min ${s}s` };
   return { value: s, unit: "s" };
+}
+
+function formatSubscriptionStatus(status) {
+  const labels = {
+    ACTIVE: "Premium ativo",
+    FREE: "Gratuito",
+    PENDING: "Pagamento pendente",
+    CANCELLED: "Cancelado",
+    PAST_DUE: "Pagamento atrasado",
+  };
+
+  return labels[status] || status || "Gratuito";
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return null;
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toLocaleDateString("pt-BR");
 }
 
 /* ── Custom tooltip for the donut ── */
@@ -257,6 +279,7 @@ export default function PerfilUsuario() {
   });
 
   const [userInfo, setUserInfo] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [books, setBooks] = useState([]);
   const [generalStats, setGeneralStats] = useState(null);
   const [fetching, setFetching] = useState(true);
@@ -277,12 +300,14 @@ export default function PerfilUsuario() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [statsResponse, userData] = await Promise.all([
+        const [statsResponse, userData, subscriptionData] = await Promise.all([
           getGeneralStats(),
           getUser(),
+          getMySubscription(),
         ]);
 
         setGeneralStats(statsResponse?.data || statsResponse);
+        setSubscription(subscriptionData);
 
         const info = userData.data || userData;
         setUserInfo(info);
@@ -360,6 +385,9 @@ export default function PerfilUsuario() {
 
   const profilePhotoPath = getProfilePhotoPath(userInfo);
   const profilePhotoUrl = resolveProfilePhotoUrl(profilePhotoPath, { cacheBust: true });
+  const subscriptionStatus = subscription?.status || userInfo?.subscriptionPlan || "FREE";
+  const subscriptionLabel = formatSubscriptionStatus(subscriptionStatus);
+  const subscriptionEndDate = formatDate(subscription?.currentPeriodEnd);
 
   return (
     <div className={`dashboard-container ${isDarkMode ? "dark-theme" : ""}`}>
@@ -395,6 +423,10 @@ export default function PerfilUsuario() {
                       <h2>Informações da Conta</h2>
                       <p><strong>Nome de Usuário:</strong> {userInfo.username}</p>
                       <p><strong>Email:</strong> {userInfo.email}</p>
+                      <p><strong>Plano atual:</strong> {subscriptionLabel}</p>
+                      {subscriptionEndDate && (
+                        <p><strong>Válido até:</strong> {subscriptionEndDate}</p>
+                      )}
                       <p><strong>Meta diária:</strong> {userInfo.dailyReadingGoalMinutes || 10} minutos</p>
                     </div>
                   </div>
