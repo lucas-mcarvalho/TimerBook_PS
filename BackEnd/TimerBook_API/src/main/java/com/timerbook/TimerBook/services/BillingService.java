@@ -18,4 +18,6 @@ public interface BillingService {
     SubscriptionResponse getMySubscription(String authHeader);
 
     String createCustomerPortal(String authHeader);
+
+    void resendLatestReceipt(String authHeader);
 }

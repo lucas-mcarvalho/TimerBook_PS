@@ -78,4 +78,14 @@ public interface BillingControllerDocs {
     ResponseEntity<CustomerPortalResponse> createCustomerPortal(
             @RequestHeader("Authorization") String authHeader
     );
+
+    @Operation(summary = "Reenvia o último comprovante", description = "Envia novamente por e-mail o comprovante do último pagamento aprovado do usuário autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Comprovante reenviado com sucesso", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Nenhum pagamento aprovado encontrado", content = @Content)
+    })
+    ResponseEntity<Void> resendLatestReceipt(
+            @RequestHeader("Authorization") String authHeader
+    );
 }

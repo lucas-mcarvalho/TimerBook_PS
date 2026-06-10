@@ -34,3 +34,13 @@ export async function createCustomerPortal() {
     throw error;
   }
 }
+
+export async function resendPaymentReceipt() {
+  try {
+    const response = await api.post("/billing/receipt/resend");
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao reenviar comprovante:", error.response?.data || error.message);
+    throw error;
+  }
+}

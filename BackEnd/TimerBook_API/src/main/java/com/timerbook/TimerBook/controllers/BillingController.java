@@ -80,6 +80,14 @@ public class BillingController implements BillingControllerDocs {
         return ResponseEntity.ok(new CustomerPortalResponse(url));
     }
 
+    @PostMapping("/receipt/resend")
+    public ResponseEntity<Void> resendLatestReceipt(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        billingService.resendLatestReceipt(authHeader);
+        return ResponseEntity.noContent().build();
+    }
+
     private String getHeaderIgnoreCase(Map<String, String> headers, String name) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(name)) {

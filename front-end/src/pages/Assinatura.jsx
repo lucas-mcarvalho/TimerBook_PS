@@ -6,6 +6,7 @@ import {
   createCheckoutSession,
   createCustomerPortal,
   getMySubscription,
+  resendPaymentReceipt,
 } from "../features/payments/paymentApi.js";
 import { getUser } from "../features/user/userApi.js";
 
@@ -26,22 +27,12 @@ const plans = [
   {
     id: "monthly",
     name: "Premium mensal",
-    price: "R$ 14,90",
+    price: "R$ 19,90",
     period: "por mês",
     description: "Para acompanhar evolução, estatísticas e recursos avançados.",
     badge: "Mais flexível",
     features: ["Livros ilimitados", "Estatísticas completas", "Relatórios de progresso", "Recursos de IA"],
     actionLabel: "Assinar mensal",
-  },
-  {
-    id: "annual",
-    name: "Premium anual",
-    price: "R$ 129,90",
-    period: "por ano",
-    description: "Acesso premium por 12 meses com melhor custo-benefício.",
-    badge: "Melhor valor",
-    features: ["Tudo do mensal", "Economia no ano", "Prioridade em novidades", "Histórico avançado"],
-    actionLabel: "Assinar anual",
   },
 ];
 
@@ -69,6 +60,7 @@ export default function Assinatura() {
   const [loading, setLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [resendingReceipt, setResendingReceipt] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("monthly");
   const [statusMessage, setStatusMessage] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -187,6 +179,22 @@ export default function Assinatura() {
     }
   };
 
+  const handleResendReceipt = async () => {
+    setResendingReceipt(true);
+
+    try {
+      await resendPaymentReceipt();
+      showToast("Comprovante reenviado para o e-mail da sua conta.", "success");
+    } catch (error) {
+      const message = error.response?.status === 404
+        ? "Nenhum pagamento aprovado foi encontrado para reenviar."
+        : "Não foi possível reenviar o comprovante agora.";
+      showToast(message, "error");
+    } finally {
+      setResendingReceipt(false);
+    }
+  };
+
   return (
     <div className={`dashboard-container ${isDarkMode ? "dark-theme" : ""}`}>
       <Sidebar
@@ -213,14 +221,24 @@ export default function Assinatura() {
             {subscription?.provider && <small>Provider: {subscription.provider}</small>}
             {renewalDate && <small>Renova em {new Date(renewalDate).toLocaleDateString("pt-BR")}</small>}
             {subscription?.providerSubscriptionId && (
-              <button
-                type="button"
-                className="subscription-portal-button"
-                onClick={handleOpenPortal}
-                disabled={openingPortal}
-              >
-                {openingPortal ? "Abrindo..." : "Gerenciar"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="subscription-portal-button"
+                  onClick={handleOpenPortal}
+                  disabled={openingPortal}
+                >
+                  {openingPortal ? "Abrindo..." : "Gerenciar"}
+                </button>
+                <button
+                  type="button"
+                  className="subscription-portal-button"
+                  onClick={handleResendReceipt}
+                  disabled={resendingReceipt}
+                >
+                  {resendingReceipt ? "Reenviando..." : "Reenviar comprovante"}
+                </button>
+              </>
             )}
           </div>
         </div>

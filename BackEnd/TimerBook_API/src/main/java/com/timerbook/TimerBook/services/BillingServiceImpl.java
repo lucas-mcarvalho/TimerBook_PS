@@ -641,6 +641,27 @@ public class BillingServiceImpl implements BillingService {
         return customerPortalUrl;
     }
 
+    @Override
+    public void resendLatestReceipt(String authHeader) {
+        User user = userService.getMe(authHeader);
+        PaymentTransaction transaction = paymentTransactionRepository
+                .findTopByUser_IdAndStatusOrderByPaidAtDescCreatedAtDesc(user.getId(), "SUCCEEDED")
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Nenhum pagamento aprovado encontrado para reenviar comprovante."
+                ));
+
+        emailService.sendPaymentApprovedEmail(
+                user.getEmail(),
+                user.getUsername(),
+                transaction.getAmount(),
+                transaction.getCurrency(),
+                transaction.getProviderPaymentId(),
+                transaction.getProvider(),
+                transaction.getPaidAt()
+        );
+    }
+
     private JsonNode fetchMercadoPagoPayment(String paymentId) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(mercadoPagoAccessToken);
@@ -732,7 +753,10 @@ public class BillingServiceImpl implements BillingService {
                         user.getEmail(),
                         user.getUsername(),
                         transaction.getAmount(),
-                        transaction.getCurrency()
+                        transaction.getCurrency(),
+                        transaction.getProviderPaymentId(),
+                        transaction.getProvider(),
+                        transaction.getPaidAt()
                 );
                 return;
             }
