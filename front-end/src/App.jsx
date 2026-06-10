@@ -5,6 +5,7 @@ import Cadastrar_Livro from "./pages/Cadastrar_Livro";
 import UserLibrary from "./pages/UserLibrary";
 import ReadingStatsPage from "./pages/ReadingStatsPage";
 import Estatisticas from "./pages/Estatisticas";
+import Assinatura from "./pages/Assinatura";
 import Login from "./pages/Login";
 import CadastrarUsuario from "./pages/CadastrarUsuario";
 import EsqueceuSenha from "./pages/EsqueceuSenha";
@@ -28,6 +29,7 @@ function App() {
           <Route path="/meus-livros" element={<ProtectedRoute><UserLibrary /></ProtectedRoute>} />
           <Route path="/minhas-estatisticas" element={<ProtectedRoute><ReadingStatsPage /></ProtectedRoute>} />
           <Route path="/estatisticas/:readingId" element={<ProtectedRoute><Estatisticas /></ProtectedRoute>} />
+          <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
           <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
