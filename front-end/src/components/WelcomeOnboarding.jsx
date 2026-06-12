@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { updateReadingGoal } from "../features/user/userApi.js";
+import { ALLOWED_READING_GOALS, READING_GOAL_ERROR_MESSAGE } from "../utils/readingGoals.js";
 import "../styles/WelcomeOnboarding.css";
 import guideSound from "../assets/conquistas/sounds/notificacao.mp3";
 
@@ -11,13 +12,17 @@ const WelcomeOnboarding = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!readingGoal || isSaving) return;
+    const numericGoal = Number(readingGoal);
+    if (!ALLOWED_READING_GOALS.includes(numericGoal) || isSaving) {
+      setError(READING_GOAL_ERROR_MESSAGE);
+      return;
+    }
 
     setIsSaving(true);
     setError("");
 
     try {
-      await updateReadingGoal(readingGoal);
+      await updateReadingGoal(numericGoal);
       onClose();
     } catch (err) {
       console.error("Erro ao salvar meta de leitura:", err);
@@ -66,7 +71,7 @@ const WelcomeOnboarding = ({ onClose }) => {
 
         <form onSubmit={handleSubmit} className="onboarding-form">
           <div className="goal-options">
-            {[10, 20, 30].map((minutes) => (
+            {ALLOWED_READING_GOALS.map((minutes) => (
               <button
                 key={minutes}
                 type="button"

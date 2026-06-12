@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { getBookByUserId, registerBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
-import { getMySubscription } from "../features/payments/paymentApi.js";
 import { useToast } from "../components/ToastContext.js";
-
-const FREE_BOOK_LIMIT = 5;
+import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from "../utils/bookLimits.js";
 
 export default function CadastrarLivro() {
   const { showAchievementToast } = useToast();
@@ -20,25 +18,20 @@ export default function CadastrarLivro() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [bookCount, setBookCount] = useState(0);
-  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
-    async function loadPlanAndBooks() {
+    async function loadBooks() {
       try {
-        const [userResponse, subscription] = await Promise.all([
-          getUser(),
-          getMySubscription(),
-        ]);
+        const userResponse = await getUser();
         const user = userResponse.data || userResponse;
         const books = await getBookByUserId(user.id);
         setBookCount(books.length);
-        setIsPremium(subscription?.status === "ACTIVE" || user?.subscriptionPlan === "PAID");
       } catch (err) {
-        console.error("Erro ao carregar plano no cadastro de livro:", err);
+        console.error("Erro ao carregar livros no cadastro de livro:", err);
       }
     }
 
-    loadPlanAndBooks();
+    loadBooks();
   }, []);
 
   const handleInputChange = (e) => {
@@ -65,8 +58,8 @@ export default function CadastrarLivro() {
     setError(null);
     setSuccess(false);
     try {
-      if (!isPremium && bookCount >= FREE_BOOK_LIMIT) {
-        setError(`O plano gratuito permite até ${FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar mais livros.`);
+      if (bookCount >= MAX_BOOKS) {
+        setError(BOOK_LIMIT_MESSAGE);
         return;
       }
 
@@ -146,8 +139,8 @@ export default function CadastrarLivro() {
           {pdfFile && <p>✓ {pdfFile.name}</p>}
         </div>
 
-        <button type="submit" disabled={loading || (!isPremium && bookCount >= FREE_BOOK_LIMIT)}>
-          {loading ? "Cadastrando..." : !isPremium && bookCount >= FREE_BOOK_LIMIT ? "Limite atingido" : "Cadastrar Livro"}
+        <button type="submit" disabled={loading || bookCount >= MAX_BOOKS}>
+          {loading ? "Cadastrando..." : bookCount >= MAX_BOOKS ? "Limite atingido" : "Cadastrar Livro"}
         </button>
 
       </form>

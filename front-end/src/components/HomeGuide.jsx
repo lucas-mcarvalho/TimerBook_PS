@@ -32,7 +32,7 @@ const guideSteps = [
   {
     tag: "META",
     title: "Meta de leitura",
-    text: "No Perfil, use Alterar Meta de Leitura para mudar seus minutos diários.",
+    text: "No Perfil, use Alterar Meta de Leitura para escolher uma das metas disponiveis.",
     target: "guide-menu-profile",
     actionLabel: "Ir para Perfil",
     actionTo: "/perfil",

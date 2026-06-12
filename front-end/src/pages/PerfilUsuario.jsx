@@ -10,6 +10,7 @@ import EditProfileModal from "../components/EditProfileModal";
 import AchievementsList from "../components/AchievementsList";
 import ProfileIcon from "../assets/Home/ProfileIcon.svg";
 import { getProfilePhotoPath, resolveProfilePhotoUrl } from "../utils/profileImage.js";
+import { ALLOWED_READING_GOALS, READING_GOAL_ERROR_MESSAGE } from "../utils/readingGoals.js";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 import "../styles/PerfilUsuario.css";
@@ -76,10 +77,22 @@ function DonutCenter({ cx, cy, totalSeconds, sessionsCount }) {
 function GoalDonutChart({ stats, goalMinutes, isDarkMode }) {
   if (!stats) return null;
 
+  const numericGoalMinutes = Number(goalMinutes) || 0;
+  if (numericGoalMinutes <= 0) {
+    return (
+      <div className={`donut-card ${isDarkMode ? "dark" : ""}`}>
+        <p className="stats-panel-title">Meta de leitura</p>
+        <div className="donut-empty-state">
+          Defina uma meta diária para acompanhar seu progresso.
+        </div>
+      </div>
+    );
+  }
+
   const totalSeconds = stats.totalSeconds || 0;
   const sessionsCount = stats.sessionsCount || 0;
   const avgSeconds = Math.round(stats.averageSecondsPerSession || 0);
-  const goalSeconds = (goalMinutes || 10) * 60;
+  const goalSeconds = numericGoalMinutes * 60;
 
   // Slices: each session represented proportionally by its avg duration
   // We split total time into: "above avg" sessions vs "below avg" sessions
@@ -149,7 +162,7 @@ function GoalDonutChart({ stats, goalMinutes, isDarkMode }) {
       <div className="donut-meta-row">
         <div className="donut-meta-item">
           <span className="donut-meta-label">Meta diária</span>
-          <span className="donut-meta-value">{goalMinutes || 10} min</span>
+          <span className="donut-meta-value">{numericGoalMinutes} min</span>
         </div>
         <div className="donut-meta-item">
           <span className="donut-meta-label">Média/sessão</span>
@@ -286,10 +299,11 @@ export default function PerfilUsuario() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
-  const [selectedReadingGoal, setSelectedReadingGoal] = useState(10);
+  const [selectedReadingGoal, setSelectedReadingGoal] = useState("");
   const [savingReadingGoal, setSavingReadingGoal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState(null);
+  const canSaveReadingGoal = ALLOWED_READING_GOALS.includes(Number(selectedReadingGoal));
 
   const navigate = useNavigate();
 
@@ -311,7 +325,7 @@ export default function PerfilUsuario() {
 
         const info = userData.data || userData;
         setUserInfo(info);
-        setSelectedReadingGoal(info.dailyReadingGoalMinutes || 10);
+        setSelectedReadingGoal(info.dailyReadingGoalMinutes ?? "");
 
         const booksData = await getBookByUserId(info.id);
         setBooks(booksData);
@@ -333,16 +347,21 @@ export default function PerfilUsuario() {
   };
 
   const handleOpenGoalModal = () => {
-    setSelectedReadingGoal(userInfo?.dailyReadingGoalMinutes || 10);
+    setSelectedReadingGoal(userInfo?.dailyReadingGoalMinutes ?? "");
     setIsGoalModalOpen(true);
   };
 
   const handleUpdateReadingGoal = async () => {
-    if (!selectedReadingGoal || savingReadingGoal) return;
+    const numericGoal = Number(selectedReadingGoal);
+    if (!ALLOWED_READING_GOALS.includes(numericGoal) || savingReadingGoal) {
+      showToast(READING_GOAL_ERROR_MESSAGE, "error");
+      return;
+    }
+
     setSavingReadingGoal(true);
     try {
-      const response = await updateReadingGoal(selectedReadingGoal);
-      const dailyReadingGoalMinutes = response?.dailyReadingGoalMinutes || selectedReadingGoal;
+      const response = await updateReadingGoal(numericGoal);
+      const dailyReadingGoalMinutes = response?.dailyReadingGoalMinutes ?? response?.goal ?? numericGoal;
       setUserInfo((prev) => ({ ...prev, dailyReadingGoalMinutes }));
       setSelectedReadingGoal(dailyReadingGoalMinutes);
       setIsGoalModalOpen(false);
@@ -427,7 +446,7 @@ export default function PerfilUsuario() {
                       {subscriptionEndDate && (
                         <p><strong>Válido até:</strong> {subscriptionEndDate}</p>
                       )}
-                      <p><strong>Meta diária:</strong> {userInfo.dailyReadingGoalMinutes || 10} minutos</p>
+                      <p><strong>Meta diária:</strong> {userInfo.dailyReadingGoalMinutes ? `${userInfo.dailyReadingGoalMinutes} minutos` : "Não definida"}</p>
                     </div>
                   </div>
 
@@ -457,7 +476,7 @@ export default function PerfilUsuario() {
             <StatsPanel stats={generalStats} isDarkMode={isDarkMode} />
             <GoalDonutChart
               stats={generalStats}
-              goalMinutes={userInfo?.dailyReadingGoalMinutes || 10}
+              goalMinutes={userInfo?.dailyReadingGoalMinutes}
               isDarkMode={isDarkMode}
             />
           </div>
@@ -479,7 +498,7 @@ export default function PerfilUsuario() {
             <h3>Meta diária de leitura</h3>
             <p>Escolha quantos minutos você quer ler por dia.</p>
             <div className="reading-goal-options">
-              {[10, 20, 30].map((minutes) => (
+              {ALLOWED_READING_GOALS.map((minutes) => (
                 <button
                   key={minutes}
                   type="button"
@@ -496,7 +515,7 @@ export default function PerfilUsuario() {
               <button className="btn-secondary" onClick={() => setIsGoalModalOpen(false)} disabled={savingReadingGoal}>
                 Cancelar
               </button>
-              <button className="btn-save-goal" onClick={handleUpdateReadingGoal} disabled={savingReadingGoal}>
+              <button className="btn-save-goal" onClick={handleUpdateReadingGoal} disabled={savingReadingGoal || !canSaveReadingGoal}>
                 {savingReadingGoal ? "Salvando..." : "Salvar Meta"}
               </button>
             </div>

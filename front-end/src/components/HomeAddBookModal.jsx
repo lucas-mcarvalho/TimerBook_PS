@@ -3,10 +3,9 @@ import { useToast } from './ToastContext.js';
 import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
 import {getUser} from "../features/user/userApi.js";
+import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from '../utils/bookLimits.js';
 
-const FREE_BOOK_LIMIT = 5;
-
-const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0, isPremium = false }) => {
+const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0 }) => {
   const { showToast, showAchievementToast } = useToast();
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState(''); 
@@ -67,14 +66,14 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0, isPremium
 
   if (!isOpen) return null;
 
-  const reachedFreeBookLimit = !isPremium && bookCount >= FREE_BOOK_LIMIT;
+  const reachedBookLimit = bookCount >= MAX_BOOKS;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
 
-    if (reachedFreeBookLimit) {
-      showToast(`O plano gratuito permite até ${FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar mais.`, "error");
+    if (reachedBookLimit) {
+      showToast(BOOK_LIMIT_MESSAGE, "error");
       return;
     }
 
@@ -120,9 +119,9 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0, isPremium
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">Adição de novo livro</h2>
-        {reachedFreeBookLimit && (
+        {reachedBookLimit && (
           <div className="modal-limit-warning">
-            O plano gratuito permite até {FREE_BOOK_LIMIT} livros. Assine o Premium para cadastrar livros ilimitados.
+            {BOOK_LIMIT_MESSAGE}
           </div>
         )}
         <form onSubmit={handleSubmit}>
@@ -136,8 +135,8 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0, isPremium
                 <label>Descrição</label>
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} placeholder="Digite um breve resumo do livro..." />
               </div>
-              <button type="submit" className="btn-concluir" disabled={isLoading || reachedFreeBookLimit}>
-                {isLoading ? 'Salvando...' : reachedFreeBookLimit ? 'Limite atingido' : 'Concluir'}
+              <button type="submit" className="btn-concluir" disabled={isLoading || reachedBookLimit}>
+                {isLoading ? 'Salvando...' : reachedBookLimit ? 'Limite atingido' : 'Concluir'}
               </button>
             </div>
             
