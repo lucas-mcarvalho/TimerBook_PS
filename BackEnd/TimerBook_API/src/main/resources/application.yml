@@ -39,6 +39,7 @@ app:
   frontend:
     reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/redefinir-senha}
     verify-email-url: ${FRONTEND_VERIFY_EMAIL_URL:http://localhost:5173/verify-email}
+    oauth2-redirect-url: ${FRONTEND_OAUTH2_REDIRECT_URL:http://localhost:5173/oauth2/redirect}
   storage:
     type: ${APP_STORAGE_TYPE:local}
   aws:

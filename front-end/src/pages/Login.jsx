@@ -10,6 +10,8 @@ import "../styles/Login.css";
 import "../styles/LoginLight.css"; 
 import '../styles/HomeDark.css'; 
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
 export default function Login() {
   const { showAchievementToast } = useToast();
   const navigate = useNavigate();
@@ -56,7 +58,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
   };
 
   const handleSubmit = async (e) => {

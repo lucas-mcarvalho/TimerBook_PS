@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +40,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Autowired
     private AchievementService achievementService;
+
+    @Value("${app.frontend.oauth2-redirect-url:http://localhost:5173/oauth2/redirect}")
+    private String frontendOAuth2RedirectUrl = "http://localhost:5173/oauth2/redirect";
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -69,8 +74,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
-        String frontendUrl = "http://localhost:5173/oauth2/redirect";
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl)
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendOAuth2RedirectUrl)
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
