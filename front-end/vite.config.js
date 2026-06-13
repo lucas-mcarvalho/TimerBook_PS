@@ -9,6 +9,7 @@ export default defineConfig({
     allowedHosts: [
       'api.timerbook.com.br',
       'timerbook.com.br',
+      '13.218.62.152',
       '44.202.167.42'
     ]
   }

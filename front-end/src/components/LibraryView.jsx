@@ -1,5 +1,6 @@
 import React from 'react';
 import PencilIcon from '../assets/Home/PencilIcon.svg';
+import { buildApiUrl } from '../features/apiConfig.js';
 
 const LibraryView = ({ books, isEditing, setIsEditing, onRead, onDelete, onStats, onOpenModal }) => {
   return (
@@ -34,7 +35,7 @@ const LibraryView = ({ books, isEditing, setIsEditing, onRead, onDelete, onStats
               <div className="book-cover-wrapper">
                 {(book.cover || book.coverUrl) && (
                   <img 
-                    src={book.cover?.startsWith('blob:') ? book.cover : `http://localhost:8080/${book.coverUrl}`}
+                    src={book.cover?.startsWith('blob:') ? book.cover : buildApiUrl(book.coverUrl)}
                     alt={`Capa de ${book.name}`}
                     className="book-cover-image"
                     onError={(e) => { e.target.style.display = 'none'; }}

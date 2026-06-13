@@ -24,7 +24,7 @@ public class FileController {
         this.fileStorageService = fileStorageService;
     }
 
-    @GetMapping("/uploads/**")
+    @GetMapping({"/uploads/**", "/api/uploads/**"})
     public ResponseEntity<byte[]> getFile(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         int prefixIndex = requestUri.indexOf(UPLOADS_PREFIX);

@@ -13,6 +13,7 @@ import PencilIcon from '../assets/Home/PencilIcon.svg';
 import Sidebar from '../components/Sidebar';
 import HomeAddBookModal from '../components/HomeAddBookModal';
 import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from '../utils/bookLimits.js';
+import { buildApiUrl } from '../features/apiConfig.js';
 
 function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
   return (
@@ -54,7 +55,7 @@ function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
       <div className="book-cover-wrapper">
         {(book.coverUrl) && (
           <img 
-            src={`http://localhost:8080/${book.coverUrl}`} 
+            src={buildApiUrl(book.coverUrl)} 
             alt={`Capa de ${book.name}`} 
             className="book-cover-image" 
             onError={(e) => {

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
+import { buildApiUrl } from "../features/apiConfig.js";
 import { askAI, searchPDF, getPageText, translatePageText, buildPdfPath } from "../features/ia-service/aiApi.js";
 import { getMySubscription } from "../features/payments/paymentApi.js";
 import "../styles/Leitor.css";
@@ -64,7 +65,7 @@ export default function Leitor() {
   useEffect(() => {
     const loadPDF = async () => {
       try {
-        const response = await api.get(`/${book.dataPath}`, { responseType: "blob" });
+        const response = await api.get(buildApiUrl(book.dataPath), { responseType: "blob" });
         setPdfFile(response.data);
       } catch (error) {
         console.error("Erro ao carregar PDF:", error);

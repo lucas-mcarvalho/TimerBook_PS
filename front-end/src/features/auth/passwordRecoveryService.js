@@ -1,18 +1,16 @@
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-const API_URL = `${API_BASE_URL}/forgot`;
+import { buildApiUrl } from '../apiConfig.js';
 
 export const passwordRecoveryService = {
   // Envia o e-mail para pedir o link de recuperação
   requestRecovery: async (email) => {
-    const response = await axios.post(`${API_URL}/request`, { email });
+    const response = await axios.post(buildApiUrl('/forgot/request'), { email });
     return response.data;
   },
 
   // Valida se o token que está na URL é válido
   validateToken: async (token) => {
-    const response = await axios.get(`${API_URL}/validate-token`, { 
+    const response = await axios.get(buildApiUrl('/forgot/validate-token'), { 
       params: { token } 
     });
     return response.data;
@@ -20,7 +18,7 @@ export const passwordRecoveryService = {
 
   // Envia a nova senha junto com o token
   resetPassword: async (token, newPassword) => {
-    const response = await axios.post(`${API_URL}/reset-password`, { 
+    const response = await axios.post(buildApiUrl('/forgot/reset-password'), { 
       token, 
       newPassword 
     });

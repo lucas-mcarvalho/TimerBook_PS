@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080";
+import { buildApiUrl } from "../features/apiConfig.js";
 
 export function getProfilePhotoPath(userInfo) {
   return (
@@ -19,7 +19,7 @@ export function resolveProfilePhotoUrl(photoPath, { cacheBust = false } = {}) {
 
   const url = /^https?:\/\//i.test(normalizedPath)
     ? normalizedPath
-    : `${API_BASE_URL}/${normalizedPath.replace(/^\/+/, "")}`;
+    : buildApiUrl(normalizedPath);
 
   if (!cacheBust) return url;
 

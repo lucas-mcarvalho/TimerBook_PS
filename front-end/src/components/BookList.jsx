@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getBooks } from "../features/books/booksApi";
+import { buildApiUrl } from "../features/apiConfig.js";
 
 function BookList() {
   const [books, setBooks] = useState([]);
@@ -47,7 +48,7 @@ function BookList() {
               {book.coverUrl && (
                 <div className="book-cover">
                   <img 
-                    src={`http://localhost:8080/files/${book.coverUrl}`} 
+                    src={buildApiUrl(book.coverUrl)} 
                     alt={book.name}
                   />
                 </div>

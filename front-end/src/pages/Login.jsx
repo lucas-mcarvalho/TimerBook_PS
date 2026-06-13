@@ -6,11 +6,10 @@ import { useToast } from "../components/ToastContext.js";
 import TimerBookLogo from '../assets/Home/TimerbookLogo.svg'; 
 import MoonIcon from '../assets/Home/MoonIcon.svg';
 import SunIcon from '../assets/Home/SunIcon.svg';
+import { buildApiUrl } from "../features/apiConfig.js";
 import "../styles/Login.css";
 import "../styles/LoginLight.css"; 
 import '../styles/HomeDark.css'; 
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export default function Login() {
   const { showAchievementToast } = useToast();
@@ -58,7 +57,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
+    window.location.href = buildApiUrl("/oauth2/authorization/google");
   };
 
   const handleSubmit = async (e) => {
