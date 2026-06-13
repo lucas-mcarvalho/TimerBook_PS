@@ -57,10 +57,8 @@ services:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-}
       - SPRING_PROFILES_ACTIVE=dev
-      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - OLLAMA_URL=https://tiagobrs--timerbook-ai-fastapi-app.modal.run/api/generate
       - OLLAMA_MODEL=qwen2.5:14b
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres_data:

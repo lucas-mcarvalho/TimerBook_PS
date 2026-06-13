@@ -23,6 +23,7 @@ export async function registerBook(userId, book, coverFile, pdfFile) {
 
     return response.data;
   } catch (error) {
+    console.log(error);
     console.error("Erro:", error.response?.data || error.message);
     throw error;
   }
