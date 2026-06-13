@@ -264,6 +264,15 @@
   border-radius: 8px;
 }
 
+.pdf-page-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(226, 232, 240, 0.6), rgba(248, 250, 252, 0.95), rgba(226, 232, 240, 0.6));
+}
+
 /* =========================================
    FILTROS DE ACESSIBILIDADE
 ========================================= */

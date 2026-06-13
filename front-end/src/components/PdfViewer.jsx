@@ -10,6 +10,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 const SPEECH_RATES = [0.5, 1, 1.5, 2];
 const DEFAULT_SPEECH_RATE = 1;
 const DEFAULT_TRANSLATION_LANGUAGE = "pt-BR";
+const CONTINUOUS_RENDER_WINDOW = 2;
 const TRANSLATION_LANGUAGES = [
   { code: "pt-BR", label: "Português BR", googleCode: "pt" },
   { code: "pt-PT", label: "Português PT", googleCode: "pt" },
@@ -756,6 +757,11 @@ function PdfViewer({
     : numPages
       ? Array.from({ length: numPages }, (_, i) => i + 1)
       : [];
+  const estimatedPageHeight = Math.round(pageWidth * 1.414);
+  const shouldRenderPage = useCallback((renderedPage) => (
+    safeViewMode === "single"
+    || Math.abs(renderedPage - pageNumber) <= CONTINUOUS_RENDER_WINDOW
+  ), [pageNumber, safeViewMode]);
 
   return (
     <div
@@ -1056,14 +1062,26 @@ function PdfViewer({
                     ref={(el) => (pageRefs.current[pageIndex] = el)}
                     aria-label={`Página ${renderedPage}`}
                   >
-                    <Page
-                      pageNumber={renderedPage}
-                      width={pageWidth}
-                      rotate={rotation}
-                      renderTextLayer
-                      renderAnnotationLayer
-                      onRenderSuccess={() => handlePageRenderSuccess(pageIndex)}
-                    />
+                    {shouldRenderPage(renderedPage) ? (
+                      <Page
+                        pageNumber={renderedPage}
+                        width={pageWidth}
+                        rotate={rotation}
+                        renderTextLayer
+                        renderAnnotationLayer
+                        onRenderSuccess={() => handlePageRenderSuccess(pageIndex)}
+                        onRenderError={(err) => console.error(`ERRO AO RENDERIZAR PÁGINA ${renderedPage}:`, err)}
+                      />
+                    ) : (
+                      <div
+                        className="pdf-page-placeholder"
+                        style={{
+                          width: `${pageWidth}px`,
+                          minHeight: `${estimatedPageHeight}px`,
+                        }}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
                 );
               })}
