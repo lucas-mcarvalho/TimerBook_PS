@@ -47,6 +47,9 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - FRONTEND_RESET_PASSWORD_URL=${FRONTEND_RESET_PASSWORD_URL:-http://localhost:5173/redefinir-senha}
+      - FRONTEND_VERIFY_EMAIL_URL=${FRONTEND_VERIFY_EMAIL_URL:-http://localhost:5173/verify-email}
+      - FRONTEND_OAUTH2_REDIRECT_URL=${FRONTEND_OAUTH2_REDIRECT_URL:-http://localhost:5173/oauth2/redirect}
       - SPRING_PROFILES_ACTIVE=dev
       - OLLAMA_URL=https://tiagobrs--timerbook-ai-fastapi-app.modal.run/api/generate
       - OLLAMA_MODEL=qwen2.5:14b
