@@ -14,14 +14,15 @@ export function buildApiUrl(path = "") {
   }
 
   const cleanBase = API_BASE_URL.replace(/\/+$/, "");
-  const cleanPath = encodePath(path);
+  const [pathname, query] = String(path).split("?");
+  const cleanPath = encodePath(pathname);
+  const queryString = query ? `?${query}` : "";
 
-  return cleanPath ? `${cleanBase}/${cleanPath}` : cleanBase;
+  return cleanPath ? `${cleanBase}/${cleanPath}${queryString}` : `${cleanBase}${queryString}`;
 }
 
 export function buildApiUrlCandidates(path = "") {
-  const primaryUrl = buildApiUrl(path);
-  const candidates = [primaryUrl];
+  const candidates = [buildApiUrl(`/files?path=${encodeURIComponent(path)}`), buildApiUrl(path)];
 
   try {
     const cleanPath = encodePath(path);

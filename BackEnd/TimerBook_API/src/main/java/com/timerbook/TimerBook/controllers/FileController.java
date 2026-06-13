@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriUtils;
@@ -36,7 +37,15 @@ public class FileController {
         }
 
         String filePath = UriUtils.decode(requestUri.substring(prefixIndex + 1), StandardCharsets.UTF_8);
+        return serveFile(filePath);
+    }
 
+    @GetMapping({"/files", "/api/files"})
+    public ResponseEntity<byte[]> getFileByPath(@RequestParam("path") String filePath) {
+        return serveFile(filePath);
+    }
+
+    private ResponseEntity<byte[]> serveFile(String filePath) {
         try {
             byte[] file = fileStorageService.loadFile(filePath);
             String contentType = fileStorageService.getContentType(filePath);

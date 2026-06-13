@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/book/**").hasRole("USER")
                         .requestMatchers("/readings/**").hasRole("USER")
                         .requestMatchers("/forgot/**").permitAll()
-                        .requestMatchers("/uploads/**", "/api/uploads/**").permitAll()
+                        .requestMatchers("/uploads/**", "/api/uploads/**", "/files", "/api/files").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
