@@ -14,7 +14,11 @@ public class Book {
     private Long id;
     private String name;
     private String description;
+
+    @Column(name = "cover_url", length = 500)
     private String coverUrl;
+
+    @Column(name = "data_path", length = 500)
     private String dataPath;
 
     @ManyToOne

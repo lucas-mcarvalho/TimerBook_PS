@@ -1,0 +1,3 @@
+ALTER TABLE books
+    ALTER COLUMN cover_url TYPE VARCHAR(500),
+    ALTER COLUMN data_path TYPE VARCHAR(500);

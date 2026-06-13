@@ -16,8 +16,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: ${APP_MAX_FILE_SIZE:300MB}
+      max-request-size: ${APP_MAX_REQUEST_SIZE:320MB}
   profiles:
     active: test
 

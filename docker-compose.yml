@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: timerbook
       POSTGRES_USER: postgres
@@ -18,6 +18,7 @@ services:
 
   frontend:
     build: ./front-end
+    restart: unless-stopped
     ports:
       - "80:5173"
     environment:
@@ -31,6 +32,7 @@ services:
 
   backend:
     build: ./BackEnd/TimerBook_API
+    restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
@@ -50,6 +52,8 @@ services:
       - FRONTEND_RESET_PASSWORD_URL=${FRONTEND_RESET_PASSWORD_URL:-http://localhost:5173/redefinir-senha}
       - FRONTEND_VERIFY_EMAIL_URL=${FRONTEND_VERIFY_EMAIL_URL:-http://localhost:5173/verify-email}
       - FRONTEND_OAUTH2_REDIRECT_URL=${FRONTEND_OAUTH2_REDIRECT_URL:-http://localhost:5173/oauth2/redirect}
+      - APP_MAX_FILE_SIZE=${APP_MAX_FILE_SIZE:-300MB}
+      - APP_MAX_REQUEST_SIZE=${APP_MAX_REQUEST_SIZE:-320MB}
       - SPRING_PROFILES_ACTIVE=dev
       - OLLAMA_URL=https://tiagobrs--timerbook-ai-fastapi-app.modal.run/api/generate
       - OLLAMA_MODEL=qwen2.5:14b

@@ -44,6 +44,18 @@ class FileStorageServiceTest {
     }
 
     @Test
+    void storeFileShouldShortenVeryLongFileNames() {
+        String longName = "a".repeat(600) + ".pdf";
+        MockMultipartFile file = new MockMultipartFile("file", longName, "application/pdf", "pdf-content".getBytes());
+
+        String storedPath = service.storeFile(file, "pdfs");
+
+        assertTrue(storedPath.startsWith("uploads/pdfs/"));
+        assertTrue(storedPath.endsWith(".pdf"));
+        assertTrue(storedPath.length() <= 500);
+    }
+
+    @Test
     void storeFileShouldWrapIOException() throws Exception {
         MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("broken.pdf");

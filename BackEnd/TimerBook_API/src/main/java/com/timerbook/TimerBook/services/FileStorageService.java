@@ -29,6 +29,8 @@ import java.util.UUID;
 public class FileStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
+    private static final int MAX_STORAGE_PATH_LENGTH = 500;
+    private static final int MAX_FILE_NAME_LENGTH = 180;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -199,8 +201,31 @@ public class FileStorageService {
 
     private String buildStoragePath(String originalFileName, String subfolder) {
         String cleanSubfolder = String.valueOf(subfolder).replace("\\", "/").replaceAll("^/+|/+$", "");
-        String safeFileName = Paths.get(String.valueOf(originalFileName)).getFileName().toString();
+        String safeFileName = shortenFileName(Paths.get(String.valueOf(originalFileName)).getFileName().toString(), cleanSubfolder);
         return "uploads/" + cleanSubfolder + "/" + UUID.randomUUID() + "_" + safeFileName;
+    }
+
+    private String shortenFileName(String fileName, String subfolder) {
+        String fallbackName = fileName == null || fileName.isBlank() ? "arquivo" : fileName;
+        String normalizedName = fallbackName.replace("\\", "_").replace("/", "_").trim();
+
+        int reservedLength = "uploads/".length()
+                + String.valueOf(subfolder).length()
+                + "/".length()
+                + UUID.randomUUID().toString().length()
+                + "_".length();
+        int maxFileNameLength = Math.min(MAX_FILE_NAME_LENGTH, Math.max(32, MAX_STORAGE_PATH_LENGTH - reservedLength));
+
+        if (normalizedName.length() <= maxFileNameLength) {
+            return normalizedName;
+        }
+
+        int dotIndex = normalizedName.lastIndexOf('.');
+        String extension = dotIndex > 0 ? normalizedName.substring(dotIndex) : "";
+        String baseName = dotIndex > 0 ? normalizedName.substring(0, dotIndex) : normalizedName;
+        int maxBaseLength = Math.max(1, maxFileNameLength - extension.length());
+
+        return baseName.substring(0, Math.min(baseName.length(), maxBaseLength)) + extension;
     }
 
     private String normalizeStoragePath(String filePath) {
