@@ -58,19 +58,10 @@ def get_page_count(pdf_path: str) -> int:
     return count
 
 
-async def ask_model(context: str, question: str) -> str:
+async def ask_model(prompt: str) -> str:
     import httpx
     OLLAMA_URL = "http://localhost:11434/api/generate"
     MODEL = "qwen2.5:14b"
-
-    prompt = f"""Você é um assistente de leitura. Use apenas o conteúdo abaixo para responder.
-
-CONTEÚDO DO DOCUMENTO:
-{context}
-
-PERGUNTA: {question}
-
-Responda de forma clara e baseada somente no conteúdo fornecido."""
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(OLLAMA_URL, json={
@@ -114,6 +105,12 @@ def build_fastapi_app():
     class PageTextResponse(BaseModel):
         text: str
 
+    # Schema compatível com o formato que o Spring envia
+    class OllamaGenerateRequest(BaseModel):
+        model: str
+        prompt: str
+        stream: bool = False
+
     PAGE_RANGE = 2
     api = FastAPI(
         title="PDF AI Service",
@@ -133,6 +130,13 @@ def build_fastapi_app():
     def health():
         return {"status": "ok"}
 
+    # ── Rota compatível com o Spring (AiOllamaService) ──
+    @api.post("/api/generate")
+    async def ollama_generate(req: OllamaGenerateRequest):
+        answer = await ask_model(req.prompt)
+        return {"response": answer}
+
+    # ── Rotas do microsserviço Python ──
     @api.post("/api/v1/ask", response_model=AskResponse)
     async def ask(req: AskRequest):
         pdf_path = str(PDF_DIR / req.pdf_path)
@@ -149,7 +153,16 @@ def build_fastapi_app():
             if not context.strip():
                 raise HTTPException(status_code=422, detail="Nenhum texto encontrado nas páginas solicitadas.")
 
-            answer = await ask_model(context, req.question)
+            prompt = f"""Você é um assistente de leitura. Use apenas o conteúdo abaixo para responder.
+
+CONTEÚDO DO DOCUMENTO:
+{context}
+
+PERGUNTA: {req.question}
+
+Responda de forma clara e baseada somente no conteúdo fornecido."""
+
+            answer = await ask_model(prompt)
             return AskResponse(answer=answer)
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail=f"PDF não encontrado: {req.pdf_path}")
@@ -196,7 +209,7 @@ def build_fastapi_app():
     gpu="A10G",
     volumes={
         str(PDF_DIR): pdf_volume,
-        str(OLLAMA_MODELS_DIR): model_volume,   # modelo cacheado entre cold starts
+        str(OLLAMA_MODELS_DIR): model_volume,
     },
     scaledown_window=300,
     timeout=300,
@@ -204,12 +217,10 @@ def build_fastapi_app():
 @modal.concurrent(max_inputs=4)
 @modal.asgi_app()
 def fastapi_app():
-    # Inicia o servidor Ollama em background
     env = {"OLLAMA_MODELS": str(OLLAMA_MODELS_DIR)}
     subprocess.Popen(["ollama", "serve"], env={**__import__("os").environ, **env})
-    time.sleep(3)  # aguarda o servidor subir
+    time.sleep(3)
 
-    # Baixa o modelo se ainda não estiver no volume
     subprocess.run(["ollama", "pull", "qwen2.5:14b"], check=True)
 
     return build_fastapi_app()
