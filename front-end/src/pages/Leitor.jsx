@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
-import { buildApiUrl } from "../features/apiConfig.js";
+import { buildApiUrlCandidates } from "../features/apiConfig.js";
 import { askAI, searchPDF, getPageText, translatePageText, buildPdfPath } from "../features/ia-service/aiApi.js";
 import { getMySubscription } from "../features/payments/paymentApi.js";
 import "../styles/Leitor.css";
@@ -25,6 +25,7 @@ export default function Leitor() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
+  const [pdfError, setPdfError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
@@ -64,12 +65,25 @@ export default function Leitor() {
   // Loads the PDF blob from Java (for display in the viewer)
   useEffect(() => {
     const loadPDF = async () => {
-      try {
-        const response = await api.get(buildApiUrl(book.dataPath), { responseType: "blob" });
-        setPdfFile(response.data);
-      } catch (error) {
-        console.error("Erro ao carregar PDF:", error);
+      setPdfFile(null);
+      setPdfError("");
+
+      const candidateUrls = buildApiUrlCandidates(book.dataPath);
+      let lastError = null;
+
+      for (const url of candidateUrls) {
+        try {
+          const response = await api.get(url, { responseType: "blob" });
+          setPdfFile(response.data);
+          return;
+        } catch (error) {
+          lastError = error;
+          console.error(`Erro ao carregar PDF em ${url}:`, error);
+        }
       }
+
+      setPdfError("Não foi possível carregar o PDF.");
+      console.error("Erro ao carregar PDF:", lastError);
     };
     if (book?.dataPath) loadPDF();
   }, [book]);
@@ -232,7 +246,7 @@ export default function Leitor() {
             ) : (
               <div className="leitor-pdf-loading">
                 <div className="leitor-spinner" />
-                <span className="leitor-loading-text">Carregando PDF…</span>
+                <span className="leitor-loading-text">{pdfError || "Carregando PDF…"}</span>
               </div>
             )}
           </div>
