@@ -22,6 +22,14 @@ app:
       inactivity-hours: 24
       reminder-interval-minutes: 1440
 
+dev:
+  admin:
+    seed-enabled: ${DEV_ADMIN_SEED_ENABLED:false}
+    email: ${DEV_ADMIN_EMAIL:admin@timerbook.local}
+    username: ${DEV_ADMIN_USERNAME:Admin}
+    password: ${DEV_ADMIN_PASSWORD:Admin123!}
+    reset-password: ${DEV_ADMIN_RESET_PASSWORD:false}
+
 payment:
   webhook-signature:
     enabled: ${PAYMENT_WEBHOOK_SIGNATURE_ENABLED:false}

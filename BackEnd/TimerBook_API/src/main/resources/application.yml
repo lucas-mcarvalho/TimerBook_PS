@@ -38,6 +38,12 @@ cors:
 app:
   frontend:
     reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/redefinir-senha}
+  storage:
+    type: ${APP_STORAGE_TYPE:local}
+  aws:
+    region: ${AWS_REGION:us-east-1}
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
   ai:
     ollama:
       url: ${OLLAMA_URL:http://localhost:11434/api/generate}

@@ -4,15 +4,11 @@ import com.timerbook.TimerBook.dto.AiSearchResultDTO;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -20,16 +16,14 @@ import java.util.Locale;
 @Service
 public class AiPdfService {
 
-    private final Path uploadRoot;
+    private final FileStorageService fileStorageService;
 
-    public AiPdfService(@Value("${app.upload.dir:uploads}") String uploadDir) {
-        this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+    public AiPdfService(FileStorageService fileStorageService) {
+        this.fileStorageService = fileStorageService;
     }
 
     public String extractPageText(String pdfPath, int pageNumber) {
-        Path resolvedPath = resolvePdfPath(pdfPath);
-
-        try (PDDocument document = Loader.loadPDF(resolvedPath.toFile())) {
+        try (PDDocument document = loadPdf(pdfPath)) {
             validatePage(pageNumber, document.getNumberOfPages());
             return extractPageText(document, pageNumber);
         } catch (IOException exception) {
@@ -38,9 +32,7 @@ public class AiPdfService {
     }
 
     public String extractPageRange(String pdfPath, int start, int end) {
-        Path resolvedPath = resolvePdfPath(pdfPath);
-
-        try (PDDocument document = Loader.loadPDF(resolvedPath.toFile())) {
+        try (PDDocument document = loadPdf(pdfPath)) {
             int totalPages = document.getNumberOfPages();
             int safeStart = Math.max(1, start);
             int safeEnd = Math.min(end, totalPages);
@@ -61,9 +53,7 @@ public class AiPdfService {
     }
 
     public int getPageCount(String pdfPath) {
-        Path resolvedPath = resolvePdfPath(pdfPath);
-
-        try (PDDocument document = Loader.loadPDF(resolvedPath.toFile())) {
+        try (PDDocument document = loadPdf(pdfPath)) {
             return document.getNumberOfPages();
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Não foi possível ler o PDF.", exception);
@@ -71,11 +61,10 @@ public class AiPdfService {
     }
 
     public List<AiSearchResultDTO> search(String pdfPath, String query) {
-        Path resolvedPath = resolvePdfPath(pdfPath);
         String normalizedQuery = query.toLowerCase(Locale.ROOT);
         List<AiSearchResultDTO> results = new ArrayList<>();
 
-        try (PDDocument document = Loader.loadPDF(resolvedPath.toFile())) {
+        try (PDDocument document = loadPdf(pdfPath)) {
             for (int page = 1; page <= document.getNumberOfPages(); page++) {
                 String text = extractPageText(document, page);
                 String normalizedText = text.toLowerCase(Locale.ROOT);
@@ -94,23 +83,16 @@ public class AiPdfService {
         }
     }
 
-    private Path resolvePdfPath(String pdfPath) {
+    private PDDocument loadPdf(String pdfPath) throws IOException {
         if (pdfPath == null || pdfPath.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O caminho do PDF é obrigatório.");
         }
 
-        String cleanPath = pdfPath.trim().replace("\\", "/");
-        Path candidate = Paths.get(cleanPath).normalize();
-
-        if (!candidate.isAbsolute()) {
-            candidate = Paths.get("").toAbsolutePath().resolve(candidate).normalize();
-        }
-
-        if (!candidate.startsWith(uploadRoot) || !Files.exists(candidate) || Files.isDirectory(candidate)) {
+        try {
+            return Loader.loadPDF(fileStorageService.loadFile(pdfPath));
+        } catch (RuntimeException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "PDF não encontrado: " + pdfPath);
         }
-
-        return candidate;
     }
 
     private String extractPageText(PDDocument document, int pageNumber) throws IOException {
