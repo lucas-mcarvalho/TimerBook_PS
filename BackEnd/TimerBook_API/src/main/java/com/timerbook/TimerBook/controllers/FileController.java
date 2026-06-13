@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -33,7 +35,7 @@ public class FileController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Caminho de arquivo inválido.");
         }
 
-        String filePath = requestUri.substring(prefixIndex + 1);
+        String filePath = UriUtils.decode(requestUri.substring(prefixIndex + 1), StandardCharsets.UTF_8);
 
         try {
             byte[] file = fileStorageService.loadFile(filePath);

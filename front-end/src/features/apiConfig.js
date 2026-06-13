@@ -1,12 +1,20 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+function encodePath(path = "") {
+  return String(path)
+    .replace(/^\/+/, "")
+    .split("/")
+    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+    .join("/");
+}
+
 export function buildApiUrl(path = "") {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
   const cleanBase = API_BASE_URL.replace(/\/+$/, "");
-  const cleanPath = String(path).replace(/^\/+/, "");
+  const cleanPath = encodePath(path);
 
   return cleanPath ? `${cleanBase}/${cleanPath}` : cleanBase;
 }
@@ -16,7 +24,7 @@ export function buildApiUrlCandidates(path = "") {
   const candidates = [primaryUrl];
 
   try {
-    const cleanPath = String(path).replace(/^\/+/, "");
+    const cleanPath = encodePath(path);
     const apiBase = new URL(API_BASE_URL);
 
     if (apiBase.pathname.replace(/\/+$/, "").endsWith("/api")) {
