@@ -38,6 +38,7 @@ cors:
 app:
   frontend:
     reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/redefinir-senha}
+    verify-email-url: ${FRONTEND_VERIFY_EMAIL_URL:http://localhost:5173/verify-email}
   storage:
     type: ${APP_STORAGE_TYPE:local}
   aws:

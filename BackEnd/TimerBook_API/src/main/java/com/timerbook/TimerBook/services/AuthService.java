@@ -10,6 +10,7 @@ import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.RoleRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,6 +50,9 @@ public class AuthService {
 
     @Autowired
     private PasswordValidatorService passwordValidatorService;
+
+    @Value("${app.frontend.verify-email-url:http://localhost:5173/verify-email}")
+    private String verifyEmailUrl = "http://localhost:5173/verify-email";
 
     public ResponseDTO login(LoginRequestDTO body) {
         String loginIdentifier = body.email();
@@ -106,10 +110,15 @@ public class AuthService {
 
         userRepository.save(newUser);
         String emailToken = tokenService.generateEmailVerificationToken(newUser.getEmail());
-        String link = "http://localhost:5173/verify-email?token=" + emailToken;
+        String link = buildVerifyEmailLink(emailToken);
 
         emailService.sendVerificationEmail(newUser.getEmail(), link);
         return "Usuário registrado com sucesso. Verifique seu e-mail para ativar a conta.";
+    }
+
+    private String buildVerifyEmailLink(String emailToken) {
+        String separator = verifyEmailUrl.contains("?") ? "&" : "?";
+        return verifyEmailUrl + separator + "token=" + emailToken;
     }
 
 
