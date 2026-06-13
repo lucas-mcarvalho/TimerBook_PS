@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
 const api = axios.create({
-  baseURL: "http://localhost:8080"
+  baseURL: API_BASE_URL
 });
 
 // 🔹 REQUEST → adiciona access token (exceto rotas de auth)
@@ -28,7 +30,7 @@ const refreshAccessToken = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
 
   const response = await axios.post(
-    "http://localhost:8080/auth/refresh",
+    `${API_BASE_URL}/auth/refresh`,
     { refreshToken },
     { withCredentials: true }
   );

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Ajuste a URL base se o seu backend estiver rodando em outra porta
-const API_URL = 'http://localhost:8080/forgot'; 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_URL = `${API_BASE_URL}/forgot`;
 
 export const passwordRecoveryService = {
   // Envia o e-mail para pedir o link de recuperação
