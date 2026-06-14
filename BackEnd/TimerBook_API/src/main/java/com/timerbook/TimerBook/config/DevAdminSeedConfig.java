@@ -2,8 +2,10 @@ package com.timerbook.TimerBook.config;
 
 import com.timerbook.TimerBook.models.Role;
 import com.timerbook.TimerBook.models.User;
+import com.timerbook.TimerBook.models.billing.UserSubscription;
 import com.timerbook.TimerBook.repository.RoleRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
+import com.timerbook.TimerBook.repository.UserSubscriptionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.LocalDateTime;
 
 @Configuration
 @Profile("dev")
@@ -23,6 +27,7 @@ public class DevAdminSeedConfig {
     ApplicationRunner seedDevAdmin(
             UserRepository userRepository,
             RoleRepository roleRepository,
+            UserSubscriptionRepository userSubscriptionRepository,
             PasswordEncoder passwordEncoder,
             @Value("${dev.admin.seed-enabled:false}") boolean seedEnabled,
             @Value("${dev.admin.email:admin@timerbook.local}") String adminEmail,
@@ -58,8 +63,27 @@ public class DevAdminSeedConfig {
             admin.getRoles().add(adminRole);
 
             userRepository.save(admin);
+            upsertPremiumSubscription(userSubscriptionRepository, admin);
             logger.info("Usuario admin premium de desenvolvimento pronto: {}", adminEmail);
         };
+    }
+
+    private void upsertPremiumSubscription(UserSubscriptionRepository userSubscriptionRepository, User admin) {
+        UserSubscription subscription = userSubscriptionRepository.findByUserId(admin.getId())
+                .orElseGet(UserSubscription::new);
+
+        subscription.setUser(admin);
+        subscription.setProvider("MERCADO_PAGO");
+        subscription.setProviderSubscriptionId("dev-admin-" + admin.getId());
+        subscription.setStatus("ACTIVE");
+        subscription.setCurrentPeriodEnd(LocalDateTime.now().plusYears(10));
+        subscription.setCanceledAt(null);
+        subscription.setUpdatedAt(LocalDateTime.now());
+        if (subscription.getCreatedAt() == null) {
+            subscription.setCreatedAt(LocalDateTime.now());
+        }
+
+        userSubscriptionRepository.save(subscription);
     }
 
     private Role getOrCreateRole(RoleRepository roleRepository, String authority) {
