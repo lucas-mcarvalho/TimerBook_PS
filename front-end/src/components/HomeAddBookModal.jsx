@@ -84,7 +84,10 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0 }) => {
       const userId = response.data.id;
       console.log("ID do usuário obtido:", userId);
       console.log("Dados do livro a registrar:", { name: newName, description: newDescription, coverFile, pdfFile });
-      const bookData = { name: newName, description: newDescription };
+      const bookData = {
+        name: newName.trim(),
+        description: newDescription.trim()
+      };
       const savedBookFromServer = await registerBook(
         userId,
         bookData, 

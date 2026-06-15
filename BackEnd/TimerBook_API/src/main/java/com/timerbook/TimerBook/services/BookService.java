@@ -66,7 +66,7 @@ public class BookService {
 
         Book book = new Book();
         book.setName(dto.getName());
-        book.setDescription(dto.getDescription());
+        book.setDescription(normalizeDescription(dto.getDescription()));
         book.setCoverUrl(coverPath);
         book.setDataPath(pdfPath);
         book.setUser(user);
@@ -81,7 +81,7 @@ public class BookService {
         Book book = findById(id);
 
         book.setName(dto.getName());
-        book.setDescription(dto.getDescription());
+        book.setDescription(normalizeDescription(dto.getDescription()));
 
         if (dto.getCover() != null && !dto.getCover().isEmpty()) {
             fileStorageService.deleteFile(book.getCoverUrl());
@@ -109,6 +109,13 @@ public class BookService {
 
     public List<Book> findByUserId(Long userId) {
         return bookRepository.findByUserId(userId);
+    }
+
+    private String normalizeDescription(String description) {
+        if (description == null || description.isBlank()) {
+            return "";
+        }
+        return description.trim();
     }
 
 }

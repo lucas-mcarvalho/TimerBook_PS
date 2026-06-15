@@ -30,7 +30,7 @@ public class BookController implements BookcontrollerDocs {
     public ResponseEntity<BookCreationResponseDTO> create(
             @RequestParam Long userId,
             @RequestPart("name") String name,
-            @RequestPart("description") String description,
+            @RequestPart(value = "description", required = false) String description,
             @RequestPart(value = "cover", required = false) MultipartFile cover,
             @RequestPart(value = "pdf", required = false) MultipartFile pdf) {
         BookDTO dto = new BookDTO();
@@ -62,7 +62,7 @@ public class BookController implements BookcontrollerDocs {
             @PathVariable Long id,
 
             @RequestPart("name") String name,
-            @RequestPart("description") String description,
+            @RequestPart(value = "description", required = false) String description,
             @RequestPart(value = "cover", required = false) MultipartFile cover,
             @RequestPart(value = "pdf", required = false) MultipartFile pdf) {
 
