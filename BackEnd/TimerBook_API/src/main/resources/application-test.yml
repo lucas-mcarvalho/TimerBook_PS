@@ -15,6 +15,8 @@ spring:
     enabled: false
 
 app:
+  storage:
+    type: local
   reminders:
     reading:
       enabled: false

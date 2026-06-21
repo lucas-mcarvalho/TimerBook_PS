@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/HomeGuide.css";
+import guideOpenSound from "../assets/conquistas/sounds/guia.mp3";
+import guideNextSound from "../assets/conquistas/sounds/guia2.mp3";
 
 const guideSteps = [
   {
@@ -30,7 +32,7 @@ const guideSteps = [
   {
     tag: "META",
     title: "Meta de leitura",
-    text: "No Perfil, use Alterar Meta de Leitura para mudar seus minutos diários.",
+    text: "No Perfil, use Alterar Meta de Leitura para escolher uma das metas disponiveis.",
     target: "guide-menu-profile",
     actionLabel: "Ir para Perfil",
     actionTo: "/perfil",
@@ -66,6 +68,8 @@ const HomeGuide = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [highlightStyle, setHighlightStyle] = useState(null);
+  const guideAudioRef = useRef(null);
+  const guideNextAudioRef = useRef(null);
 
   const currentStep = guideSteps[step];
   const progress = ((step + 1) / guideSteps.length) * 100;
@@ -96,7 +100,49 @@ const HomeGuide = () => {
     return () => cancelAnimationFrame(frame);
   }, [step, isOpen]);
 
+  useEffect(() => {
+    if (!guideAudioRef.current) {
+      try {
+        guideAudioRef.current = new Audio(guideOpenSound);
+        guideAudioRef.current.preload = "auto";
+        guideAudioRef.current.volume = 0.9;
+      } catch (err) {
+        guideAudioRef.current = null;
+      }
+    }
+
+    if (isOpen) {
+      try {
+        guideAudioRef.current.currentTime = 0;
+        guideAudioRef.current.play().catch(() => {});
+      } catch (err) {
+        // ignore playback errors
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!guideNextAudioRef.current) {
+      try {
+        guideNextAudioRef.current = new Audio(guideNextSound);
+        guideNextAudioRef.current.preload = "auto";
+        guideNextAudioRef.current.volume = 0.85;
+      } catch (err) {
+        guideNextAudioRef.current = null;
+      }
+    }
+  }, []);
+
   const nextStep = () => {
+    try {
+      if (guideNextAudioRef.current) {
+        guideNextAudioRef.current.currentTime = 0;
+        guideNextAudioRef.current.play().catch(() => {});
+      }
+    } catch (e) {
+      // ignore
+    }
+
     if (step < guideSteps.length - 1) {
       setStep(step + 1);
     } else {

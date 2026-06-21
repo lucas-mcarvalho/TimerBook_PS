@@ -3,8 +3,8 @@ import api from "../axiosApi";
 export async function registerBook(userId, book, coverFile, pdfFile) {
   const formData = new FormData();
 
-   formData.append("name", book.name);
-   formData.append("description", book.description);
+  formData.append("name", book.name);
+  formData.append("description", book.description?.trim() || "");
 
   if (coverFile) {
     formData.append("cover", coverFile);
@@ -23,6 +23,7 @@ export async function registerBook(userId, book, coverFile, pdfFile) {
 
     return response.data;
   } catch (error) {
+    console.log(error);
     console.error("Erro:", error.response?.data || error.message);
     throw error;
   }

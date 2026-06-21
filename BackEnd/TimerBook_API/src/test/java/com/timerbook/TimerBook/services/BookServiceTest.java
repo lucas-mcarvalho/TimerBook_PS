@@ -10,9 +10,11 @@ import com.timerbook.TimerBook.services.exception.BookException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.http.HttpStatus;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -147,6 +149,49 @@ class BookServiceTest {
         assertEquals(user, result.getBook().getUser());
         verify(fileStorageService, never()).storeFile(any(), anyString());
         verify(achievementService).checkRegisteredBookMilestones(user);
+    }
+
+    @Test
+    void createShouldRejectFreeUserWhenBookLimitIsReached() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setSubscriptionPlan("FREE");
+
+        BookDTO dto = new BookDTO();
+        dto.setName("Livro excedente");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookRepository.countByUserId(userId)).thenReturn(5L);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> bookService.create(userId, dto));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+        assertEquals("Plano gratuito limitado a 5 livros. Assine o Premium para cadastrar livros ilimitados.", exception.getReason());
+        verify(bookRepository, never()).save(any());
+        verify(fileStorageService, never()).storeFile(any(), anyString());
+        verify(achievementService, never()).checkRegisteredBookMilestones(any());
+    }
+
+    @Test
+    void createShouldAllowPaidUserAboveFreeBookLimit() {
+        Long userId = 1L;
+        User user = new User();
+        user.setId(userId);
+        user.setSubscriptionPlan("PAID");
+
+        BookDTO dto = new BookDTO();
+        dto.setName("Livro premium");
+        dto.setDescription("Descrição");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bookRepository.save(any(Book.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BookCreationResponseDTO result = bookService.create(userId, dto);
+
+        assertEquals("Livro premium", result.getBook().getName());
+        verify(bookRepository, never()).countByUserId(userId);
+        verify(bookRepository).save(any(Book.class));
     }
 
     @Test

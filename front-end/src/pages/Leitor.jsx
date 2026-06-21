@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ToastContext.js";
 import ReactMarkdown from "react-markdown";
 import api from "../features/axiosApi.js";
-import { askAI, searchPDF, getPageText, buildPdfPath } from "../features/ia-service/aiApi.js";
+import { askAI, searchPDF, getPageText, translatePageText, buildPdfPath } from "../features/ia-service/aiApi.js";
+import { getMySubscription } from "../features/payments/paymentApi.js";
 import "../styles/Leitor.css";
 
 export default function Leitor() {
@@ -23,7 +24,9 @@ export default function Leitor() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [endingSession, setEndingSession] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [subscription, setSubscription] = useState(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
 
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -33,6 +36,8 @@ export default function Leitor() {
     "Resumir este capítulo",
     "Temas desta passagem",
   ];
+
+  const isPremium = subscription?.status === "ACTIVE";
 
   const handleEndSession = async () => {
     if (!sessionId) {
@@ -69,6 +74,23 @@ export default function Leitor() {
   }, [book]);
 
   useEffect(() => {
+    async function loadSubscription() {
+      try {
+        const subscriptionData = await getMySubscription();
+        setSubscription(subscriptionData);
+        setDrawerOpen(subscriptionData?.status === "ACTIVE");
+      } catch (error) {
+        console.error("Erro ao carregar assinatura no leitor:", error);
+        setSubscription(null);
+      } finally {
+        setLoadingSubscription(false);
+      }
+    }
+
+    loadSubscription();
+  }, []);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -76,6 +98,11 @@ export default function Leitor() {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!question.trim() || loading) return;
+
+    if (!isPremium) {
+      showToast("O assistente de IA é exclusivo do plano Premium.", "error");
+      return;
+    }
 
     const userMsg = question.trim();
     setQuestion("");
@@ -86,9 +113,12 @@ export default function Leitor() {
       const answer = await askAI(buildPdfPath(book.dataPath), currentPage, userMsg);
       setMessages((prev) => [...prev, { role: "ai", content: answer }]);
     } catch (error) {
+      const message = error.response?.status === 403
+        ? "O assistente de IA é exclusivo do plano Premium."
+        : "Erro ao obter resposta: " + error.message;
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "Erro ao obter resposta: " + error.message },
+        { role: "ai", content: message },
       ]);
     } finally {
       setLoading(false);
@@ -102,6 +132,10 @@ export default function Leitor() {
 
   const handleTextPageRequest = async (pageNumber) => {
     return await getPageText(buildPdfPath(book.dataPath), pageNumber);
+  };
+
+  const handleTranslatePageText = async (pageNumber, targetLanguage) => {
+    return await translatePageText(buildPdfPath(book.dataPath), pageNumber, targetLanguage);
   };
 
   const handleKeyDown = (e) => {
@@ -155,15 +189,25 @@ export default function Leitor() {
             </span>
           </div>
 
-          <button
-            className={`leitor-ai-toggle ${drawerOpen ? "active" : ""}`}
-            onClick={() => setDrawerOpen((v) => !v)}
-          >
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-            </svg>
-            Assistente
-          </button>
+          {isPremium ? (
+            <button
+              className={`leitor-ai-toggle ${drawerOpen ? "active" : ""}`}
+              onClick={() => setDrawerOpen((v) => !v)}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+              Assistente
+            </button>
+          ) : !loadingSubscription ? (
+            <button
+              type="button"
+              className="leitor-premium-callout"
+              onClick={() => navigate("/assinatura")}
+            >
+              IA no Premium
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -179,8 +223,10 @@ export default function Leitor() {
                 initialPage={initialPage}
                 onPageChange={setCurrentPage}
                 storageKey={book.id || book.dataPath || "livro"}
-                onSearchRequest={handleSearchRequest}
+                onSearchRequest={isPremium ? handleSearchRequest : undefined}
                 onTextPageRequest={handleTextPageRequest}
+                onTranslatePageRequest={isPremium ? handleTranslatePageText : undefined}
+                premiumAiEnabled={isPremium}
               />
             ) : (
               <div className="leitor-pdf-loading">
@@ -192,6 +238,7 @@ export default function Leitor() {
         </div>
 
        
+        {isPremium && (
         <div className={`leitor-drawer ${drawerOpen ? "open" : ""}`}>
           <div className="leitor-drawer-inner">
 
@@ -305,6 +352,7 @@ export default function Leitor() {
 
           </div>
         </div>
+        )}
       </div>
 
     </div>

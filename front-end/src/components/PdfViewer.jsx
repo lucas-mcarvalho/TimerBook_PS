@@ -3,8 +3,22 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "../styles/PdfViewer.css";
 import "../styles/TextLayer.css";
 import "../styles/AnnotationLayer.css";
+import pageTurnSound from "../assets/conquistas/sounds/folha.mp3";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
+const SPEECH_RATES = [0.5, 1, 1.5, 2];
+const DEFAULT_SPEECH_RATE = 1;
+const DEFAULT_TRANSLATION_LANGUAGE = "pt-BR";
+const TRANSLATION_LANGUAGES = [
+  { code: "pt-BR", label: "Português BR", googleCode: "pt" },
+  { code: "pt-PT", label: "Português PT", googleCode: "pt" },
+  { code: "en", label: "Inglês", googleCode: "en" },
+  { code: "es", label: "Espanhol", googleCode: "es" },
+  { code: "fr", label: "Francês", googleCode: "fr" },
+  { code: "de", label: "Alemão", googleCode: "de" },
+  { code: "it", label: "Italiano", googleCode: "it" },
+];
 
 const DEFAULT_PREFERENCES = {
   viewMode: "continuous",
@@ -15,9 +29,34 @@ const DEFAULT_PREFERENCES = {
   textSize: 18,
   lineHeight: 1.7,
   rotation: 0,
+  speechRate: DEFAULT_SPEECH_RATE,
+  speechVoiceURI: "",
+  translationLanguage: DEFAULT_TRANSLATION_LANGUAGE,
 };
 
 const VIEW_MODES = new Set(["continuous", "single"]);
+
+// ===========================================================================
+// Fallback de tradução direta no front caso o endpoint Java não seja informado.
+// ===========================================================================
+
+function getTranslationLanguage(code) {
+  return TRANSLATION_LANGUAGES.find((language) => language.code === code) || TRANSLATION_LANGUAGES[0];
+}
+
+async function fetchFreeTranslation(text, targetLanguage = DEFAULT_TRANSLATION_LANGUAGE) {
+  const language = getTranslationLanguage(targetLanguage);
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${language.googleCode}&dt=t&q=${encodeURIComponent(text)}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Erro na rede do tradutor gratuito");
+  const data = await response.json();
+  
+  return data[0].map((pedaco) => pedaco[0]).join("");
+}
+
+// ===========================================================================
+// UTILITÁRIOS
+// ===========================================================================
 
 function readStorage(key, fallback) {
   try {
@@ -35,6 +74,11 @@ function readStorage(key, fallback) {
   }
 }
 
+function normalizeSpeechRate(value) {
+  const numericValue = Number(value);
+  return SPEECH_RATES.includes(numericValue) ? numericValue : DEFAULT_SPEECH_RATE;
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -45,21 +89,96 @@ function highlightText(text, query) {
   const parts = text.split(new RegExp(`(${escapeRegExp(query.trim())})`, "gi"));
   return parts.map((part, index) => (
     part.toLowerCase() === query.trim().toLowerCase()
-      ? <mark key={`${part}-${index}`}>{part}</mark>
+      ? <mark key={`highlight-${index}-${part}`}>{part}</mark>
       : part
   ));
 }
 
+function prepareTextForSpeech(text) {
+  return text
+    .replace(/\r/g, "\n")
+    .replace(/([A-Za-zÀ-ÿ])-\s*\n\s*([A-Za-zÀ-ÿ])/g, "$1$2")
+    .replace(/[ \t]*\n[ \t]*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function splitTextForSpeech(text, maxLength = 220) {
+  const sentences = text.match(/[^.!?;:]+[.!?;:]?/g) || [text];
+  const chunks = [];
+  let currentChunk = "";
+
+  const pushLongPart = (part) => {
+    let wordChunk = "";
+
+    part.split(/\s+/).forEach((word) => {
+      if (!word) return;
+
+      const nextWordChunk = wordChunk ? `${wordChunk} ${word}` : word;
+      if (nextWordChunk.length > maxLength && wordChunk) {
+        chunks.push(wordChunk);
+        wordChunk = word;
+      } else {
+        wordChunk = nextWordChunk;
+      }
+    });
+
+    if (wordChunk) chunks.push(wordChunk);
+  };
+
+  sentences.forEach((rawSentence) => {
+    const sentence = rawSentence.trim();
+    if (!sentence) return;
+
+    if (sentence.length > maxLength) {
+      sentence.split(/,\s+|\s+-\s+/).forEach((part) => {
+        const cleanedPart = part.trim();
+        if (cleanedPart) pushLongPart(cleanedPart);
+      });
+      return;
+    }
+
+    const nextChunk = currentChunk ? `${currentChunk} ${sentence}` : sentence;
+    if (nextChunk.length > maxLength && currentChunk) {
+      chunks.push(currentChunk);
+      currentChunk = sentence;
+    } else {
+      currentChunk = nextChunk;
+    }
+  });
+
+  if (currentChunk) chunks.push(currentChunk);
+  return chunks;
+}
+
+function getPortugueseVoiceScore(voice) {
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+  let score = 0;
+
+  if (lang === "pt-br") score += 120;
+  else if (lang.startsWith("pt")) score += 80;
+  else score -= 100;
+
+  if (name.includes("natural")) score += 35;
+  if (name.includes("neural")) score += 35;
+  if (name.includes("online")) score += 25;
+  if (name.includes("google")) score += 25;
+  if (name.includes("microsoft")) score += 15;
+  if (name.includes("brasil") || name.includes("brazil")) score += 15;
+  if (name.includes("portugu")) score += 10;
+
+  return score;
+}
+
+function chooseBestPortugueseVoice(voices) {
+  return [...voices]
+    .filter((voice) => voice.lang.toLowerCase().startsWith("pt"))
+    .sort((voiceA, voiceB) => getPortugueseVoiceScore(voiceB) - getPortugueseVoiceScore(voiceA))[0] || null;
+}
+
 // ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-// onSearchRequest  : async (query: string) => Array<{ page: number, excerpt: string }>
-//                    Called when the user submits a search. The backend (Python)
-//                    performs the full-document text search and returns results.
-//
-// onTextPageRequest: async (pageNumber: number) => string
-//                    Called when text mode is active and the page changes.
-//                    The backend extracts and returns the plain text for that page.
+// COMPONENTE PRINCIPAL
 // ---------------------------------------------------------------------------
 
 function PdfViewer({
@@ -69,6 +188,8 @@ function PdfViewer({
   storageKey = "default",
   onSearchRequest,
   onTextPageRequest,
+  onTranslatePageRequest,
+  premiumAiEnabled = false,
 }) {
   const preferencesKey = `timerbook-pdf-preferences-${storageKey}`;
   const bookmarksKey = `timerbook-pdf-bookmarks-${storageKey}`;
@@ -88,14 +209,41 @@ function PdfViewer({
   const [textSize, setTextSize] = useState(savedPreferences.textSize);
   const [lineHeight, setLineHeight] = useState(savedPreferences.lineHeight);
   const [rotation, setRotation] = useState(savedPreferences.rotation);
+  const [speechRate, setSpeechRate] = useState(() => normalizeSpeechRate(savedPreferences.speechRate));
+  const [speechVoiceURI, setSpeechVoiceURI] = useState(savedPreferences.speechVoiceURI || DEFAULT_PREFERENCES.speechVoiceURI);
   const [bookmarks, setBookmarks] = useState(savedBookmarks);
   const [containerWidth, setContainerWidth] = useState(700);
   const [pageText, setPageText] = useState("");
+  
+  // =====================================
+  // ESTADOS DE TRADUÇÃO
+  // =====================================
+  const [translatedText, setTranslatedText] = useState("");
+  const [translationCache, setTranslationCache] = useState({});
+  const [translationLoading, setTranslationLoading] = useState(false);
+  const [isTranslationActive, setIsTranslationActive] = useState(false);
+  const [translationError, setTranslationError] = useState("");
+  const [translationLanguage, setTranslationLanguage] = useState(
+    getTranslationLanguage(savedPreferences.translationLanguage).code
+  );
+  
   const [textLoading, setTextLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
+  
+  // =====================================
+  // ESTADOS E REFS DO ÁUDIO
+  // =====================================
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const speechSessionRef = useRef(0);
+  const pageTurnAudioRef = useRef(null);
+  const hasMountedForAudioRef = useRef(false);
+
   const containerRef = useRef(null);
   const viewportRef = useRef(null);
   const pageRefs = useRef([]);
@@ -107,30 +255,79 @@ function PdfViewer({
   const onPageChangeRef = useRef(onPageChange);
   useEffect(() => { onPageChangeRef.current = onPageChange; }, [onPageChange]);
 
-  // Notify parent whenever pageNumber changes
   useEffect(() => {
     onPageChangeRef.current?.(pageNumber);
   }, [pageNumber]);
 
   useEffect(() => {
+    if (!pageTurnAudioRef.current) {
+      try {
+        pageTurnAudioRef.current = new Audio(pageTurnSound);
+        pageTurnAudioRef.current.preload = "auto";
+        pageTurnAudioRef.current.volume = 0.8;
+      } catch (err) {
+        // falha ao inicializar o áudio — não bloquear a leitura
+        pageTurnAudioRef.current = null;
+      }
+    }
+
+    if (!hasMountedForAudioRef.current) {
+      hasMountedForAudioRef.current = true;
+      return;
+    }
+
+    try {
+      if (pageTurnAudioRef.current) {
+        pageTurnAudioRef.current.currentTime = 0;
+        pageTurnAudioRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      // silencioso em caso de erro de reprodução
+    }
+  }, [pageNumber]);
+
+  useEffect(() => {
     const preferences = {
-      viewMode,
-      zoom,
-      fitWidth,
-      visualMode,
-      textMode,
-      textSize,
-      lineHeight,
-      rotation,
+      viewMode, zoom, fitWidth, visualMode, textMode, textSize, lineHeight, rotation, speechRate, speechVoiceURI, translationLanguage,
     };
     localStorage.setItem(preferencesKey, JSON.stringify(preferences));
-  }, [fitWidth, lineHeight, preferencesKey, rotation, textMode, textSize, viewMode, visualMode, zoom]);
+  }, [fitWidth, lineHeight, preferencesKey, rotation, speechRate, speechVoiceURI, textMode, textSize, translationLanguage, viewMode, visualMode, zoom]);
 
   useEffect(() => {
     localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
   }, [bookmarks, bookmarksKey]);
 
-  // Reset scroll flag when file changes
+  useEffect(() => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setSpeechSupported(false);
+      return undefined;
+    }
+
+    let retryCount = 0;
+    let retryTimer;
+
+    const loadVoices = () => {
+      setSpeechSupported(true);
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+
+      if (!voices.length && retryCount < 8) {
+        retryCount += 1;
+        retryTimer = window.setTimeout(loadVoices, 250);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+
+    return () => {
+      window.clearTimeout(retryTimer);
+      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+      window.speechSynthesis.cancel();
+      speechSessionRef.current += 1;
+    };
+  }, []);
+
   useEffect(() => {
     hasScrolledToInitial.current = false;
     const frame = requestAnimationFrame(() => {
@@ -145,16 +342,23 @@ function PdfViewer({
     const target = viewportRef.current;
     if (!target) return;
 
+    let timeoutId;
     const resizeObserver = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setContainerWidth(entry.contentRect.width);
+      }, 100);
     });
 
     resizeObserver.observe(target);
-    return () => resizeObserver.disconnect();
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Text mode — delegate extraction to the backend via onTextPageRequest
+  // Extração do Texto
   // ---------------------------------------------------------------------------
   useEffect(() => {
     let cancelled = false;
@@ -162,13 +366,21 @@ function PdfViewer({
     const loadPageText = async () => {
       if (!textMode || !onTextPageRequest) {
         setPageText("");
+        setTranslatedText("");
+        setIsTranslationActive(false);
+        setTranslationError("");
         return;
       }
 
       setTextLoading(true);
       try {
         const text = await onTextPageRequest(pageNumber);
-        if (!cancelled) setPageText(text || "Nenhum texto extraível nesta página.");
+        if (!cancelled) {
+          setPageText(text || "Nenhum texto extraível nesta página.");
+          setTranslatedText("");
+          setIsTranslationActive(false);
+          setTranslationError("");
+        }
       } catch (error) {
         console.error("Erro ao obter texto da página:", error);
         if (!cancelled) setPageText("Não foi possível obter o texto desta página.");
@@ -181,7 +393,12 @@ function PdfViewer({
     return () => { cancelled = true; };
   }, [textMode, pageNumber, onTextPageRequest]);
 
-  // Scroll to initialPage once enough pages have rendered.
+  useEffect(() => {
+    setTranslatedText("");
+    setIsTranslationActive(false);
+    setTranslationError("");
+  }, [translationLanguage]);
+
   useEffect(() => {
     if (viewMode !== "continuous") return;
     if (initialPage <= 1 || hasScrolledToInitial.current) return;
@@ -206,7 +423,6 @@ function PdfViewer({
     return () => ro.disconnect();
   }, [pagesRendered, initialPage, viewMode]);
 
-  // IntersectionObserver: track which page is most visible
   useEffect(() => {
     if (!numPages || viewMode !== "continuous") return;
 
@@ -279,9 +495,6 @@ function PdfViewer({
     goToPage(searchResults[nextIndex].page);
   }, [goToPage, searchResults]);
 
-  // ---------------------------------------------------------------------------
-  // Search — delegate to the backend via onSearchRequest
-  // ---------------------------------------------------------------------------
   const handleSearch = async () => {
     const query = searchQuery.trim();
     if (!query || !onSearchRequest) {
@@ -292,7 +505,6 @@ function PdfViewer({
 
     setSearching(true);
     try {
-      // onSearchRequest returns Array<{ page: number, excerpt: string }>
       const results = await onSearchRequest(query);
       setSearchResults(results);
       setActiveSearchIndex(results.length ? 0 : -1);
@@ -303,6 +515,51 @@ function PdfViewer({
       setActiveSearchIndex(-1);
     } finally {
       setSearching(false);
+    }
+  };
+
+  // =====================================
+  // APLICAÇÃO DA TRADUÇÃO
+  // =====================================
+  const handleTranslatePageText = async () => {
+    if (!premiumAiEnabled || !pageText.trim()) return;
+
+    const cacheKey = `${pageNumber}:${translationLanguage}`;
+
+    if (translationCache[cacheKey]) {
+      setTranslatedText(translationCache[cacheKey]);
+      setIsTranslationActive(true);
+      return;
+    }
+
+    setTranslationLoading(true);
+    setTranslationError("");
+    
+    const currentPageAtRequest = pageNumber;
+    const currentLanguageAtRequest = translationLanguage;
+
+    try {
+      const translated = onTranslatePageRequest
+        ? await onTranslatePageRequest(currentPageAtRequest, currentLanguageAtRequest)
+        : await fetchFreeTranslation(pageText, currentLanguageAtRequest);
+      
+      if (translated) {
+        setTranslationCache((prev) => ({ ...prev, [cacheKey]: translated }));
+      }
+
+      if (currentPageAtRequest === pageNumber && currentLanguageAtRequest === translationLanguage) {
+        setTranslatedText(translated || "Não foi possível traduzir o texto desta página.");
+        setIsTranslationActive(true);
+      }
+    } catch (error) {
+      console.error("Erro no fluxo de tradução:", error);
+      if (currentPageAtRequest === pageNumber && currentLanguageAtRequest === translationLanguage) {
+        setTranslationError("Erro na tradução. Tente novamente.");
+        setIsTranslationActive(false);
+        setTranslatedText("");
+      }
+    } finally {
+      setTranslationLoading(false);
     }
   };
 
@@ -395,10 +652,104 @@ function PdfViewer({
     }
   };
 
+  const stopSpeaking = useCallback(() => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    speechSessionRef.current += 1;
+    setIsSpeaking(false);
+    setIsSpeechPaused(false);
+  }, []);
+
+  const pauseSpeaking = useCallback(() => {
+    if (!isSpeaking || isSpeechPaused || !("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.pause();
+    setIsSpeechPaused(true);
+  }, [isSpeaking, isSpeechPaused]);
+
+  const resumeSpeaking = useCallback(() => {
+    if (!isSpeaking || !isSpeechPaused || !("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.resume();
+    setIsSpeechPaused(false);
+  }, [isSpeaking, isSpeechPaused]);
+
+  const cycleSpeechRate = useCallback(() => {
+    setSpeechRate((currentRate) => {
+      const normalizedRate = normalizeSpeechRate(currentRate);
+      const currentIndex = SPEECH_RATES.indexOf(normalizedRate);
+      return SPEECH_RATES[(currentIndex + 1) % SPEECH_RATES.length];
+    });
+  }, []);
+
+  const speakPage = useCallback(() => {
+    const currentText = isTranslationActive ? translatedText : pageText;
+    
+    if (!speechSupported || !currentText.trim()) return;
+
+    const preparedText = prepareTextForSpeech(currentText);
+    const chunks = splitTextForSpeech(preparedText);
+    if (!chunks.length) return;
+
+    stopSpeaking();
+
+    const sessionId = speechSessionRef.current + 1;
+    const selectedVoice = availableVoices.find((voice) => voice.voiceURI === speechVoiceURI)
+      || chooseBestPortugueseVoice(availableVoices);
+    let chunkIndex = 0;
+
+    speechSessionRef.current = sessionId;
+    setIsSpeaking(true);
+    setIsSpeechPaused(false);
+
+    const speakNextChunk = () => {
+      if (speechSessionRef.current !== sessionId) return;
+
+      const chunk = chunks[chunkIndex];
+      if (!chunk) {
+        setIsSpeaking(false);
+        setIsSpeechPaused(false);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      utterance.lang = selectedVoice?.lang || "pt-BR";
+      utterance.voice = selectedVoice;
+      utterance.rate = speechRate;
+      utterance.pitch = 1.04;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        if (speechSessionRef.current !== sessionId) return;
+        chunkIndex += 1;
+        speakNextChunk();
+      };
+
+      utterance.onerror = (event) => {
+        if (event.error !== "interrupted" && event.error !== "canceled") {
+          console.error("Erro na síntese de voz:", event.error);
+        }
+
+        if (speechSessionRef.current === sessionId) {
+          setIsSpeaking(false);
+          setIsSpeechPaused(false);
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakNextChunk();
+  }, [availableVoices, pageText, translatedText, isTranslationActive, speechRate, speechSupported, speechVoiceURI, stopSpeaking]);
+
   const baseWidth = fitWidth ? Math.min(900, Math.max(320, containerWidth - 48)) : 650;
   const pageWidth = Math.round(baseWidth * zoom);
   const isCurrentPageBookmarked = bookmarks.includes(pageNumber);
   const activeResult = activeSearchIndex >= 0 ? searchResults[activeSearchIndex] : null;
+  const canSpeakPage = speechSupported && !textLoading && Boolean(pageText.trim());
+  const portugueseVoices = availableVoices.filter((voice) => voice.lang.toLowerCase().startsWith("pt"));
+  const translationLanguageLabel = getTranslationLanguage(translationLanguage).label;
   const safeViewMode = VIEW_MODES.has(viewMode) ? viewMode : DEFAULT_PREFERENCES.viewMode;
   const pagesToRender = safeViewMode === "single" && numPages
     ? [pageNumber]
@@ -452,45 +803,47 @@ function PdfViewer({
           </button>
         </div>
 
-        <form
-          className="pdf-toolbar-group pdf-search"
-          aria-label="Busca no PDF"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSearch();
-          }}
-        >
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Buscar"
-            aria-label="Buscar no PDF"
-          />
-          <button type="submit" disabled={searching || !onSearchRequest}>
-            {searching ? "..." : "Ir"}
-          </button>
-          <button
-            type="button"
-            onClick={() => goToSearchResult(activeSearchIndex - 1)}
-            disabled={!searchResults.length}
-            aria-label="Resultado anterior"
+        {premiumAiEnabled && (
+          <form
+            className="pdf-toolbar-group pdf-search"
+            aria-label="Busca no PDF"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSearch();
+            }}
           >
-            {"<"}
-          </button>
-          <button
-            type="button"
-            onClick={() => goToSearchResult(activeSearchIndex + 1)}
-            disabled={!searchResults.length}
-            aria-label="Próximo resultado"
-          >
-            {">"}
-          </button>
-          <span className="pdf-search-count" aria-live="polite">
-            {searchResults.length ? `${activeSearchIndex + 1}/${searchResults.length}` : "0"}
-          </span>
-        </form>
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar"
+              aria-label="Buscar no PDF"
+            />
+            <button type="submit" disabled={searching || !onSearchRequest}>
+              {searching ? "..." : "Ir"}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSearchResult(activeSearchIndex - 1)}
+              disabled={!searchResults.length}
+              aria-label="Resultado anterior"
+            >
+              {"<"}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToSearchResult(activeSearchIndex + 1)}
+              disabled={!searchResults.length}
+              aria-label="Próximo resultado"
+            >
+              {">"}
+            </button>
+            <span className="pdf-search-count" aria-live="polite">
+              {searchResults.length ? `${activeSearchIndex + 1}/${searchResults.length}` : "0"}
+            </span>
+          </form>
+        )}
 
         <div className="pdf-toolbar-group" aria-label="Zoom">
           <button type="button" onClick={() => setZoom((value) => Math.max(0.7, value - 0.1))} aria-label="Diminuir zoom">
@@ -544,7 +897,7 @@ function PdfViewer({
         </div>
       </div>
 
-      {(bookmarks.length > 0 || activeResult) && (
+      {(bookmarks.length > 0 || (premiumAiEnabled && activeResult)) && (
         <div className="pdf-secondary-bar">
           {bookmarks.length > 0 && (
             <div className="pdf-bookmarks" aria-label="Marcadores">
@@ -556,7 +909,7 @@ function PdfViewer({
               ))}
             </div>
           )}
-          {activeResult && (
+          {premiumAiEnabled && activeResult && (
             <button type="button" className="pdf-search-excerpt" onClick={() => goToPage(activeResult.page)}>
               p. {activeResult.page}: {activeResult.excerpt}
             </button>
@@ -578,13 +931,110 @@ function PdfViewer({
               <button type="button" onClick={() => setTextSize((value) => Math.min(28, value + 1))}>A+</button>
               <button type="button" onClick={() => setLineHeight((value) => Math.max(1.3, Number((value - 0.1).toFixed(1))))}>Espaço -</button>
               <button type="button" onClick={() => setLineHeight((value) => Math.min(2.2, Number((value + 0.1).toFixed(1))))}>Espaço +</button>
+              {portugueseVoices.length > 1 && (
+                <select
+                  value={speechVoiceURI}
+                  onChange={(event) => setSpeechVoiceURI(event.target.value)}
+                  aria-label="Voz da leitura"
+                  title="Voz da leitura"
+                >
+                  <option value="">Voz auto</option>
+                  {portugueseVoices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                type="button"
+                className="pdf-speech-rate-button"
+                onClick={cycleSpeechRate}
+                aria-label={`Velocidade da voz: ${speechRate}x`}
+                title="Mudar velocidade da voz"
+              >
+                {speechRate}x
+              </button>
+
+              {premiumAiEnabled && (
+                <>
+                  <select
+                    value={translationLanguage}
+                    onChange={(event) => setTranslationLanguage(event.target.value)}
+                    disabled={translationLoading}
+                    aria-label="Idioma da tradução"
+                    title="Idioma da tradução"
+                  >
+                    {TRANSLATION_LANGUAGES.map((language) => (
+                      <option key={language.code} value={language.code}>
+                        {language.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className={isTranslationActive ? "active" : ""}
+                    onClick={handleTranslatePageText}
+                    disabled={!pageText.trim() || translationLoading}
+                    aria-pressed={isTranslationActive}
+                    title={`Traduzir para ${translationLanguageLabel}`}
+                  >
+                    {translationLoading ? "Traduzindo…" : isTranslationActive ? "Atualizar" : "Traduzir"}
+                  </button>
+                  {isTranslationActive && (
+                    <button
+                      type="button"
+                      onClick={() => setIsTranslationActive(false)}
+                      disabled={translationLoading}
+                    >
+                      Original
+                    </button>
+                  )}
+                </>
+              )}
+              
+              <button
+                type="button"
+                className={isSpeaking ? "active" : ""}
+                onClick={speakPage}
+                disabled={!isSpeaking && !canSpeakPage}
+                aria-pressed={isSpeaking}
+                title={speechSupported ? "Ler esta página em voz alta" : "Leitura em voz não suportada neste navegador"}
+              >
+                {isSpeaking ? "Reiniciar" : "Ler página"}
+              </button>
+              {isSpeaking && (
+                <>
+                  <button
+                    type="button"
+                    className={isSpeechPaused ? "active" : ""}
+                    onClick={isSpeechPaused ? resumeSpeaking : pauseSpeaking}
+                    aria-pressed={isSpeechPaused}
+                  >
+                    {isSpeechPaused ? "Retomar" : "Pausar"}
+                  </button>
+                  <button type="button" onClick={stopSpeaking}>
+                    Parar
+                  </button>
+                </>
+              )}
             </div>
             <article
               className="pdf-text-page"
               style={{ fontSize: `${textSize}px`, lineHeight }}
             >
-              {textLoading ? "Carregando texto..." : highlightText(pageText, searchQuery)}
+              {textLoading
+                ? "Carregando texto..."
+                : translationLoading
+                  ? "Traduzindo texto..."
+                  : highlightText(isTranslationActive ? translatedText : pageText, searchQuery)}
             </article>
+            {translationError && (
+              <div className="pdf-text-error" role="alert">
+                {translationError}
+              </div>
+            )}
           </section>
         ) : (
           <div ref={containerRef} className="pdf-pages">

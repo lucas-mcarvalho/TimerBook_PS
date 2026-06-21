@@ -5,9 +5,12 @@ import com.timerbook.TimerBook.models.PasswordResetToken;
 import com.timerbook.TimerBook.repository.PasswordResetTokenRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,6 +26,9 @@ public class PasswordRecoveryService {
     @Autowired
     private EmailService emailService;
 
+    @Value("${app.frontend.reset-password-url:http://localhost:5173/redefinir-senha}")
+    private String resetPasswordUrl = "http://localhost:5173/redefinir-senha";
+
     public void sendRecoveryEmail(String email) {
         var user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado com este e-mail"));
@@ -35,12 +41,14 @@ public class PasswordRecoveryService {
         tokenEntity.setExpiresAt(LocalDateTime.now().plusMinutes(2));
 
         tokenRepository.save(tokenEntity);
-        String linkRecuperacao = "http://localhost:5173/redefinir-senha?token=" + generatedToken;
+        String encodedToken = URLEncoder.encode(generatedToken, StandardCharsets.UTF_8);
+        String separator = resetPasswordUrl.contains("?") ? "&" : "?";
+        String linkRecuperacao = resetPasswordUrl + separator + "token=" + encodedToken;
 
         EmailRequestDTO emailRequest = new EmailRequestDTO();
         emailRequest.setTo(email);
         emailRequest.setSubject("Recuperação de Senha - TimerBook");
-        emailRequest.setMessage("Olá! Você solicitou a recuperação de senha. \n\nclique no link e redefina a senha: "+linkRecuperacao);
+        emailRequest.setMessage("Olá! Você solicitou a recuperação de senha. \n\nClique no link e redefina a senha: " + linkRecuperacao);
         emailService.send(emailRequest);
     }
 

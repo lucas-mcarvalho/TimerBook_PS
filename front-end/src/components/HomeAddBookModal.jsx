@@ -3,8 +3,9 @@ import { useToast } from './ToastContext.js';
 import '../styles/HomeAddBookModal.css';
 import { registerBook } from '../features/books/booksApi.js';
 import {getUser} from "../features/user/userApi.js";
+import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from '../utils/bookLimits.js';
 
-const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
+const HomeAddBookModal = ({ isOpen, onClose, onAddBook, bookCount = 0 }) => {
   const { showToast, showAchievementToast } = useToast();
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState(''); 
@@ -65,9 +66,16 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
 
   if (!isOpen) return null;
 
+  const reachedBookLimit = bookCount >= MAX_BOOKS;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
+
+    if (reachedBookLimit) {
+      showToast(BOOK_LIMIT_MESSAGE, "error");
+      return;
+    }
 
     setIsLoading(true);
 
@@ -76,7 +84,10 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
       const userId = response.data.id;
       console.log("ID do usuário obtido:", userId);
       console.log("Dados do livro a registrar:", { name: newName, description: newDescription, coverFile, pdfFile });
-      const bookData = { name: newName, description: newDescription };
+      const bookData = {
+        name: newName.trim(),
+        description: newDescription.trim()
+      };
       const savedBookFromServer = await registerBook(
         userId,
         bookData, 
@@ -100,7 +111,8 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
       
     } catch (err) {
       console.error("Erro ao cadastrar livro:", err);
-      showToast("Ops! Falha ao conectar com o servidor.", "error");
+      const message = err.response?.data?.message || err.response?.data || "Ops! Falha ao conectar com o servidor.";
+      showToast(message, "error");
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +122,11 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">Adição de novo livro</h2>
+        {reachedBookLimit && (
+          <div className="modal-limit-warning">
+            {BOOK_LIMIT_MESSAGE}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="modal-body-flex">
             <div className="modal-inputs-col">
@@ -121,8 +138,8 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
                 <label>Descrição</label>
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4} placeholder="Digite um breve resumo do livro..." />
               </div>
-              <button type="submit" className="btn-concluir" disabled={isLoading}>
-                {isLoading ? 'Salvando...' : 'Concluir'}
+              <button type="submit" className="btn-concluir" disabled={isLoading || reachedBookLimit}>
+                {isLoading ? 'Salvando...' : reachedBookLimit ? 'Limite atingido' : 'Concluir'}
               </button>
             </div>
             

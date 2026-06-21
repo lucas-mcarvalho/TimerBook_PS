@@ -33,6 +33,17 @@
     margin-bottom: 40px;
 }
 
+.modal-limit-warning {
+    background-color: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 8px;
+    color: #9a3412;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: -20px 0 28px;
+    padding: 14px 16px;
+}
+
 .modal-body-flex {
     display: flex;
     gap: 60px; 
@@ -107,6 +118,11 @@
     background-color: #27ae60;
 }
 
+.btn-concluir:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
+}
+
 .modal-uploads-col {
     display: flex;
     gap: 30px;
@@ -166,4 +182,10 @@
     position: absolute;
     top: 0;
     left: 0;
+}
+
+.dark-theme .modal-limit-warning {
+    background-color: rgba(253, 186, 116, 0.12);
+    border-color: rgba(253, 186, 116, 0.35);
+    color: #fdba74;
 }

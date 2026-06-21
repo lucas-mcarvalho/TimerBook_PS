@@ -54,7 +54,7 @@ function BookList() {
               )}
               <div className="book-info">
                 <h2 className="book-title">{book.name}</h2>
-                <p className="book-description">{book.description}</p>
+                <p className="book-description">{book.description || "Sem descrição"}</p>
                 <div className="book-actions">
                   <button className="btn-read">Ler</button>
                   <button className="btn-delete">Deletar</button>
