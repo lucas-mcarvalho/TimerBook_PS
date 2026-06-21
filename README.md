@@ -28,21 +28,15 @@ O projeto também conta com recursos de autenticação, recuperação de senha, 
 
 ## Tecnologias
 
-![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=111111)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-
-- Java
-- Spring Boot
-- PostgreSQL
-- Docker
-- JavaScript
-- React
-- Python
+| Tecnologia | Uso no projeto |
+|------------|----------------|
+| `Java` | Desenvolvimento da API backend. |
+| `Spring Boot` | Estrutura principal da API, autenticação, serviços e controllers. |
+| `PostgreSQL` | Banco de dados relacional. |
+| `Docker` | Containerização dos serviços do projeto. |
+| `JavaScript` | Desenvolvimento do front-end web. |
+| `React` | Interface da aplicação web. |
+| `Python` | Serviço de IA integrado ao projeto. |
 
 ## Principais Funcionalidades
 
