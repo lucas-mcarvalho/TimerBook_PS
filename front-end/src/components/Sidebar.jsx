@@ -13,6 +13,24 @@ import MoonIcon from '../assets/Home/MoonIcon.svg';
 import SunIcon from '../assets/Home/SunIcon.svg';
 import '../styles/Sidebar.css';
 
+const PlanIcon = () => (
+  <svg
+    className="nav-svg-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3 10h18" />
+    <path d="M7 15h4" />
+  </svg>
+);
+
 const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal }) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -67,6 +85,13 @@ const Sidebar = ({ menuAtivo, books = [], isDarkMode, setIsDarkMode, onOpenModal
           className={`nav-item ${menuAtivo === 'livros' ? 'active' : ''}`}
         >
           <img src={BookIcon} alt="Livros" className="nav-icon" /> Biblioteca
+        </Link>
+
+        <Link
+          to="/assinatura"
+          className={`nav-item ${menuAtivo === 'assinatura' ? 'active' : ''}`}
+        >
+          <PlanIcon /> Assinatura
         </Link>
 
         {books.length === 0 ? (

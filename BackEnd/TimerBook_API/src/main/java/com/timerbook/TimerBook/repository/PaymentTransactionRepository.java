@@ -1,0 +1,12 @@
+package com.timerbook.TimerBook.repository;
+
+import com.timerbook.TimerBook.models.billing.PaymentTransaction;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
+    Optional<PaymentTransaction> findByProviderPaymentId(String providerPaymentId);
+
+    Optional<PaymentTransaction> findTopByUser_IdAndStatusOrderByPaidAtDescCreatedAtDesc(Long userId, String status);
+}

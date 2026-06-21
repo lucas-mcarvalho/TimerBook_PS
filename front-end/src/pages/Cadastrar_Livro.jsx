@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { registerBook } from "../features/books/booksApi.js";
+import { useEffect, useState } from "react";
+import { getBookByUserId, registerBook } from "../features/books/booksApi.js";
 import { getUser } from "../features/user/userApi.js";
 import { useToast } from "../components/ToastContext.js";
+import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from "../utils/bookLimits.js";
 
 export default function CadastrarLivro() {
   const { showAchievementToast } = useToast();
@@ -16,6 +17,22 @@ export default function CadastrarLivro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [bookCount, setBookCount] = useState(0);
+
+  useEffect(() => {
+    async function loadBooks() {
+      try {
+        const userResponse = await getUser();
+        const user = userResponse.data || userResponse;
+        const books = await getBookByUserId(user.id);
+        setBookCount(books.length);
+      } catch (err) {
+        console.error("Erro ao carregar livros no cadastro de livro:", err);
+      }
+    }
+
+    loadBooks();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,6 +58,11 @@ export default function CadastrarLivro() {
     setError(null);
     setSuccess(false);
     try {
+      if (bookCount >= MAX_BOOKS) {
+        setError(BOOK_LIMIT_MESSAGE);
+        return;
+      }
+
       const response = await getUser();
       const userId = response.data?.id || response.id;
       const bookData = {
@@ -58,6 +80,7 @@ export default function CadastrarLivro() {
         novas.forEach((conquista) => showAchievementToast(conquista));
       }
       setSuccess(true);
+      setBookCount((value) => value + 1);
       setFormData({
         name: ""
       });
@@ -116,8 +139,8 @@ export default function CadastrarLivro() {
           {pdfFile && <p>✓ {pdfFile.name}</p>}
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Cadastrando..." : "Cadastrar Livro"}
+        <button type="submit" disabled={loading || bookCount >= MAX_BOOKS}>
+          {loading ? "Cadastrando..." : bookCount >= MAX_BOOKS ? "Limite atingido" : "Cadastrar Livro"}
         </button>
 
       </form>

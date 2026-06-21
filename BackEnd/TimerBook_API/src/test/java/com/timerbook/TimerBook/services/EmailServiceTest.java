@@ -10,6 +10,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -94,6 +97,34 @@ class EmailServiceTest {
         service.sendReadingReminderEmail("reader@mail.com", " ");
 
         verify(emailSender).withMessage(argThat(message -> message.contains("<p>Olá!</p>")));
+    }
+
+    @Test
+    void sendPaymentApprovedEmailShouldBuildReceiptMessage() throws Exception {
+        when(emailSender.to("reader@mail.com")).thenReturn(emailSender);
+        when(emailSender.withSubject(anyString())).thenReturn(emailSender);
+        when(emailSender.withMessage(anyString())).thenReturn(emailSender);
+
+        service.sendPaymentApprovedEmail(
+                "reader@mail.com",
+                "Lucas",
+                new BigDecimal("19.90"),
+                "BRL",
+                "123456789",
+                "MERCADO_PAGO",
+                LocalDateTime.of(2026, 6, 9, 21, 30)
+        );
+
+        verify(emailSender).withSubject("TimerBook - Comprovante de pagamento");
+        verify(emailSender).withMessage(argThat(message ->
+                message.contains("Comprovante de pagamento")
+                        && message.contains("Premium mensal")
+                        && message.contains("R$")
+                        && message.contains("123456789")
+                        && message.contains("MERCADO_PAGO")
+                        && message.contains("09/06/2026 21:30")
+        ));
+        verify(emailSender).send(emailConfig);
     }
 
     private void mockEmailSenderChain(String to, String subject, String message) throws Exception {

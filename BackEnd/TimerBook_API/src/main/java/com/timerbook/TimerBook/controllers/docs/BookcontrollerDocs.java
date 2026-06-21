@@ -42,7 +42,7 @@ public interface BookcontrollerDocs {
     @Parameter(description = "ID do livro", example = "1")
     ResponseEntity<Book> update(  @PathVariable Long id,
                                   @RequestPart("name") String name,
-                                  @RequestPart("description") String description,
+                                  @RequestPart(value = "description", required = false) String description,
                                   @RequestPart(value = "cover", required = false) MultipartFile cover,
                                   @RequestPart(value = "pdf", required = false) MultipartFile pdf);
 

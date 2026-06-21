@@ -8,12 +8,15 @@ import com.timerbook.TimerBook.models.User;
 import com.timerbook.TimerBook.repository.BookRepository;
 import com.timerbook.TimerBook.repository.UserRepository;
 import com.timerbook.TimerBook.services.exception.BookException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @Service
 public class BookService {
+    private static final int FREE_BOOK_LIMIT = 5;
 
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
@@ -44,6 +47,13 @@ public class BookService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        if (!user.isPaidUser() && bookRepository.countByUserId(userId) >= FREE_BOOK_LIMIT) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Plano gratuito limitado a 5 livros. Assine o Premium para cadastrar livros ilimitados."
+            );
+        }
+
         String coverPath = null;
         if (dto.getCover() != null && !dto.getCover().isEmpty()) {
             coverPath = fileStorageService.storeFile(dto.getCover(), "covers");
@@ -56,7 +66,7 @@ public class BookService {
 
         Book book = new Book();
         book.setName(dto.getName());
-        book.setDescription(dto.getDescription());
+        book.setDescription(normalizeDescription(dto.getDescription()));
         book.setCoverUrl(coverPath);
         book.setDataPath(pdfPath);
         book.setUser(user);
@@ -71,7 +81,7 @@ public class BookService {
         Book book = findById(id);
 
         book.setName(dto.getName());
-        book.setDescription(dto.getDescription());
+        book.setDescription(normalizeDescription(dto.getDescription()));
 
         if (dto.getCover() != null && !dto.getCover().isEmpty()) {
             fileStorageService.deleteFile(book.getCoverUrl());
@@ -99,6 +109,13 @@ public class BookService {
 
     public List<Book> findByUserId(Long userId) {
         return bookRepository.findByUserId(userId);
+    }
+
+    private String normalizeDescription(String description) {
+        if (description == null || description.isBlank()) {
+            return "";
+        }
+        return description.trim();
     }
 
 }

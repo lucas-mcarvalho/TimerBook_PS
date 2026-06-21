@@ -12,6 +12,7 @@ import '../styles/HomeDark.css';
 import PencilIcon from '../assets/Home/PencilIcon.svg';
 import Sidebar from '../components/Sidebar';
 import HomeAddBookModal from '../components/HomeAddBookModal';
+import { BOOK_LIMIT_MESSAGE, MAX_BOOKS } from '../utils/bookLimits.js';
 
 function BookCard({ book, onRead, onDelete, isEditing, onOpenStats }) {
   return (
@@ -197,6 +198,18 @@ function UserLibrary() {
     }
   };
 
+  const reachedBookLimit = books.length >= MAX_BOOKS;
+
+  const handleOpenAddBookModal = () => {
+    if (reachedBookLimit) {
+      setError(BOOK_LIMIT_MESSAGE);
+      return;
+    }
+
+    setError(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className={`dashboard-container ${isDarkMode ? 'dark-theme' : ''}`}>
       
@@ -217,7 +230,7 @@ function UserLibrary() {
         ) : (
           <div className="books-grid">
             {books.length === 0 ? (
-              <button className="book-card add-new-card" onClick={() => setIsModalOpen(true)} style={{border: 'none', background: 'transparent'}}>
+              <button className="book-card add-new-card" onClick={handleOpenAddBookModal} style={{border: 'none', background: 'transparent'}}>
                 <div className="book-cover-wrapper"><div className="book-cover-placeholder">+</div></div>
                 <div className="book-info"><h3 className="book-title">Adicionar novo livro</h3></div>
               </button>
@@ -237,8 +250,8 @@ function UserLibrary() {
         )}
         
         <div className="bottom-actions">
-          <button className="btn-add-book" onClick={() => setIsModalOpen(true)}>
-            Adicionar Livro
+          <button className="btn-add-book" onClick={handleOpenAddBookModal}>
+            {reachedBookLimit ? "Limite atingido" : "Adicionar Livro"}
           </button>
           <button className={`btn-edit-book ${isEditing ? 'editing-active' : ''}`} onClick={() => setIsEditing(!isEditing)}>
             <img src={PencilIcon} alt="Lápis" className="nav-icon" />
@@ -250,6 +263,7 @@ function UserLibrary() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onAddBook={handleAddNewBook} 
+        bookCount={books.length}
       />
       
     </div>

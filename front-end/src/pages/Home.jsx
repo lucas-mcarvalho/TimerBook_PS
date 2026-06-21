@@ -42,7 +42,11 @@ const Home = () => {
 
         const storageKey = getOnboardingStorageKey(info);
         setOnboardingStorageKey(storageKey);
-        setShowOnboarding(storageKey ? localStorage.getItem(storageKey) !== "true" : false);
+        setShowOnboarding(
+          storageKey
+            ? info.dailyReadingGoalMinutes == null && localStorage.getItem(storageKey) !== "true"
+            : false
+        );
         
         const booksData = await getBookByUserId(info.id);
         setBooks(booksData);

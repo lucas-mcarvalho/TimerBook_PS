@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { ToastContext } from './ToastContext.js';
+import notificacao from '../assets/conquistas/sounds/notificacao.mp3';
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
@@ -28,6 +29,14 @@ export const ToastProvider = ({ children }) => {
     const title = achievement?.nome || achievement?.name || "Conquista";
     const description = achievement?.descricao || achievement?.description || "Nova conquista desbloqueada";
     const icon = achievement?.icone || achievement?.icon || "✓";
+
+    try {
+      const audio = new Audio(notificacao);
+      audio.volume = 0.5;
+      audio.play().catch((err) => console.log(err));
+    } catch (error) {
+      console.error(error);
+    }
 
     showToast({ title, description, icon }, "achievement", { duration: 6200 });
   }, [showToast]);

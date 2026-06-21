@@ -33,9 +33,21 @@ spring:
               - profile
 
 cors:
-  originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173,http://localhost:8081
+  originPatterns: http://localhost:8080,http://localhost:3000,http://localhost:5173,http://localhost:8081,http://*:5173, http://*:8081
 
 app:
+  frontend:
+    reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/redefinir-senha}
+  storage:
+    type: ${APP_STORAGE_TYPE:local}
+  aws:
+    region: ${AWS_REGION:us-east-1}
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
+  ai:
+    ollama:
+      url: ${OLLAMA_URL:http://localhost:11434/api/generate}
+      model: ${OLLAMA_MODEL:qwen2.5:14b}
   reminders:
     reading:
       enabled: true
@@ -55,3 +67,21 @@ api:
   security:
     token:
       secret: MYJWTSECRET
+
+payment:
+  provider: ${PAYMENT_PROVIDER:MERCADO_PAGO}
+  secret-key: ${PAYMENT_SECRET_KEY:${MP_ACCESS_TOKEN:}}
+  webhook-secret: ${PAYMENT_WEBHOOK_SECRET:${MP_WEBHOOK_SECRET:}}
+  webhook-signature:
+    enabled: ${PAYMENT_WEBHOOK_SIGNATURE_ENABLED:true}
+  mercado-pago:
+    access-token: ${MP_ACCESS_TOKEN:}
+    base-url: ${MP_BASE_URL:https://api.mercadopago.com}
+  checkout:
+    title: ${PAYMENT_CHECKOUT_TITLE:TimerBook Premium}
+    amount: ${PAYMENT_CHECKOUT_AMOUNT:19.90}
+    currency: ${PAYMENT_CHECKOUT_CURRENCY:BRL}
+    success-url: ${BILLING_SUCCESS_URL:${PAYMENT_SUCCESS_URL:http://localhost:5173/perfil?payment=success}}
+    cancel-url: ${BILLING_CANCEL_URL:${PAYMENT_CANCEL_URL:http://localhost:5173/perfil?payment=cancel}}
+    notification-url: ${PAYMENT_NOTIFICATION_URL:http://localhost:8080/billing/webhook/mercado_pago}
+  customer-portal-url: ${PAYMENT_CUSTOMER_PORTAL_URL:http://localhost:5173/perfil}

@@ -838,6 +838,22 @@
   margin: 8px 0 4px;
 }
 
+.donut-empty-state {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  padding: 12px;
+}
+
+.dark-theme .donut-empty-state {
+  color: #94a3b8;
+}
+
 /* ─── Legend ─────────────────────────────────────────────── */
 .donut-legend {
   display: flex;
@@ -958,4 +974,3 @@
     width: 100%;
   }
 }
-
