@@ -33,7 +33,7 @@ O projeto também conta com recursos de autenticação, recuperação de senha, 
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original-wordmark.svg" width="64" height="64" alt="Java" />
       <br />
-      <strong>Java</strong>
+      <strong></strong>
     </td>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg" width="56" height="56" alt="Spring Boot" />
@@ -43,34 +43,34 @@ O projeto também conta com recursos de autenticação, recuperação de senha, 
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original-wordmark.svg" width="64" height="64" alt="PostgreSQL" />
       <br />
-      <strong>PostgreSQL</strong>
+      <strong></strong>
     </td>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain-wordmark.svg" width="64" height="64" alt="Docker" />
       <br />
-      <strong>Docker</strong>
+      <strong></strong>
     </td>
   </tr>
   <tr>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" width="56" height="56" alt="JavaScript" />
       <br />
-      <strong>JavaScript</strong>
+      <strong></strong>
     </td>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original-wordmark.svg" width="64" height="64" alt="React" />
       <br />
-      <strong>React</strong>
+      <strong></strong>
     </td>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" width="64" height="64" alt="Python" />
       <br />
-      <strong>Python</strong>
+      <strong></strong>
     </td>
     <td align="center" width="110">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg" width="72" height="64" alt="AWS" />
       <br />
-      <strong>AWS</strong>
+      <strong></strong>
     </td>
   </tr>
 </table>
