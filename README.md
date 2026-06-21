@@ -28,15 +28,52 @@ O projeto também conta com recursos de autenticação, recuperação de senha, 
 
 ## Tecnologias
 
-| Tecnologia | Uso no projeto |
-|------------|----------------|
-| `Java` | Desenvolvimento da API backend. |
-| `Spring Boot` | Estrutura principal da API, autenticação, serviços e controllers. |
-| `PostgreSQL` | Banco de dados relacional. |
-| `Docker` | Containerização dos serviços do projeto. |
-| `JavaScript` | Desenvolvimento do front-end web. |
-| `React` | Interface da aplicação web. |
-| `Python` | Serviço de IA integrado ao projeto. |
+<table>
+  <tr>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original-wordmark.svg" width="64" height="64" alt="Java" />
+      <br />
+      <strong>Java</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg" width="56" height="56" alt="Spring Boot" />
+      <br />
+      <strong>Spring Boot</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original-wordmark.svg" width="64" height="64" alt="PostgreSQL" />
+      <br />
+      <strong>PostgreSQL</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-plain-wordmark.svg" width="64" height="64" alt="Docker" />
+      <br />
+      <strong>Docker</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" width="56" height="56" alt="JavaScript" />
+      <br />
+      <strong>JavaScript</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original-wordmark.svg" width="64" height="64" alt="React" />
+      <br />
+      <strong>React</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" width="64" height="64" alt="Python" />
+      <br />
+      <strong>Python</strong>
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg" width="72" height="64" alt="AWS" />
+      <br />
+      <strong>AWS</strong>
+    </td>
+  </tr>
+</table>
 
 ## Principais Funcionalidades
 
