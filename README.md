@@ -20,6 +20,7 @@ O projeto também conta com recursos de autenticação, recuperação de senha, 
 |---------|--------|
 | Deploy da aplicação | [timerbook.com.br](http://timerbook.com.br) |
 | Landing page | [TimerBook Landing Page](https://lucas-mcarvalho.github.io/TimerBook_PS/) |
+| Propaganda do projeto | [Assistir no YouTube](https://www.youtube.com/watch?v=rk8HtUo2tHo) |
 | Vídeo do projeto | [Assistir no YouTube](https://www.youtube.com/watch?v=RutJxCjv6bo) |
 | Planejamento no Trello | [Trello TimerBook](https://trello.com/b/HtVptYfz/timerbook) |
 | User Stories e protótipo | [Figma TimerBook](https://www.figma.com/design/dgX72w2shMIYEC9jvOFopp/TimerBook?node-id=1-5&p=f&t=HIWQvvAN6rVbJlLf-0) |
