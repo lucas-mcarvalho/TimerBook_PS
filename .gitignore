@@ -34,3 +34,7 @@ build/
 
 ### VS Code ###
 .vscode/
+ia-service/venv/
+venv/
+.venv/
+__pycache__/
