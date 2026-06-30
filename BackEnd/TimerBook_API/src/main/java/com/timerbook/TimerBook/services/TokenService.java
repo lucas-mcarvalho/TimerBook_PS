@@ -10,8 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -53,7 +52,7 @@ public class TokenService {
     }
 
     private Instant generateExpirationDate() {
-        return LocalDateTime.now().plusMinutes(15).toInstant(ZoneOffset.UTC);
+        return Instant.now().plus(15, ChronoUnit.MINUTES);
     }
 
     public String createRefreshToken(User user) {
@@ -63,7 +62,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("timerbook-login-api")
                     .withSubject(user.getEmail())
-                    .withExpiresAt(LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.UTC))
+                    .withExpiresAt(Instant.now().plus(2, ChronoUnit.HOURS))
                     .sign(algorithm);
 
         } catch (Exception e) {
@@ -79,7 +78,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("timerbook-email-verification")
                     .withSubject(email)
-                    .withExpiresAt(LocalDateTime.now().plusHours(24).toInstant(ZoneOffset.UTC))
+                    .withExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS))
                     .sign(algorithm);
 
         } catch (Exception e) {

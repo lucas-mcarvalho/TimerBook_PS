@@ -2,6 +2,7 @@ package com.timerbook.TimerBook.controllers;
 
 
 import com.timerbook.TimerBook.controllers.docs.BookcontrollerDocs;
+import com.timerbook.TimerBook.dto.BookCreationResponseDTO;
 import com.timerbook.TimerBook.dto.BookDTO;
 import com.timerbook.TimerBook.models.Book;
 import com.timerbook.TimerBook.services.BookService;
@@ -26,7 +27,7 @@ public class BookController implements BookcontrollerDocs {
 
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Book> create(
+    public ResponseEntity<BookCreationResponseDTO> create(
             @RequestParam Long userId,
             @RequestPart("name") String name,
             @RequestPart("description") String description,
@@ -38,8 +39,8 @@ public class BookController implements BookcontrollerDocs {
         dto.setCover(cover);
         dto.setData(pdf);
 
-        Book book = bookService.create(userId, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(book);
+        BookCreationResponseDTO response = bookService.create(userId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping

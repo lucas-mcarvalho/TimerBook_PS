@@ -23,25 +23,33 @@ export default function CadastrarUsuario() {
     photo: null,
   });
 
-  // Novo estado para mostrar a pré-visualização da imagem
+  // Estado para mostrar a pré-visualização da imagem
   const [photoPreview, setPhotoPreview] = useState(null);
 
+  // Estados de feedback
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  
+  // Estado específico para a lista de erros da senha (agora é um Array)
+  const [passwordErrors, setPasswordErrors] = useState([]);
 
   // Manipulador para os inputs de texto padrão
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Limpa os "chips" de erro assim que o usuário volta a digitar a senha
+    if (name === "password") {
+      setPasswordErrors([]);
+    }
   };
 
-  // Novo manipulador exclusivo para o input de arquivo (foto)
+  // Manipulador exclusivo para o input de arquivo (foto)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFormData((prev) => ({ ...prev, photo: file }));
-      // Cria uma URL local temporária para o preview da imagem
       setPhotoPreview(URL.createObjectURL(file));
     } else {
       setFormData((prev) => ({ ...prev, photo: null }));
@@ -54,8 +62,10 @@ export default function CadastrarUsuario() {
     
     if (loading) return;
 
+    // Reseta todos os alertas antes de tentar enviar novamente
     setError(null);
     setSuccess(false);
+    setPasswordErrors([]);
 
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem.");
@@ -65,7 +75,6 @@ export default function CadastrarUsuario() {
     setLoading(true);
 
     try {
-      // Repassando os dados, incluindo a foto, para a sua função de API
       await registerUser(
         formData.username,
         formData.email,
@@ -96,8 +105,24 @@ export default function CadastrarUsuario() {
           setError("Este e-mail já está sendo usado. Tente outro ou recupere sua senha.");
         } else if (lowerMessage.includes("username já está em uso") || lowerMessage.includes("username ja esta em uso")) {
           setError("Este nome de usuário já existe. Escolha um nome diferente.");
+        } 
+        // Lógica inteligente para capturar os erros em inglês e traduzir
+        else if (lowerMessage.includes("password") || lowerMessage.includes("senha")) {
+          const errorsList = [];
+          
+          if (lowerMessage.includes("8 or more") || lowerMessage.includes("length")) errorsList.push("Mínimo de 8 caracteres");
+          if (lowerMessage.includes("uppercase")) errorsList.push("1 letra maiúscula");
+          if (lowerMessage.includes("lowercase")) errorsList.push("1 letra minúscula");
+          if (lowerMessage.includes("special") || lowerMessage.includes("non-alphanumeric")) errorsList.push("1 caractere especial (!@#)");
+          if (lowerMessage.includes("digit") || lowerMessage.includes("number")) errorsList.push("1 número");
+
+          if (errorsList.length > 0) {
+            setPasswordErrors(errorsList);
+          } else {
+            setPasswordErrors(["A senha está muito fraca."]);
+          }
         } else {
-          setError(message);
+          setError(message); // Cai aqui se for um erro diferente
         }
       } else {
         setError("Erro ao conectar com o servidor. Tente novamente mais tarde.");
@@ -158,7 +183,7 @@ export default function CadastrarUsuario() {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                style={{ display: "none" }} // Esconde o input feio nativo do navegador
+                style={{ display: "none" }}
               />
             </div>
 
@@ -186,6 +211,7 @@ export default function CadastrarUsuario() {
               />
             </div>
 
+            {/* CAMPO DE SENHA COM FEEDBACK VISUAL PREMIUM */}
             <div className="form-group" style={{ marginTop: "15px" }}>
               <label>Senha</label>
               <input
@@ -195,7 +221,39 @@ export default function CadastrarUsuario() {
                 onChange={handleInputChange}
                 required
                 placeholder="••••••••"
+                style={passwordErrors.length > 0 ? { borderColor: '#ff4757', boxShadow: '0 0 0 2px rgba(255, 71, 87, 0.1)' } : {}}
               />
+              
+              {/* RENDERIZAÇÃO DOS CHIPS DE ERRO */}
+              {passwordErrors.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                  <span style={{ width: '100%', fontSize: '12px', color: '#ff4757', fontWeight: '500', marginBottom: '2px' }}>
+                    Sua senha precisa de:
+                  </span>
+                  
+                  {passwordErrors.map((erroMsg, index) => (
+                    <div key={index} style={{
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      background: 'rgba(255, 71, 87, 0.1)', 
+                      color: '#ff4757',
+                      padding: '4px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      border: '1px solid rgba(255, 71, 87, 0.2)'
+                    }}>
+                      {/* Ícone de X em SVG */}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                      {erroMsg}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="form-group" style={{ marginTop: "15px" }}>

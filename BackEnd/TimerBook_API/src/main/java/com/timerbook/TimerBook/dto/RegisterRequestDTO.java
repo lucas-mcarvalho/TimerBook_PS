@@ -24,6 +24,10 @@ public record RegisterRequestDTO (
 	@Schema(description = "Caminho da foto de perfil")
 	String photopath,
 
-	@Schema(description = "Meta diária de leitura em minutos", example = "20")
+	@Schema(
+		description = "Meta diária de leitura em minutos. Valores permitidos: 5, 10, 15, 30 e 60",
+		example = "15",
+		allowableValues = {"5", "10", "15", "30", "60"}
+	)
 	Integer dailyReadingGoalMinutes
 ){}

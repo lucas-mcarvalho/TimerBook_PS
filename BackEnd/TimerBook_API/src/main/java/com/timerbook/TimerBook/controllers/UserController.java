@@ -1,6 +1,7 @@
 package com.timerbook.TimerBook.controllers;
 
 import com.timerbook.TimerBook.controllers.docs.UserControllerDocs;
+import com.timerbook.TimerBook.dto.UserCustomReadingGoalRequestDTO;
 import com.timerbook.TimerBook.dto.UserReadingGoalRequestDTO;
 import com.timerbook.TimerBook.dto.UserReadingGoalResponseDTO;
 import com.timerbook.TimerBook.dto.UserDTO;
@@ -99,6 +100,18 @@ public class UserController implements UserControllerDocs {
             return ResponseEntity.ok(new UserReadingGoalResponseDTO(user.getDailyReadingGoalMinutes()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/me/reading-goal/custom")
+    public ResponseEntity<UserReadingGoalResponseDTO> updateMyCustomReadingGoal(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody UserCustomReadingGoalRequestDTO body) {
+        try {
+            User user = userService.updateMyCustomReadingGoalMinutes(authHeader, body.getDailyReadingGoalMinutes());
+            return ResponseEntity.ok(new UserReadingGoalResponseDTO(user.getDailyReadingGoalMinutes()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserReadingGoalResponseDTO(null));
         }
     }
 }

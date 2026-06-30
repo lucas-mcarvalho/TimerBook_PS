@@ -47,12 +47,18 @@ public class AuthService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PasswordValidatorService passwordValidatorService;
+
     public ResponseDTO login(LoginRequestDTO body) {
+        String loginIdentifier = body.email();
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(body.email(), body.password())
+            new UsernamePasswordAuthenticationToken(loginIdentifier, body.password())
         );
 
-        User user = userRepository.findByEmail(body.email())
+        User user = userRepository.findByEmail(loginIdentifier)
+            .or(() -> userRepository.findByUsername(loginIdentifier))
                 .orElseThrow(() -> new RuntimeException("Usuario nao encontrado"));
 
         String accessToken = tokenService.generateToken(user);
@@ -76,6 +82,8 @@ public class AuthService {
         if (existingUsername.isPresent()) {
             throw new RuntimeException("Este username já está em uso!");
         }
+
+        passwordValidatorService.validate(body.password());
 
         User newUser = new User();
         newUser.setEnabled(false);
@@ -138,10 +146,33 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        if (user.getRefreshToken() == null || !user.getRefreshToken().equals(token)) {
+            throw new RuntimeException("Refresh Token expirado ou inválido. Faça login novamente.");
+        }
+
         String newAccessToken = tokenService.generateToken(user);
         String newRefreshToken = tokenService.createRefreshToken(user);
         user.setRefreshToken(newRefreshToken);
         userRepository.save(user);
         return new ResponseDTO(user.getUsername(), newAccessToken, newRefreshToken,null);
+    }
+
+    public void logout(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido ou ausente");
+        }
+        String token = authHeader.replace("Bearer ", "");
+
+        DecodedJWT decodedJWT = tokenService.validateAndDecodeToken(token);
+        if (decodedJWT == null) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        String email = decodedJWT.getSubject();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        user.setRefreshToken(null);
+        userRepository.save(user);
     }
 }

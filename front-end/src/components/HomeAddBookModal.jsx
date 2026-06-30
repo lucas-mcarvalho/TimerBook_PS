@@ -5,7 +5,7 @@ import { registerBook } from '../features/books/booksApi.js';
 import {getUser} from "../features/user/userApi.js";
 
 const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
-  const { showToast } = useToast();
+  const { showToast, showAchievementToast } = useToast();
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState(''); 
   const [coverFile, setCoverFile] = useState(null);
@@ -83,9 +83,15 @@ const HomeAddBookModal = ({ isOpen, onClose, onAddBook }) => {
         coverFile || undefined, 
         pdfFile || undefined
       );
+      const novas = savedBookFromServer?.novasConquistas || [];
+      if (novas.length > 0) {
+        novas.forEach((conquista) => showAchievementToast(conquista));
+      }
+
+      const savedBook = savedBookFromServer?.book || savedBookFromServer;
 
       onAddBook({ 
-        ...savedBookFromServer, 
+        ...savedBook, 
         cover: coverPreviewUrl 
       });
 

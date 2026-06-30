@@ -16,7 +16,7 @@ import java.util.Set;
 @Service
 public class UserService {
 
-    private static final Set<Integer> ALLOWED_READING_GOALS = Set.of(10, 20, 30);
+    private static final Set<Integer> ALLOWED_READING_GOALS = Set.of(5, 10, 15, 30, 60);
 
     @Autowired
     private UserRepository userRepository;
@@ -133,12 +133,28 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User updateMyCustomReadingGoalMinutes(String authHeader, Integer dailyReadingGoalMinutes) {
+        User user = getMe(authHeader);
+        
+        // Validate if user is PAID
+        if (!user.isPaidUser()) {
+            throw new IllegalArgumentException("Apenas usuários com plano pago podem definir metas personalizadas. Utilize um dos valores pré-definidos: 5, 10, 15, 30 ou 60 minutos.");
+        }
+        
+        if (dailyReadingGoalMinutes == null || dailyReadingGoalMinutes <= 0) {
+            throw new IllegalArgumentException("Meta de leitura inválida. Informe um valor maior que zero.");
+        }
+
+        user.setDailyReadingGoalMinutes(dailyReadingGoalMinutes);
+        return userRepository.save(user);
+    }
+
     public Integer normalizeReadingGoal(Integer goalMinutes) {
         if (goalMinutes == null) {
             return User.DEFAULT_DAILY_READING_GOAL_MINUTES;
         }
         if (!ALLOWED_READING_GOALS.contains(goalMinutes)) {
-            throw new IllegalArgumentException("Meta de leitura inválida. Valores permitidos: 10, 20 ou 30 minutos.");
+            throw new IllegalArgumentException("Meta de leitura inválida. Valores permitidos: 5, 10, 15, 30 ou 60 minutos.");
         }
         return goalMinutes;
     }

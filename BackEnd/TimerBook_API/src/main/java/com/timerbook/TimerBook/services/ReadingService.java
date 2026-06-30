@@ -31,6 +31,9 @@ public class ReadingService {
     @Autowired
     private ReadingSessionRepository readingSessionRepository;
 
+    @Autowired
+    private AchievementService achievementService;
+
     public Reading initializeReading(Long userId, InitReadingDTO dto) {
 
         User user = userRepository.findById(userId)
@@ -87,7 +90,9 @@ public class ReadingService {
         }
 
         readingEntity.setFinishedAt(LocalDateTime.now());
-        return readingRepository.save(readingEntity);
+        Reading savedReading = readingRepository.save(readingEntity);
+        achievementService.checkFastBookRead(savedReading);
+        return savedReading;
     }
 
     public Reading getReadingById(Long readingId) {

@@ -38,6 +38,9 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (decodedJWT != null) {
             String email = decodedJWT.getSubject();
             List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+            if (roles == null) {
+                roles = List.of();
+            }
 
             var authorities = roles.stream()
                     .map(SimpleGrantedAuthority::new)

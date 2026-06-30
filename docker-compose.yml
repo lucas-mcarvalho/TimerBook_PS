@@ -43,7 +43,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-     - ./uploads:/app/uploads
+      - ./uploads:/app/uploads
     env_file:
       - .env
     depends_on:
@@ -52,5 +52,20 @@ services:
     environment:
       - APP_UPLOAD_DIR=/app/uploads
       - SPRING_PROFILES_ACTIVE=dev
+
+  python-ai:
+    build: ./ia-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - UPLOADS_DIR=/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
+    restart: on-failure
+
 volumes:
   postgres_data:
