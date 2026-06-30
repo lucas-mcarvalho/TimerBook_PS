@@ -38,3 +38,7 @@ ia-service/venv/
 venv/
 .venv/
 __pycache__/
+venv/
+.venv/
+__pycache__/
+ia-service/venv/
